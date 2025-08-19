@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Supervisor - Control de Incidencias</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f3f4;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .pin-access {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .refresh-button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .refresh-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .refresh-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .last-update {
+            font-size: 12px;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .pin-verification {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .pin-input {
+            font-size: 24px;
+            text-align: center;
+            padding: 15px;
+            border: 3px solid #e9ecef;
+            border-radius: 12px;
+            width: 200px;
+            margin: 20px auto;
+            display: block;
+            letter-spacing: 5px;
+        }
+        
+        .pin-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .dashboard {
+            display: none;
+        }
+        
+        .dashboard.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 5px solid;
+        }
+        
+        .stat-card.critical { border-left-color: #dc3545; }
+        .stat-card.warning { border-left-color: #ffc107; }
+        .stat-card.success { border-left-color: #28a745; }
+        .stat-card.info { border-left-color: #17a2b8; }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .incidents-section {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px 25px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .incident-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .incident-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background 0.2s ease;
+        }
+        
+        .incident-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .incident-id {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        
+        .incident-priority {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .priority-critical { background: #dc3545; color: white; }
+        .priority-high { background: #fd7e14; color: white; }
+        .priority-medium { background: #ffc107; color: #212529; }
+        .priority-low { background: #28a745; color: white; }
+        
+        .incident-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .incident-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-assigned { background: #d1ecf1; color: #0c5460; }
+        .status-escalated { background: #f8d7da; color: #721c24; }
+        .status-resolved { background: #d4edda; color: #155724; }
+        
+        .incident-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .escalation-timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+        
+        .timeline-step {
+            text-align: center;
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+        
+        .timeline-step.completed { background: #d4edda; color: #155724; }
+        .timeline-step.current { background: #fff3cd; color: #856404; }
+        .timeline-step.pending { background: #f8f9fa; color: #6c757d; }
+        .timeline-step.failed { background: #f8d7da; color: #721c24; }
+        
+        .action-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .technician-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .technician-item {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .technician-item:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        
+        .technician-item.selected {
+            border-color: #007bff;
+            background: #e7f1ff;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <div class="logo">🎯 Control de Incidencias</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">
+                    Elena Vázquez - Supervisor
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">
+                        🔐 Acceso Supervisorial
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8;">
+                        Sesión activa
+                    </div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button class="refresh-button" onclick="refreshData()" id="refreshBtn">
+                        🔄 Actualizar
+                    </button>
+                    <div class="last-update" id="lastUpdate" style="margin-top: 6px; font-size: 12px; opacity: 0.8;">
+                        Última actualización: 14:23
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Verificación PIN -->
+        <div class="pin-verification" id="pinVerification">
+            <h2 style="margin-bottom: 20px; color: #2c3e50;">🔐 Verificación de Acceso Supervisorial</h2>
+            <p style="color: #6c757d; margin-bottom: 20px;">
+                Introduce tu PIN de supervisor para acceder al panel de control
+            </p>
+            <input type="password" class="pin-input" id="pinInput" placeholder="••••" maxlength="4">
+            <button class="btn btn-primary" onclick="verifyPin()" style="margin-top: 15px;">
+                Verificar Acceso
+            </button>
+            <div id="pinError" style="color: #dc3545; margin-top: 15px; display: none;">
+                PIN incorrecto. Inténtalo de nuevo.
+            </div>
+        </div>
+        
+        <!-- Dashboard Principal -->
+        <div class="dashboard" id="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card critical">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Incidencias Críticas</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Escaladas a L3</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">En Proceso</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-number">45</div>
+                    <div class="stat-label">Resueltas Hoy</div>
+                </div>
+            </div>
+            
+            <div class="incidents-section">
+                <div class="section-header">
+                    <h3>📋 Incidencias Activas</h3>
+                    <div class="filters">
+                        <button class="filter-btn active" onclick="filterIncidents('all')">Todas</button>
+                        <button class="filter-btn" onclick="filterIncidents('critical')">Críticas</button>
+                        <button class="filter-btn" onclick="filterIncidents('escalated')">Escaladas</button>
+                        <button class="filter-btn" onclick="filterIncidents('pending')">Pendientes</button>
+                    </div>
+                </div>
+                
+                <div class="incident-list" id="incidentList">
+                    <!-- Incidencia 1 - Crítica con solicitud de ayuda -->
+                    <div class="incident-item" data-status="help_requested" data-priority="critical">
+                        <div class="incident-header">
+                            <div class="incident-id">INC-20/08-00045-CRÍTICA-ZNA-MT12</div>
+                            <div class="incident-priority priority-critical">🔴 CRÍTICA</div>
+                        </div>
+                        
+                        <div class="incident-details">
+                            <div><strong>Equipo:</strong> Compresor Principal #3</div>
+                            <div><strong>Zona:</strong> Línea Norte A</div>
+                            <div><strong>Tiempo:</strong> 8 min</div>
+                        </div>
+                        
+                        <!-- Respuestas de técnicos -->
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                            <strong style="color: #856404;">📋 Respuestas Técnicos:</strong><br>
+                            <div style="margin-top: 8px;">
+                                <span style="color: #dc3545;">❌ Jorge (L0):</span> "Fuera de mi especialidad"<br>
+                                <span style="color: #ffc107;">🆘 Ana (L1):</span> "Necesito herramientas especiales" 
+                                <span style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">
+                                    ⏸️ ESCALADO PAUSADO
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="escalation-timeline">
+                            <div class="timeline-step failed">L0: RECHAZÓ</div>
+                            <div class="timeline-step current">L1: PIDE AYUDA</div>
+                            <div class="timeline-step pending">L2: PAUSADO</div>
+                            <div class="timeline-step pending">L3: PAUSADO</div>
+                        </div>
+                        
+                        <div class="incident-status" style="background: #fff3cd; color: #856404;">
+                            🆘 ANA NECESITA AYUDA - ESCALADO PAUSADO
+                        </div>
+                        
+                        <div class="incident-actions">
+                            <button class="btn btn-success" onclick="resolveHelp('INC-20/08-00045-CRÍTICA-ZNA-MT12', 'provide_tools')">
+                                🔧 PROPORCIONAR HERRAMIENTAS
+                            </button>
+                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00045-CRÍTICA-ZNA-MT12')">
+                                🎯 REASIGNAR A ESPECIALISTA
+                            </button>
+                            <button class="btn btn-info" onclick="takeControl('INC-20/08-00045-CRÍTICA-ZNA-MT12')">
+                                🔧 RESOLVER YO MISMO
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Incidencia 2 - Alta escalada automáticamente -->
+                    <div class="incident-item" data-status="escalated" data-priority="high">
+                        <div class="incident-header">
+                            <div class="incident-id">INC-20/08-00046-ALTA-ZSB-HV08</div>
+                            <div class="incident-priority priority-high">🟠 ALTA</div>
+                        </div>
+                        
+                        <div class="incident-details">
+                            <div><strong>Equipo:</strong> Válvula Hidráulica #8</div>
+                            <div><strong>Zona:</strong> Línea Sur B</div>
+                            <div><strong>Tiempo:</strong> 18 min</div>
+                        </div>
+                        
+                        <!-- Respuestas de técnicos -->
+                        <div style="background: #f8d7da; border: 1px solid #dc3545; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                            <strong style="color: #721c24;">📋 Historial Completo:</strong><br>
+                            <div style="margin-top: 8px;">
+                                <span style="color: #dc3545;">❌ Miguel (L0):</span> "Ocupado con otra incidencia"<br>
+                                <span style="color: #dc3545;">❌ Carlos (L1):</span> "No disponible ahora"<br>
+                                <span style="color: #dc3545;">❌ Equipo L2 (5 técnicos):</span> "Sin respuesta"
+                            </div>
+                        </div>
+                        
+                        <div class="escalation-timeline">
+                            <div class="timeline-step failed">L0: RECHAZÓ</div>
+                            <div class="timeline-step failed">L1: RECHAZÓ</div>
+                            <div class="timeline-step failed">L2: SIN RESPUESTA</div>
+                            <div class="timeline-step current">L3: CRÍTICO</div>
+                        </div>
+                        
+                        <div class="incident-status status-escalated">⚠️ REQUIERE ASIGNACIÓN MANUAL INMEDIATA</div>
+                        
+                        <div class="incident-actions">
+                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00046-ALTA-ZSB-HV08')">
+                                🎯 ASIGNAR MANUALMENTE
+                            </button>
+                            <button class="btn btn-info" onclick="takeControl('INC-20/08-00046-ALTA-ZSB-HV08')">
+                                🔧 RESOLVER DIRECTAMENTE
+                            </button>
+                            <button class="btn btn-primary" onclick="viewDetails('INC-20/08-00046-ALTA-ZSB-HV08')">
+                                📋 VER DETALLES
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Incidencia 3 - Media en proceso normal -->
+                    <div class="incident-item" data-status="assigned" data-priority="medium">
+                        <div class="incident-header">
+                            <div class="incident-id">INC-20/08-00047-MEDIA-ZCA-MT05</div>
+                            <div class="incident-priority priority-medium">🟡 MEDIA</div>
+                        </div>
+                        
+                        <div class="incident-details">
+                            <div><strong>Equipo:</strong> Motor Transportador #5</div>
+                            <div><strong>Zona:</strong> Línea Central A</div>
+                            <div><strong>Tiempo:</strong> 3 min</div>
+                        </div>
+                        
+                        <!-- Estado actual -->
+                        <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                            <strong style="color: #155724;">✅ Estado Actual:</strong><br>
+                            <div style="margin-top: 8px;">
+                                <span style="color: #28a745;">✅ Luis (L0):</span> Aceptó la incidencia - Trabajando en sitio
+                            </div>
+                        </div>
+                        
+                        <div class="escalation-timeline">
+                            <div class="timeline-step completed">L0: ACEPTADO</div>
+                            <div class="timeline-step pending">L1: --</div>
+                            <div class="timeline-step pending">L2: --</div>
+                            <div class="timeline-step pending">L3: --</div>
+                        </div>
+                        
+                        <div class="incident-status status-assigned">✅ LUIS TRABAJANDO EN SITIO</div>
+                        
+                        <div class="incident-actions">
+                            <button class="btn btn-primary" onclick="viewDetails('INC-20/08-00047-MEDIA-ZCA-MT05')">
+                                📋 VER PROGRESO
+                            </button>
+                            <button class="btn btn-info" onclick="contactTechnician('luis@empresa.com')">
+                                📞 CONTACTAR LUIS
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Incidencia 4 - Baja pendiente respuesta -->
+                    <div class="incident-item" data-status="pending" data-priority="low">
+                        <div class="incident-header">
+                            <div class="incident-id">INC-20/08-00048-BAJA-ZNB-LT12</div>
+                            <div class="incident-priority priority-low">🟢 BAJA</div>
+                        </div>
+                        
+                        <div class="incident-details">
+                            <div><strong>Equipo:</strong> Luz Indicadora #12</div>
+                            <div><strong>Zona:</strong> Línea Norte B</div>
+                            <div><strong>Tiempo:</strong> 2 min</div>
+                        </div>
+                        
+                        <!-- Estado pendiente -->
+                        <div style="background: #e2e3e5; border: 1px solid #6c757d; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                            <strong style="color: #495057;">⏳ Estado Actual:</strong><br>
+                            <div style="margin-top: 8px;">
+                                <span style="color: #6c757d;">⏳ Roberto (L0):</span> Notificado - Esperando respuesta (13 min restantes)
+                            </div>
+                        </div>
+                        
+                        <div class="escalation-timeline">
+                            <div class="timeline-step current">L0: ESPERANDO</div>
+                            <div class="timeline-step pending">L1: --</div>
+                            <div class="timeline-step pending">L2: --</div>
+                            <div class="timeline-step pending">L3: --</div>
+                        </div>
+                        
+                        <div class="incident-status status-pending">⏳ ESPERANDO RESPUESTA DE ROBERTO</div>
+                        
+                        <div class="incident-actions">
+                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00048-BAJA-ZNB-LT12')">
+                                🎯 REASIGNAR AHORA
+                            </button>
+                            <button class="btn btn-primary" onclick="contactTechnician('roberto@empresa.com')">
+                                📞 LLAMAR A ROBERTO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Asignación -->
+    <div class="action-modal" id="assignmentModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">🎯 Asignar Técnico Manualmente</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>Incidencia:</strong> <span id="modalIncidentId">INC-20/08-00045</span><br>
+                <strong>Prioridad:</strong> <span id="modalPriority">🔴 CRÍTICA</span>
+            </div>
+            
+            <h4>Técnicos Disponibles:</h4>
+            <div class="technician-list">
+                <div class="technician-item" onclick="selectTechnician(this, 'jorge.ramos@empresa.com')">
+                    <strong>Jorge Ramos</strong> - Mecánico Senior<br>
+                    <small>📱 +34 600 111 001 | 🟢 Disponible | ⭐ 4.8/5</small><br>
+                    <small>🔧 Especialidad: Compresores, Sistemas Hidráulicos</small>
+                </div>
+                
+                <div class="technician-item" onclick="selectTechnician(this, 'ana.lopez@empresa.com')">
+                    <strong>Ana López</strong> - Técnico Especialista<br>
+                    <small>📱 +34 600 111 002 | 🟡 Ocupado (Baja prioridad) | ⭐ 4.9/5</small><br>
+                    <small>🔧 Especialidad: Válvulas, Sistemas de Control</small>
+                </div>
+                
+                <div class="technician-item" onclick="selectTechnician(this, 'miguel.torres@empresa.com')">
+                    <strong>Miguel Torres</strong> - Mecánico<br>
+                    <small>📱 +34 600 111 003 | 🟢 Disponible | ⭐ 4.6/5</small><br>
+                    <small>🔧 Especialidad: Motores, Mantenimiento General</small>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="confirmAssignment()" disabled id="confirmBtn">
+                    ✅ ASIGNAR TÉCNICO
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal()" style="background: #6c757d;">
+                    ❌ CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let selectedTechnician = null;
+        
+        function verifyPin() {
+            const pin = document.getElementById('pinInput').value;
+            const errorDiv = document.getElementById('pinError');
+            
+            // PIN de ejemplo: 1234
+            if (pin === '1234') {
+                document.getElementById('pinVerification').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+            } else {
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function filterIncidents(filter) {
+            const items = document.querySelectorAll('.incident-item');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            // Actualizar botones activos
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filtrar incidencias
+            items.forEach(item => {
+                if (filter === 'all') {
+                    item.style.display = 'block';
+                } else if (filter === 'critical') {
+                    item.style.display = item.dataset.priority === 'critical' ? 'block' : 'none';
+                } else if (filter === 'escalated') {
+                    item.style.display = item.dataset.status === 'escalated' ? 'block' : 'none';
+                } else if (filter === 'pending') {
+                    item.style.display = item.dataset.status === 'pending' ? 'block' : 'none';
+                }
+            });
+        }
+        
+        function openAssignmentModal(incidentId) {
+            document.getElementById('modalIncidentId').textContent = incidentId;
+            document.getElementById('assignmentModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('assignmentModal').style.display = 'none';
+            selectedTechnician = null;
+            document.querySelectorAll('.technician-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.getElementById('confirmBtn').disabled = true;
+        }
+        
+        function selectTechnician(element, email) {
+            document.querySelectorAll('.technician-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedTechnician = email;
+            document.getElementById('confirmBtn').disabled = false;
+        }
+        
+        function confirmAssignment() {
+            if (selectedTechnician) {
+                const incidentId = document.getElementById('modalIncidentId').textContent;
+                alert(`✅ Técnico asignado exitosamente:\n\nIncidencia: ${incidentId}\nTécnico: ${selectedTechnician}\n\nEl técnico será notificado inmediatamente.`);
+                closeModal();
+                // Aquí llamarías al webhook real
+                updateIncidentStatus(incidentId, 'assigned');
+            }
+        }
+        
+        function takeControl(incidentId) {
+            if (confirm(`¿Confirmas que te harás cargo directamente de la incidencia ${incidentId}?`)) {
+                alert(`✅ Has tomado control de la incidencia ${incidentId}.\n\nEl escalado automático ha sido detenido.`);
+                updateIncidentStatus(incidentId, 'supervisor_assigned');
+            }
+        }
+        
+        function resolveHelp(incidentId, action) {
+            let message = '';
+            switch(action) {
+                case 'provide_tools':
+                    message = `🔧 Gestionando herramientas para ${incidentId}.\n\nSe proporcionarán las herramientas necesarias y se reactivará el escalado.`;
+                    break;
+                case 'provide_consultation':
+                    message = `📞 Contactando técnico para consulta de ${incidentId}.\n\nSe proporcionará asesoramiento y continuará la incidencia.`;
+                    break;
+            }
+            
+            if (confirm(message)) {
+                alert(`✅ Acción ejecutada para ${incidentId}.\n\nEl escalado se reactivará automáticamente.`);
+                // Aquí llamarías al webhook de resolución de ayuda
+                updateIncidentStatus(incidentId, 'help_resolved');
+            }
+        }
+        
+        function contactTechnician(email) {
+            alert(`📞 Iniciando llamada a ${email}...\n\n(En implementación real: integración con sistema telefónico)`);
+        }
+        
+        function cutEscalation(incidentId) {
+            if (confirm(`¿Confirmas cortar el escalado automático para ${incidentId}?`)) {
+                alert(`✂️ Escalado cortado para ${incidentId}.\n\nPuedes ahora asignar manualmente o resolver directamente.`);
+                updateIncidentStatus(incidentId, 'escalation_stopped');
+            }
+        }
+        
+        function viewDetails(incidentId) {
+            // Simular apertura de Notion o ventana de detalles
+            alert(`📋 Abriendo detalles completos de ${incidentId}...\n\n(En implementación real: abriría Notion o panel detallado)`);
+        }
+        
+        function updateIncidentStatus(incidentId, newStatus) {
+            // Aquí actualizarías el estado en la interfaz
+            console.log(`Actualizando ${incidentId} a estado: ${newStatus}`);
+        }
+        
+        // Permitir verificación con Enter
+        document.getElementById('pinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyPin();
+            }
+        });
+        
+        // Función para actualizar datos manualmente
+        function refreshData() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const lastUpdateElement = document.getElementById('lastUpdate');
+            
+            // Cambiar estado del botón
+            refreshBtn.innerHTML = '🔄 Actualizando...';
+            refreshBtn.disabled = true;
+            
+            // Simular llamada a Make para obtener datos actualizados
+            setTimeout(() => {
+                // Aquí harías la llamada real al webhook de Make
+                // fetch('/api/get-incidents-data').then(...)
+                
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                lastUpdateElement.textContent = `Última actualización: ${timeString}`;
+                refreshBtn.innerHTML = '🔄 Actualizar';
+                refreshBtn.disabled = false;
+                
+                // Mostrar confirmación
+                showNotification('✅ Datos actualizados correctamente', 'success');
+            }, 1500);
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+            `;
+            
+            switch(type) {
+                case 'success':
+                    notification.style.background = '#28a745';
+                    break;
+                case 'error':
+                    notification.style.background = '#dc3545';
+                    break;
+                default:
+                    notification.style.background = '#17a2b8';
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Añadir estilos para animaciones
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
