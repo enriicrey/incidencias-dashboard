@@ -4,15 +4,15 @@
   "routes": [
     {
       "src": "/",
-      "dest": "/public/index.html"
+      "dest": "/index.html"
     },
     {
       "src": "/tecnico",
-      "dest": "/public/tecnico.html"
+      "dest": "/tecnico.html"
     },
     {
       "src": "/supervisor", 
-      "dest": "/public/supervisor.html"
+      "dest": "/supervisor.html"
     },
     {
       "src": "/api/webhook-respuesta",
