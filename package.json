@@ -1,0 +1,30 @@
+{
+  "name": "sistema-incidencias-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard de respuesta técnica y control supervisorial para sistema de incidencias",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static files ready'",
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "incidencias",
+    "dashboard",
+    "técnicos",
+    "supervisor",
+    "escalado",
+    "make",
+    "notion"
+  ],
+  "author": "Tu Empresa",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
