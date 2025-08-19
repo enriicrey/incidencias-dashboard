@@ -34,8 +34,7 @@
     }
   ],
   "env": {
-    "MAKE_WEBHOOK_RESPUESTA": "@make_webhook_respuesta",
-    "MAKE_WEBHOOK_SUPERVISOR": "@make_webhook_supervisor",
-    "NOTION_INTEGRATION_TOKEN": "@notion_token"
+    "MAKE_WEBHOOK_RESPUESTA": "make_webhook_respuesta",
+    "MAKE_WEBHOOK_SUPERVISOR": "make_webhook_supervisor"
   }
 }
