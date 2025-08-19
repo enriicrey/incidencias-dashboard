@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Técnico - Sistema de Incidencias</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 800px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .incident-id {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .priority-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .priority-critical { background: #dc3545; color: white; }
+        .priority-high { background: #fd7e14; color: white; }
+        .priority-medium { background: #ffc107; color: #212529; }
+        .priority-low { background: #28a745; color: white; }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .incident-details {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 140px;
+        }
+        
+        .detail-value {
+            color: #212529;
+            flex: 1;
+            text-align: right;
+        }
+        
+        .description-box {
+            background: #e7f1ff;
+            border: 2px solid #0066cc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .timer-container {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+        
+        .timer {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 18px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+        
+        .btn-accept {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .btn-reject {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+        
+        .btn-help {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .contact-info {
+            background: #d1ecf1;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .contact-item {
+            text-align: center;
+        }
+        
+        .contact-phone {
+            color: #17a2b8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        
+        .breadcrumb {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .reason-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .reason-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .reason-options {
+            margin: 20px 0;
+        }
+        
+        .reason-option {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .reason-option:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        
+        .reason-option.selected {
+            border-color: #007bff;
+            background: #e7f1ff;
+        }
+        
+        .reason-option .icon {
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .reason-option .text {
+            flex: 1;
+        }
+        
+        .reason-option .title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .reason-option .description {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .reason-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        .reason-actions .btn {
+            flex: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-indicator"></div>
+        
+        <div class="breadcrumb">
+            📧 Llegaste desde: Correo de Asignación → 🎯 Acción Requerida
+        </div>
+        
+        <div class="header">
+            <div class="incident-id" id="incidentId">INC-20/08-00045-CRÍTICA-ZNA-MT12</div>
+            <div>Nueva Incidencia Asignada</div>
+            <div class="priority-badge priority-critical">🔴 CRÍTICA</div>
+        </div>
+        
+        <div class="content">
+            <div class="timer-container">
+                <div class="timer" id="countdown">05:00</div>
+                <div>Tiempo restante para responder</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">
+                    Si no respondes, se escalará automáticamente
+                </div>
+            </div>
+            
+            <div class="incident-details">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">📋 Detalles de la Incidencia</h3>
+                
+                <div class="detail-row">
+                    <span class="detail-label">🏢 Equipo:</span>
+                    <span class="detail-value">Compresor Principal #3</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">📍 Zona:</span>
+                    <span class="detail-value">Línea Norte A - Sector MT12</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">⏰ Reportada:</span>
+                    <span class="detail-value">Hoy 14:23</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">👤 Reportó:</span>
+                    <span class="detail-value">Carlos Mendoza</span>
+                </div>
+            </div>
+            
+            <div class="description-box">
+                <h4 style="margin-bottom: 15px; color: #0066cc;">🔧 Descripción del Problema</h4>
+                <p style="line-height: 1.6;">
+                    El compresor principal presenta ruidos anómalos y vibraciones excesivas. 
+                    Se detecta presión irregular en el sistema hidráulico. Requiere revisión 
+                    inmediata para evitar parada de línea.
+                </p>
+            </div>
+            
+            <div class="contact-info">
+                <h4 style="text-align: center; color: #0c5460; margin-bottom: 10px;">
+                    📞 Contactos de Apoyo
+                </h4>
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <strong style="color: #0c5460;">Encargado de Zona</strong><br>
+                        <span style="color: #495057;">María González</span><br>
+                        <a href="tel:+34600123456" class="contact-phone">+34 600 123 456</a>
+                    </div>
+                    <div class="contact-item">
+                        <strong style="color: #0c5460;">Supervisor</strong><br>
+                        <span style="color: #495057;">Elena Vázquez</span><br>
+                        <a href="tel:+34600789012" class="contact-phone">+34 600 789 012</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="#" class="btn btn-accept" onclick="handleResponse('acepto')">
+                    ✅ ACEPTO LA INCIDENCIA
+                </a>
+                
+                <a href="#" class="btn btn-reject" onclick="showReasonModal('rechazo')">
+                    ❌ NO PUEDO HACERME CARGO
+                </a>
+                
+                <a href="#" class="btn btn-help" onclick="showReasonModal('ayuda')">
+                    🆘 NECESITO AYUDA
+                </a>
+            </div>
+            
+            <!-- Modal para motivos -->
+            <div class="reason-modal" id="reasonModal">
+                <div class="reason-modal-content">
+                    <h3 id="reasonTitle">Selecciona el motivo</h3>
+                    <div class="reason-options" id="reasonOptions">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                    <div class="reason-actions">
+                        <button class="btn btn-success" onclick="confirmReason()" id="confirmReasonBtn">
+                            ✅ CONFIRMAR
+                        </button>
+                        <button class="btn" onclick="closeReasonModal()" style="background: #6c757d; color: white;">
+                            ❌ CANCELAR
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+                <small style="color: #6c757d;">
+                    <strong>Sistema de Incidencias</strong> - Respuesta Técnica L0<br>
+                    Autenticación automática desde correo
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentAction = null;
+        let selectedReason = null;
+        
+        // Motivos de rechazo
+        const rejectReasons = [
+            {
+                id: 'ocupado_otra',
+                icon: '🔧',
+                title: 'Ocupado con otra incidencia',
+                description: 'Ya estoy resolviendo otra incidencia crítica'
+            },
+            {
+                id: 'fuera_especialidad',
+                icon: '❓',
+                title: 'Fuera de mi especialidad',
+                description: 'No tengo experiencia con este tipo de equipo'
+            },
+            {
+                id: 'no_disponible',
+                icon: '⏰',
+                title: 'No disponible ahora',
+                description: 'Estoy en pausa, reunión o fuera de turno'
+            },
+            {
+                id: 'falta_herramientas',
+                icon: '🔨',
+                title: 'Faltan herramientas/repuestos',
+                description: 'No tengo las herramientas necesarias disponibles'
+            },
+            {
+                id: 'ubicacion_lejos',
+                icon: '📍',
+                title: 'Muy lejos de mi ubicación',
+                description: 'Estoy muy lejos de la zona de la incidencia'
+            },
+            {
+                id: 'sobrecarga_trabajo',
+                icon: '⚡',
+                title: 'Sobrecarga de trabajo',
+                description: 'Ya tengo demasiadas incidencias asignadas'
+            }
+        ];
+        
+        // Motivos de ayuda
+        const helpReasons = [
+            {
+                id: 'apoyo_tecnico',
+                icon: '👥',
+                title: 'Necesito apoyo técnico',
+                description: 'Requiero asistencia de otro técnico especializado'
+            },
+            {
+                id: 'consulta_supervisor',
+                icon: '🎯',
+                title: 'Consulta con supervisor',
+                description: 'Necesito autorización o guía del supervisor'
+            },
+            {
+                id: 'herramientas_especiales',
+                icon: '🔧',
+                title: 'Herramientas especiales',
+                description: 'Requiero herramientas que no tengo disponibles'
+            },
+            {
+                id: 'procedimiento_dudas',
+                icon: '📋',
+                title: 'Dudas sobre procedimiento',
+                description: 'No estoy seguro del procedimiento correcto'
+            },
+            {
+                id: 'seguridad_riesgo',
+                icon: '⚠️',
+                title: 'Problema de seguridad',
+                description: 'Hay riesgos de seguridad que requieren supervisión'
+            },
+            {
+                id: 'repuestos_urgentes',
+                icon: '📦',
+                title: 'Repuestos urgentes',
+                description: 'Necesito repuestos que debo solicitar'
+            }
+        ];
+        
+        // Simular countdown
+        let timeLeft = 300; // 5 minutos
+        const countdownElement = document.getElementById('countdown');
+        
+        function updateCountdown() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 60) {
+                countdownElement.parentElement.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+            }
+            
+            if (timeLeft > 0) {
+                timeLeft--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                countdownElement.textContent = '⏰ TIEMPO AGOTADO';
+                document.querySelector('.actions').innerHTML = '<div style="text-align: center; color: #dc3545; font-weight: 600;">La incidencia ha sido escalada automáticamente</div>';
+            }
+        }
+        
+        updateCountdown();
+        
+        function showReasonModal(action) {
+            currentAction = action;
+            const modal = document.getElementById('reasonModal');
+            const title = document.getElementById('reasonTitle');
+            const optionsContainer = document.getElementById('reasonOptions');
+            
+            // Configurar título y opciones según la acción
+            if (action === 'rechazo') {
+                title.textContent = '❌ ¿Por qué no puedes hacerte cargo?';
+                renderReasons(rejectReasons, optionsContainer);
+            } else if (action === 'ayuda') {
+                title.textContent = '🆘 ¿Qué tipo de ayuda necesitas?';
+                renderReasons(helpReasons, optionsContainer);
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function renderReasons(reasons, container) {
+            container.innerHTML = '';
+            reasons.forEach(reason => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'reason-option';
+                optionDiv.onclick = () => selectReason(optionDiv, reason.id);
+                
+                optionDiv.innerHTML = `
+                    <div class="icon">${reason.icon}</div>
+                    <div class="text">
+                        <div class="title">${reason.title}</div>
+                        <div class="description">${reason.description}</div>
+                    </div>
+                `;
+                
+                container.appendChild(optionDiv);
+            });
+        }
+        
+        function selectReason(element, reasonId) {
+            // Deseleccionar todos
+            document.querySelectorAll('.reason-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Seleccionar el actual
+            element.classList.add('selected');
+            selectedReason = reasonId;
+            
+            // Habilitar botón de confirmar
+            document.getElementById('confirmReasonBtn').disabled = false;
+        }
+        
+        function confirmReason() {
+            if (selectedReason && currentAction) {
+                handleResponse(currentAction, selectedReason);
+                closeReasonModal();
+            }
+        }
+        
+        function closeReasonModal() {
+            document.getElementById('reasonModal').style.display = 'none';
+            selectedReason = null;
+            currentAction = null;
+            document.getElementById('confirmReasonBtn').disabled = true;
+        }
+        
+        function handleResponse(action, reason = null) {
+            const incidentId = document.getElementById('incidentId').textContent;
+            const technicianEmail = new URLSearchParams(window.location.search).get('tecnico') || 'ejemplo@empresa.com';
+            
+            // Construir la respuesta
+            let responseData = {
+                action: action,
+                incident_id: incidentId,
+                technician_email: technicianEmail,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (reason) {
+                responseData.reason = reason;
+            }
+            
+            // Simular la llamada al webhook
+            console.log('Respuesta enviada:', responseData);
+            
+            // Mostrar confirmación
+            const actionsDiv = document.querySelector('.actions');
+            let message = '';
+            let color = '';
+            
+            switch(action) {
+                case 'acepto':
+                    message = '✅ Incidencia aceptada. Te hemos asignado como técnico responsable.';
+                    color = '#28a745';
+                    break;
+                case 'rechazo':
+                    const rejectReason = rejectReasons.find(r => r.id === reason);
+                    message = `❌ Respuesta registrada: "${rejectReason?.title}". La incidencia será reasignada.`;
+                    color = '#dc3545';
+                    break;
+                case 'ayuda':
+                    const helpReason = helpReasons.find(r => r.id === reason);
+                    message = `🆘 Solicitud de ayuda: "${helpReason?.title}". Un supervisor te contactará.`;
+                    color = '#ffc107';
+                    break;
+            }
+            
+            actionsDiv.innerHTML = `
+                <div style="text-align: center; color: ${color}; font-weight: 600; padding: 20px; background: ${color}20; border-radius: 12px; grid-column: span 2;">
+                    ${message}
+                </div>
+            `;
+        }
+        
+        // Extraer parámetros de la URL si vienen del correo
+        const urlParams = new URLSearchParams(window.location.search);
+        const incidentId = urlParams.get('id');
+        const technicianEmail = urlParams.get('tecnico');
+        const level = urlParams.get('nivel');
+        
+        if (incidentId) {
+            document.getElementById('incidentId').textContent = incidentId;
+        }
+    </script>
+</body>
+</html>
