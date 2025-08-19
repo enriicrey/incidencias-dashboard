@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "name": "sistema-incidencias",
+  "builds": [
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/tecnico",
+      "dest": "/public/tecnico.html"
+    },
+    {
+      "src": "/supervisor",
+      "dest": "/public/supervisor.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "MAKE_WEBHOOK_RESPUESTA": "@make_webhook_respuesta",
+    "MAKE_WEBHOOK_SUPERVISOR": "@make_webhook_supervisor",
+    "NOTION_INTEGRATION_TOKEN": "@notion_token"
+  }
+}
