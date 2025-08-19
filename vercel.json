@@ -1,34 +1,8 @@
 {
-  "version": 2,
-  "name": "sistema-incidencias",
   "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/tecnico",
-      "dest": "/tecnico.html"
-    },
-    {
-      "src": "/supervisor", 
-      "dest": "/supervisor.html"
-    },
-    {
-      "src": "/api/webhook-respuesta",
-      "dest": "/api/webhook-respuesta.js"
-    },
-    {
-      "src": "/api/webhook-supervisor",
-      "dest": "/api/webhook-supervisor.js"
-    }
-  ],
-  "functions": {
-    "api/webhook-respuesta.js": {
-      "maxDuration": 10
-    },
-    "api/webhook-supervisor.js": {
-      "maxDuration": 10
-    }
-  }
+    { "src": "/tecnico", "dest": "/tecnico.html" },
+    { "src": "/supervisor", "dest": "/supervisor.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }
