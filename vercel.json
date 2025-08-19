@@ -1,16 +1,6 @@
 {
   "version": 2,
   "name": "sistema-incidencias",
-  "builds": [
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/",
@@ -21,20 +11,24 @@
       "dest": "/public/tecnico.html"
     },
     {
-      "src": "/supervisor",
+      "src": "/supervisor", 
       "dest": "/public/supervisor.html"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/webhook-respuesta",
+      "dest": "/api/webhook-respuesta.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "src": "/api/webhook-supervisor",
+      "dest": "/api/webhook-supervisor.js"
     }
   ],
-  "env": {
-    "MAKE_WEBHOOK_RESPUESTA": "make_webhook_respuesta",
-    "MAKE_WEBHOOK_SUPERVISOR": "make_webhook_supervisor"
+  "functions": {
+    "api/webhook-respuesta.js": {
+      "maxDuration": 10
+    },
+    "api/webhook-supervisor.js": {
+      "maxDuration": 10
+    }
   }
 }
