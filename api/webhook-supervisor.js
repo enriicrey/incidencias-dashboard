@@ -55,6 +55,9 @@ export default async function handler(req, res) {
         }
         
         // En producción, enviar a Make
+        console.log('📡 Enviando a Make:', process.env.MAKE_WEBHOOK_SUPERVISOR);
+        console.log('📨 Payload:', makePayload);
+        
         const makeResponse = await fetch(process.env.MAKE_WEBHOOK_SUPERVISOR, {
             method: 'POST',
             headers: {
@@ -63,13 +66,38 @@ export default async function handler(req, res) {
             body: JSON.stringify(makePayload)
         });
         
+        console.log('📥 Make Response Status:', makeResponse.status);
+        console.log('📥 Make Response Headers:', Object.fromEntries(makeResponse.headers));
+        
         if (!makeResponse.ok) {
             throw new Error(`Error en Make: ${makeResponse.status}`);
         }
         
-        const makeData = await makeResponse.json();
+        // 🔧 DEBUGGING CRÍTICO - Ver qué devuelve Make como texto
+        const responseText = await makeResponse.text();
+        console.log('📄 Make Response Text (raw):', responseText);
+        console.log('📏 Response length:', responseText.length);
+        console.log('🔤 First 200 chars:', responseText.substring(0, 200));
+        console.log('🔤 Last 200 chars:', responseText.substring(responseText.length - 200));
         
-        return res.status(200).json(makeData);
+        // Intentar parsear JSON
+        try {
+            const makeData = JSON.parse(responseText);
+            console.log('✅ JSON parsed successfully');
+            return res.status(200).json(makeData);
+        } catch (parseError) {
+            console.error('❌ JSON Parse Error:', parseError.message);
+            console.error('❌ Error at position:', parseError.message.match(/position (\d+)/)?.[1]);
+            
+            // Devolver información útil para debugging
+            return res.status(500).json({
+                status: 'error',
+                message: 'Invalid JSON from Make',
+                parse_error: parseError.message,
+                raw_response_preview: responseText.substring(0, 500),
+                response_length: responseText.length
+            });
+        }
         
     } catch (error) {
         console.error('❌ Error en webhook-supervisor:', error);
