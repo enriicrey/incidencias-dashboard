@@ -416,7 +416,7 @@
             <!-- Campo PIN -->
             <input type="password" id="pinInput" class="pin-input" placeholder="••••" maxlength="4">
             
-            <button onclick="verifyPin()" class="verify-btn">Verificar Acceso</button>
+           <button onclick="window.verifyPin ? verifyPin() : alert('Función no cargada')" class="verify-btn">Verificar Acceso</button>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
         </div>
     </div>
