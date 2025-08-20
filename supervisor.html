@@ -1059,20 +1059,21 @@
                 }
             }, 4000);
         }
-        
+ // DEBUG: Definir función global
+            window.verifyPin = async function() {
+    console.log('verifyPin llamada');
+    alert('Función funcionando - ahora buscar el error real');
+};
+
+console.log('verifyPin definida:', typeof window.verifyPin);
         // Auto-refresh cada 2 minutos
         setInterval(() => {
             if (document.getElementById('loginScreen').style.display === 'none') {
                 refreshData();
             }
         }, 120000);
-            // DEBUG: Definir función global
-window.verifyPin = async function() {
-    console.log('verifyPin llamada');
-    alert('Función funcionando - ahora buscar el error real');
-};
+           
 
-console.log('verifyPin definida:', typeof window.verifyPin);
     </script>
 </body>
 </html>
