@@ -436,178 +436,10 @@
                 </div>
                 
                 <div class="incident-list" id="incidentList">
-                    <!-- Incidencia 1 - Crítica con solicitud de ayuda -->
-                    <div class="incident-item" data-status="help_requested" data-priority="critical">
-                        <div class="incident-header">
-                            <div class="incident-id">INC-20/08-00045-CRÍTICA-ZNA-MT12</div>
-                            <div class="incident-priority priority-critical">🔴 CRÍTICA</div>
-                        </div>
-                        
-                        <div class="incident-details">
-                            <div><strong>Equipo:</strong> Compresor Principal #3</div>
-                            <div><strong>Zona:</strong> Línea Norte A</div>
-                            <div><strong>Tiempo:</strong> 8 min</div>
-                        </div>
-                        
-                        <!-- Respuestas de técnicos -->
-                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
-                            <strong style="color: #856404;">📋 Respuestas Técnicos:</strong><br>
-                            <div style="margin-top: 8px;">
-                                <span style="color: #dc3545;">❌ Jorge (L0):</span> "Fuera de mi especialidad"<br>
-                                <span style="color: #ffc107;">🆘 Ana (L1):</span> "Necesito herramientas especiales" 
-                                <span style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">
-                                    ⏸️ ESCALADO PAUSADO
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="escalation-timeline">
-                            <div class="timeline-step failed">L0: RECHAZÓ</div>
-                            <div class="timeline-step current">L1: PIDE AYUDA</div>
-                            <div class="timeline-step pending">L2: PAUSADO</div>
-                            <div class="timeline-step pending">L3: PAUSADO</div>
-                        </div>
-                        
-                        <div class="incident-status" style="background: #fff3cd; color: #856404;">
-                            🆘 ANA NECESITA AYUDA - ESCALADO PAUSADO
-                        </div>
-                        
-                        <div class="incident-actions">
-                            <button class="btn btn-success" onclick="resolveHelp('INC-20/08-00045-CRÍTICA-ZNA-MT12', 'provide_tools')">
-                                🔧 PROPORCIONAR HERRAMIENTAS
-                            </button>
-                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00045-CRÍTICA-ZNA-MT12')">
-                                🎯 REASIGNAR A ESPECIALISTA
-                            </button>
-                            <button class="btn btn-info" onclick="takeControl('INC-20/08-00045-CRÍTICA-ZNA-MT12')">
-                                🔧 RESOLVER YO MISMO
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Incidencia 2 - Alta escalada automáticamente -->
-                    <div class="incident-item" data-status="escalated" data-priority="high">
-                        <div class="incident-header">
-                            <div class="incident-id">INC-20/08-00046-ALTA-ZSB-HV08</div>
-                            <div class="incident-priority priority-high">🟠 ALTA</div>
-                        </div>
-                        
-                        <div class="incident-details">
-                            <div><strong>Equipo:</strong> Válvula Hidráulica #8</div>
-                            <div><strong>Zona:</strong> Línea Sur B</div>
-                            <div><strong>Tiempo:</strong> 18 min</div>
-                        </div>
-                        
-                        <!-- Respuestas de técnicos -->
-                        <div style="background: #f8d7da; border: 1px solid #dc3545; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
-                            <strong style="color: #721c24;">📋 Historial Completo:</strong><br>
-                            <div style="margin-top: 8px;">
-                                <span style="color: #dc3545;">❌ Miguel (L0):</span> "Ocupado con otra incidencia"<br>
-                                <span style="color: #dc3545;">❌ Carlos (L1):</span> "No disponible ahora"<br>
-                                <span style="color: #dc3545;">❌ Equipo L2 (5 técnicos):</span> "Sin respuesta"
-                            </div>
-                        </div>
-                        
-                        <div class="escalation-timeline">
-                            <div class="timeline-step failed">L0: RECHAZÓ</div>
-                            <div class="timeline-step failed">L1: RECHAZÓ</div>
-                            <div class="timeline-step failed">L2: SIN RESPUESTA</div>
-                            <div class="timeline-step current">L3: CRÍTICO</div>
-                        </div>
-                        
-                        <div class="incident-status status-escalated">⚠️ REQUIERE ASIGNACIÓN MANUAL INMEDIATA</div>
-                        
-                        <div class="incident-actions">
-                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00046-ALTA-ZSB-HV08')">
-                                🎯 ASIGNAR MANUALMENTE
-                            </button>
-                            <button class="btn btn-info" onclick="takeControl('INC-20/08-00046-ALTA-ZSB-HV08')">
-                                🔧 RESOLVER DIRECTAMENTE
-                            </button>
-                            <button class="btn btn-primary" onclick="viewDetails('INC-20/08-00046-ALTA-ZSB-HV08')">
-                                📋 VER DETALLES
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Incidencia 3 - Media en proceso normal -->
-                    <div class="incident-item" data-status="assigned" data-priority="medium">
-                        <div class="incident-header">
-                            <div class="incident-id">INC-20/08-00047-MEDIA-ZCA-MT05</div>
-                            <div class="incident-priority priority-medium">🟡 MEDIA</div>
-                        </div>
-                        
-                        <div class="incident-details">
-                            <div><strong>Equipo:</strong> Motor Transportador #5</div>
-                            <div><strong>Zona:</strong> Línea Central A</div>
-                            <div><strong>Tiempo:</strong> 3 min</div>
-                        </div>
-                        
-                        <!-- Estado actual -->
-                        <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
-                            <strong style="color: #155724;">✅ Estado Actual:</strong><br>
-                            <div style="margin-top: 8px;">
-                                <span style="color: #28a745;">✅ Luis (L0):</span> Aceptó la incidencia - Trabajando en sitio
-                            </div>
-                        </div>
-                        
-                        <div class="escalation-timeline">
-                            <div class="timeline-step completed">L0: ACEPTADO</div>
-                            <div class="timeline-step pending">L1: --</div>
-                            <div class="timeline-step pending">L2: --</div>
-                            <div class="timeline-step pending">L3: --</div>
-                        </div>
-                        
-                        <div class="incident-status status-assigned">✅ LUIS TRABAJANDO EN SITIO</div>
-                        
-                        <div class="incident-actions">
-                            <button class="btn btn-primary" onclick="viewDetails('INC-20/08-00047-MEDIA-ZCA-MT05')">
-                                📋 VER PROGRESO
-                            </button>
-                            <button class="btn btn-info" onclick="contactTechnician('luis@empresa.com')">
-                                📞 CONTACTAR LUIS
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Incidencia 4 - Baja pendiente respuesta -->
-                    <div class="incident-item" data-status="pending" data-priority="low">
-                        <div class="incident-header">
-                            <div class="incident-id">INC-20/08-00048-BAJA-ZNB-LT12</div>
-                            <div class="incident-priority priority-low">🟢 BAJA</div>
-                        </div>
-                        
-                        <div class="incident-details">
-                            <div><strong>Equipo:</strong> Luz Indicadora #12</div>
-                            <div><strong>Zona:</strong> Línea Norte B</div>
-                            <div><strong>Tiempo:</strong> 2 min</div>
-                        </div>
-                        
-                        <!-- Estado pendiente -->
-                        <div style="background: #e2e3e5; border: 1px solid #6c757d; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
-                            <strong style="color: #495057;">⏳ Estado Actual:</strong><br>
-                            <div style="margin-top: 8px;">
-                                <span style="color: #6c757d;">⏳ Roberto (L0):</span> Notificado - Esperando respuesta (13 min restantes)
-                            </div>
-                        </div>
-                        
-                        <div class="escalation-timeline">
-                            <div class="timeline-step current">L0: ESPERANDO</div>
-                            <div class="timeline-step pending">L1: --</div>
-                            <div class="timeline-step pending">L2: --</div>
-                            <div class="timeline-step pending">L3: --</div>
-                        </div>
-                        
-                        <div class="incident-status status-pending">⏳ ESPERANDO RESPUESTA DE ROBERTO</div>
-                        
-                        <div class="incident-actions">
-                            <button class="btn btn-warning" onclick="openAssignmentModal('INC-20/08-00048-BAJA-ZNB-LT12')">
-                                🎯 REASIGNAR AHORA
-                            </button>
-                            <button class="btn btn-primary" onclick="contactTechnician('roberto@empresa.com')">
-                                📞 LLAMAR A ROBERTO
-                            </button>
-                        </div>
+                    <!-- Las incidencias se cargarán dinámicamente aquí -->
+                    <div style="text-align: center; padding: 40px; color: #6c757d;">
+                        <h3>Cargando incidencias...</h3>
+                        <p>Haz clic en "🔄 Actualizar" para cargar los datos desde Make</p>
                     </div>
                 </div>
             </div>
@@ -783,7 +615,7 @@
         });
         
         // Función para actualizar datos manualmente
-        function refreshData() {
+        async function refreshData() {
             const refreshBtn = document.getElementById('refreshBtn');
             const lastUpdateElement = document.getElementById('lastUpdate');
             
@@ -791,24 +623,274 @@
             refreshBtn.innerHTML = '🔄 Actualizando...';
             refreshBtn.disabled = true;
             
-            // Simular llamada a Make para obtener datos actualizados
-            setTimeout(() => {
-                // Aquí harías la llamada real al webhook de Make
-                // fetch('/api/get-incidents-data').then(...)
-                
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('es-ES', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+            try {
+                // Llamada real al webhook de Make
+                const response = await fetch('/api/webhook-supervisor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'get_incidents',
+                        supervisor: 'elena.vazquez@empresa.com',
+                        pin: '1234'
+                    })
                 });
                 
-                lastUpdateElement.textContent = `Última actualización: ${timeString}`;
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Actualizar última sincronización
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('es-ES', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    lastUpdateElement.textContent = `Última actualización: ${timeString}`;
+                    
+                    // Renderizar incidencias dinámicamente
+                    renderIncidents(data.incidents);
+                    
+                    // Actualizar estadísticas
+                    updateStats(data.incidents);
+                    
+                    showNotification('✅ Datos actualizados correctamente', 'success');
+                } else {
+                    throw new Error(data.message || 'Error al obtener datos');
+                }
+                
+            } catch (error) {
+                console.error('Error al actualizar datos:', error);
+                showNotification('❌ Error al actualizar datos: ' + error.message, 'error');
+            } finally {
                 refreshBtn.innerHTML = '🔄 Actualizar';
                 refreshBtn.disabled = false;
-                
-                // Mostrar confirmación
-                showNotification('✅ Datos actualizados correctamente', 'success');
-            }, 1500);
+            }
+        }
+        
+        // Función para renderizar incidencias dinámicamente
+        function renderIncidents(incidents) {
+            const incidentList = document.getElementById('incidentList');
+            
+            if (!incidents || incidents.length === 0) {
+                incidentList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6c757d;">
+                        <h3>No hay incidencias activas</h3>
+                        <p>Todas las incidencias están resueltas o no hay incidencias recientes.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            incidentList.innerHTML = incidents.map(incident => {
+                return `
+                    <div class="incident-item" data-status="${getIncidentStatus(incident)}" data-priority="${incident.priority.toLowerCase()}">
+                        ${renderIncidentHeader(incident)}
+                        ${renderIncidentDetails(incident)}
+                        ${renderTechnicianResponses(incident)}
+                        ${renderEscalationTimeline(incident)}
+                        ${renderIncidentStatus(incident)}
+                        ${renderIncidentActions(incident)}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Función para renderizar header de incidencia
+        function renderIncidentHeader(incident) {
+            const priorityClass = `priority-${incident.priority.toLowerCase()}`;
+            const priorityIcon = {
+                'CRÍTICA': '🔴',
+                'ALTA': '🟠', 
+                'MEDIA': '🟡',
+                'BAJA': '🟢'
+            };
+            
+            return `
+                <div class="incident-header">
+                    <div class="incident-id">${incident.id}</div>
+                    <div class="incident-priority ${priorityClass}">
+                        ${priorityIcon[incident.priority] || '⚪'} ${incident.priority}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Función para renderizar detalles básicos
+        function renderIncidentDetails(incident) {
+            return `
+                <div class="incident-details">
+                    <div><strong>Equipo:</strong> ${incident.equipment}</div>
+                    <div><strong>Zona:</strong> ${incident.zone}</div>
+                    <div><strong>Tiempo:</strong> ${incident.time_elapsed} min</div>
+                </div>
+            `;
+        }
+        
+        // Función para renderizar respuestas de técnicos según nivel
+        function renderTechnicianResponses(incident) {
+            if (incident.escalation_level === 0) {
+                return renderL0Response(incident);
+            } else if (incident.escalation_level === 1) {
+                return renderL0AndL1Responses(incident);
+            } else if (incident.escalation_level === 2) {
+                return renderL0L1AndL2Responses(incident);
+            } else if (incident.escalation_level >= 3) {
+                return renderFullResponseHistory(incident);
+            }
+            return '';
+        }
+        
+        // Respuestas solo L0
+        function renderL0Response(incident) {
+            const l0Status = getResponseStatus(incident.l0_response);
+            const l0Reason = incident.l0_help_type !== 'Sin ayuda' ? incident.l0_help_type : incident.l0_reject_reason;
+            
+            if (incident.l0_response === 'Sin respuesta') {
+                return `
+                    <div style="background: #e2e3e5; border: 1px solid #6c757d; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                        <strong style="color: #495057;">⏳ Estado Actual:</strong><br>
+                        <div style="margin-top: 8px;">
+                            <span style="color: #6c757d;">⏳ ${incident.l0_technician}:</span> Notificado - Esperando respuesta
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div style="background: ${l0Status.bg}; border: 1px solid ${l0Status.border}; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                    <strong style="color: ${l0Status.color};">📋 Estado L0:</strong><br>
+                    <div style="margin-top: 8px;">
+                        <span style="color: ${l0Status.textColor};">${l0Status.icon} ${incident.l0_technician}:</span> ${l0Reason}
+                        ${incident.escalation_paused ? '<span style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⏸️ ESCALADO PAUSADO</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Respuestas L0 + L1
+        function renderL0AndL1Responses(incident) {
+            const l0Status = getResponseStatus(incident.l0_response);
+            const l1Status = getResponseStatus(incident.l1_response);
+            
+            return `
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                    <strong style="color: #856404;">📋 Respuestas Técnicos:</strong><br>
+                    <div style="margin-top: 8px;">
+                        <span style="color: ${l0Status.textColor};">${l0Status.icon} ${incident.l0_technician} (L0):</span> ${incident.l0_reject_reason}<br>
+                        <span style="color: ${l1Status.textColor};">${l1Status.icon} ${incident.l1_technician} (L1):</span> ${incident.l1_help_type !== 'Sin ayuda' ? incident.l1_help_type : incident.l1_reject_reason}
+                        ${incident.escalation_paused ? '<span style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⏸️ ESCALADO PAUSADO</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Respuestas L0 + L1 + L2
+        function renderL0L1AndL2Responses(incident) {
+            return `
+                <div style="background: #f8d7da; border: 1px solid #dc3545; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 13px;">
+                    <strong style="color: #721c24;">📋 Historial Completo:</strong><br>
+                    <div style="margin-top: 8px;">
+                        <span style="color: #dc3545;">❌ ${incident.l0_technician} (L0):</span> ${incident.l0_reject_reason}<br>
+                        <span style="color: #dc3545;">❌ ${incident.l1_technician} (L1):</span> ${incident.l1_reject_reason}<br>
+                        <span style="color: #dc3545;">❌ Equipo L2:</span> ${incident.l2_reject_reasons || 'Sin respuesta'}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Historial completo para L3
+        function renderFullResponseHistory(incident) {
+            return renderL0L1AndL2Responses(incident);
+        }
+        
+        // Función auxiliar para obtener estado de respuesta
+        function getResponseStatus(response) {
+            switch (response) {
+                case 'ACEPTO':
+                    return { icon: '✅', color: '#155724', bg: '#d4edda', border: '#28a745', textColor: '#28a745' };
+                case 'RECHAZO':
+                    return { icon: '❌', color: '#721c24', bg: '#f8d7da', border: '#dc3545', textColor: '#dc3545' };
+                case 'AYUDA':
+                    return { icon: '🆘', color: '#856404', bg: '#fff3cd', border: '#ffc107', textColor: '#ffc107' };
+                default:
+                    return { icon: '⏳', color: '#495057', bg: '#e2e3e5', border: '#6c757d', textColor: '#6c757d' };
+            }
+        }
+        
+        // Timeline de escalado
+        function renderEscalationTimeline(incident) {
+            const steps = ['L0', 'L1', 'L2', 'L3'];
+            const stepLabels = ['INICIAL', 'BACKUP', 'EQUIPO', 'SUPERVISIÓN'];
+            
+            return `
+                <div class="escalation-timeline">
+                    ${steps.map((step, index) => {
+                        let stepClass = 'pending';
+                        if (index < incident.escalation_level) {
+                            stepClass = 'failed';
+                        } else if (index === incident.escalation_level) {
+                            stepClass = incident.escalation_paused ? 'failed' : 'current';
+                        }
+                        
+                        return `<div class="timeline-step ${stepClass}">${step}: ${stepLabels[index]}</div>`;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        // Estado de la incidencia
+        function renderIncidentStatus(incident) {
+            if (incident.escalation_paused && incident.escalation_level >= 0) {
+                return `<div class="incident-status" style="background: #fff3cd; color: #856404;">🆘 ESCALADO PAUSADO - REQUIERE INTERVENCIÓN</div>`;
+            } else if (incident.escalation_level >= 3) {
+                return `<div class="incident-status status-escalated">⚠️ REQUIERE ASIGNACIÓN MANUAL INMEDIATA</div>`;
+            } else if (incident.status === 'Asignada') {
+                return `<div class="incident-status status-assigned">✅ ${incident.assigned_technician} TRABAJANDO</div>`;
+            } else {
+                return `<div class="incident-status status-pending">⏳ EN PROCESO DE ESCALADO</div>`;
+            }
+        }
+        
+        // Acciones disponibles
+        function renderIncidentActions(incident) {
+            const actions = [];
+            
+            if (incident.escalation_paused) {
+                actions.push(`<button class="btn btn-success" onclick="resolveHelp('${incident.id}')">🔧 RESOLVER AYUDA</button>`);
+            }
+            
+            if (incident.escalation_level >= 1) {
+                actions.push(`<button class="btn btn-warning" onclick="openAssignmentModal('${incident.id}')">🎯 ASIGNAR MANUALMENTE</button>`);
+            }
+            
+            actions.push(`<button class="btn btn-info" onclick="takeControl('${incident.id}')">🔧 RESOLVER DIRECTAMENTE</button>`);
+            actions.push(`<button class="btn btn-primary" onclick="viewDetails('${incident.id}')">📋 VER DETALLES</button>`);
+            
+            return `<div class="incident-actions">${actions.join('')}</div>`;
+        }
+        
+        // Obtener estado de incidencia para filtros
+        function getIncidentStatus(incident) {
+            if (incident.escalation_paused) return 'help_requested';
+            if (incident.escalation_level >= 3) return 'escalated';
+            if (incident.status === 'Asignada') return 'assigned';
+            return 'pending';
+        }
+        
+        // Actualizar estadísticas
+        function updateStats(incidents) {
+            const critical = incidents.filter(i => i.priority === 'CRÍTICA').length;
+            const escalated = incidents.filter(i => i.escalation_level >= 3).length;
+            const inProcess = incidents.filter(i => i.status === 'Asignada').length;
+            const resolved = incidents.filter(i => i.status === 'Resuelta' || i.status === 'Cerrada').length;
+            
+            // Actualizar los números en las tarjetas de estadísticas
+            document.querySelector('.stat-card.critical .stat-number').textContent = critical;
+            document.querySelector('.stat-card.warning .stat-number').textContent = escalated;
+            document.querySelector('.stat-card.info .stat-number').textContent = inProcess;
+            document.querySelector('.stat-card.success .stat-number').textContent = resolved;
         }
         
         // Función para mostrar notificaciones
