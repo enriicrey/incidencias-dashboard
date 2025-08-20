@@ -81,8 +81,19 @@ export default async function handler(req, res) {
         const responseText = await makeResponse.text();
         console.log('📄 Make Response Text (raw):', responseText);
         console.log('📏 Response length:', responseText.length);
-        console.log('📤 First 200 chars:', responseText.substring(0, 200));
+        console.log('📤 First 500 chars:', responseText.substring(0, 500));
         console.log('📤 Last 200 chars:', responseText.substring(responseText.length - 200));
+        
+        // ⚠️ VERIFICACIÓN CRÍTICA: ¿Es "Accepted" únicamente?
+        if (responseText.trim() === 'Accepted' || responseText.trim() === 'OK') {
+            console.log('⚠️ Make devolvió solo texto plano, no JSON válido');
+            return res.status(500).json({
+                status: 'error',
+                message: 'Make webhook mal configurado - devuelve texto plano',
+                make_response: responseText,
+                solution: 'Verificar que el webhook response en Make devuelva JSON válido'
+            });
+        }
         
         // Intentar parsear JSON
         try {
@@ -92,6 +103,9 @@ export default async function handler(req, res) {
             // Validar que tenga la estructura esperada
             if (makeData.incidents && Array.isArray(makeData.incidents)) {
                 console.log(`📊 Received ${makeData.incidents.length} incidents`);
+            } else {
+                console.log('⚠️ JSON válido pero sin estructura esperada');
+                console.log('📋 Estructura recibida:', Object.keys(makeData));
             }
             
             return res.status(200).json(makeData);
@@ -105,7 +119,10 @@ export default async function handler(req, res) {
                 message: 'Invalid JSON from Make',
                 parse_error: parseError.message,
                 raw_response_preview: responseText.substring(0, 500),
-                response_length: responseText.length
+                response_length: responseText.length,
+                response_starts_with: responseText.substring(0, 50),
+                response_ends_with: responseText.substring(responseText.length - 50),
+                is_only_accepted: responseText.trim() === 'Accepted'
             });
         }
         
