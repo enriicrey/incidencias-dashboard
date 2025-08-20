@@ -506,27 +506,36 @@
             }
         }
         
-        function filterIncidents(filter) {
-            const items = document.querySelectorAll('.incident-item');
-            const buttons = document.querySelectorAll('.filter-btn');
-            
-            // Actualizar botones activos
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Filtrar incidencias
-            items.forEach(item => {
-                if (filter === 'all') {
-                    item.style.display = 'block';
-                } else if (filter === 'critical') {
-                    item.style.display = item.dataset.priority === 'critical' ? 'block' : 'none';
-                } else if (filter === 'escalated') {
-                    item.style.display = item.dataset.status === 'escalated' ? 'block' : 'none';
-                } else if (filter === 'pending') {
-                    item.style.display = item.dataset.status === 'pending' ? 'block' : 'none';
-                }
-            });
+     function filterIncidents(filter) {
+    const items = document.querySelectorAll('.incident-item');
+    const buttons = document.querySelectorAll('.filter-btn');
+    // DEBUG - quitar después
+console.log('🔍 Debugging filtros:');
+items.forEach((item, index) => {
+    const priorityElement = item.querySelector('.incident-priority');
+    const priorityText = priorityElement ? priorityElement.textContent : 'No encontrado';
+    console.log(`Incidencia ${index}: priority="${priorityText}", dataset.priority="${item.dataset.priority}"`);
+});
+    // Actualizar botones activos
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filtrar incidencias
+    items.forEach(item => {
+        if (filter === 'all') {
+            item.style.display = 'block';
+        } else if (filter === 'critical') {
+            // Buscar por el texto de prioridad, extrayendo solo el texto sin emojis
+            const priorityElement = item.querySelector('.incident-priority');
+            const priorityText = priorityElement ? priorityElement.textContent.replace(/[🔴🟠🟡🟢⚪]/g, '').trim() : '';
+            item.style.display = priorityText === 'CRÍTICA' ? 'block' : 'none';
+        } else if (filter === 'escalated') {
+            item.style.display = item.dataset.status === 'escalated' ? 'block' : 'none';
+        } else if (filter === 'pending') {
+            item.style.display = item.dataset.status === 'pending' ? 'block' : 'none';
         }
+    });
+}
         
         function openAssignmentModal(incidentId) {
             document.getElementById('modalIncidentId').textContent = incidentId;
@@ -697,25 +706,28 @@
             }).join('');
         }
         
-        // Función para renderizar header de incidencia
-        function renderIncidentHeader(incident) {
-            const priorityClass = `priority-${incident.priority.toLowerCase()}`;
-            const priorityIcon = {
-                'CRÍTICA': '🔴',
-                'ALTA': '🟠', 
-                'MEDIA': '🟡',
-                'BAJA': '🟢'
-            };
-            
-            return `
-                <div class="incident-header">
-                    <div class="incident-id">${incident.id}</div>
-                    <div class="incident-priority ${priorityClass}">
-                        ${priorityIcon[incident.priority] || '⚪'} ${incident.priority}
-                    </div>
-                </div>
-            `;
-        }
+       // Función para renderizar header de incidencia (CORREGIDA)
+function renderIncidentHeader(incident) {
+    // Extraer solo el texto de la prioridad, sin emojis
+    const priorityText = incident.priority.replace(/[🔴🟠🟡🟢⚪]/g, '').trim();
+    
+    const priorityClass = `priority-${priorityText.toLowerCase()}`;
+    const priorityIcon = {
+        'CRÍTICA': '🔴',
+        'ALTA': '🟠', 
+        'MEDIA': '🟡',
+        'BAJA': '🟢'
+    };
+    
+    return `
+        <div class="incident-header">
+            <div class="incident-id">${incident.id}</div>
+            <div class="incident-priority ${priorityClass}">
+                ${priorityIcon[priorityText] || '⚪'} ${priorityText}
+            </div>
+        </div>
+    `;
+}
         
         // Función para renderizar detalles básicos
         function renderIncidentDetails(incident) {
