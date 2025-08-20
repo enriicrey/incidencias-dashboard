@@ -718,7 +718,7 @@
             // Respuesta L0
             if (incident.l0_response && !incident.l0_response.includes('Sin Respuesta')) {
                 let responseText = `<strong>L0 (${incident.l0_technician}):</strong> ${incident.l0_response}`;
-                
+            }
                 if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason && incident.l0_reject_reason !== 'Sin motivo') {
                     responseText += ` - <em>${incident.l0_reject_reason}</em>`;
                 }
@@ -1059,13 +1059,7 @@
                 }
             }, 4000);
         }
- // DEBUG: Definir función global
-            window.verifyPin = async function() {
-    console.log('verifyPin llamada');
-    alert('Función funcionando - ahora buscar el error real');
-};
-
-console.log('verifyPin definida:', typeof window.verifyPin);
+        
         // Auto-refresh cada 2 minutos
         setInterval(() => {
             if (document.getElementById('loginScreen').style.display === 'none') {
