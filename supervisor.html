@@ -107,6 +107,15 @@
             width: 90%;
         }
         
+        .email-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
         .pin-input {
             width: 100%;
             padding: 15px;
@@ -399,8 +408,14 @@
     <div class="login-screen" id="loginScreen">
         <div class="login-card">
             <h2>🛡️ Acceso Supervisor</h2>
-            <p>Introduce tu PIN de seguridad</p>
+            <p>Introduce tus credenciales de acceso</p>
+            
+            <!-- Campo Email -->
+            <input type="email" id="emailInput" class="email-input" placeholder="supervisor@empresa.com">
+            
+            <!-- Campo PIN -->
             <input type="password" id="pinInput" class="pin-input" placeholder="••••" maxlength="4">
+            
             <button onclick="verifyPin()" class="verify-btn">Verificar Acceso</button>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
         </div>
@@ -411,7 +426,10 @@
         <div class="header-content">
             <div class="logo">🛡️ Dashboard Supervisor</div>
             <div class="user-info">
-                <div class="pin-access">Elena Vázquez - Supervisora</div>
+                <div class="pin-access">
+                    <span id="supervisorName">Supervisor</span> - 
+                    <span id="supervisorRole">Sistema</span>
+                </div>
                 <button id="refreshBtn" class="refresh-button" onclick="refreshData()">
                     🔄 Actualizar
                 </button>
@@ -467,10 +485,40 @@
     <script>
         let allIncidents = [];
         let currentFilter = 'all';
+        let currentSupervisor = null;
+        let supervisorEmail = null;
+        
+        // Obtener parámetros de URL al cargar
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            supervisorEmail = urlParams.get('email');
+            const pinFromUrl = urlParams.get('pin');
+            
+            // Si viene email en URL, prellenar campo
+            if (supervisorEmail) {
+                document.getElementById('emailInput').value = supervisorEmail;
+                console.log('🎯 Email prellenado desde URL:', supervisorEmail);
+            }
+            
+            // Si viene PIN en URL, prellenar y auto-validar
+            if (pinFromUrl) {
+                document.getElementById('pinInput').value = pinFromUrl;
+                if (supervisorEmail) {
+                    console.log('🔄 Auto-validando desde URL...');
+                    verifyPin();
+                }
+            }
+        });
         
         // Verificar PIN
         async function verifyPin() {
             const pin = document.getElementById('pinInput').value;
+            const email = supervisorEmail || document.getElementById('emailInput').value;
+            
+            if (!email || !email.includes('@')) {
+                showError('Introduce un email válido');
+                return;
+            }
             
             if (!pin || pin.length !== 4) {
                 showError('Introduce un PIN de 4 dígitos');
@@ -478,21 +526,34 @@
             }
             
             try {
-                const response = await fetch('/api/webhook-supervisor', {
+                // ✅ WEBHOOK VALIDATE-PIN: Solo validación
+                const response = await fetch('/api/validate-pin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'validate_pin',
-                        supervisor: 'elena.vazquez@empresa.com',
+                        supervisor: email,
                         pin: pin
                     })
                 });
                 
                 const data = await response.json();
+                console.log('🔐 Respuesta validación PIN:', data);
                 
                 if (data.status === 'success') {
+                    currentSupervisor = data.supervisor;
+                    supervisorEmail = email; // Actualizar email global
+                    
+                    // Actualizar UI con datos reales del supervisor
+                    if (currentSupervisor) {
+                        document.getElementById('supervisorName').textContent = currentSupervisor.name || 'Supervisor';
+                        document.getElementById('supervisorRole').textContent = currentSupervisor.department || 'Sistema';
+                    }
+                    
                     document.getElementById('loginScreen').style.display = 'none';
                     showNotification('✅ Acceso autorizado', 'success');
+                    
+                    // Cargar incidencias inmediatamente
                     refreshData();
                 } else {
                     showError(data.message || 'PIN incorrecto');
@@ -515,7 +576,7 @@
             if (e.key === 'Enter') verifyPin();
         });
         
-        // Función principal para actualizar datos
+        // Función para actualizar datos (SOLO get_incidents)
         async function refreshData() {
             const refreshBtn = document.getElementById('refreshBtn');
             const lastUpdateElement = document.getElementById('lastUpdate');
@@ -524,13 +585,13 @@
             refreshBtn.disabled = true;
             
             try {
+                // ✅ WEBHOOK DASHBOARD: Solo obtener incidencias (SIN PIN)
                 const response = await fetch('/api/webhook-supervisor', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'get_incidents',
-                        supervisor: 'elena.vazquez@empresa.com',
-                        pin: '1234'
+                        supervisor: supervisorEmail || document.getElementById('emailInput').value
                     })
                 });
                 
@@ -539,7 +600,7 @@
                 }
                 
                 const data = await response.json();
-                console.log('📡 Respuesta del servidor:', data);
+                console.log('📡 Respuesta incidencias:', data);
                 
                 if (data.status === 'success' && data.incidents) {
                     const now = new Date();
@@ -686,20 +747,17 @@
                 const l2TechniciansArray = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t) : [];
                 
                 if (l2ResponsesArray.length > 0) {
-                    // Si hay igual número de técnicos y respuestas, emparejar
                     if (l2TechniciansArray.length === l2ResponsesArray.length) {
                         l2ResponsesArray.forEach((response, index) => {
                             let responseText = `<strong>L2 (${l2TechniciansArray[index]}):</strong> ${response}`;
                             responses.push(responseText);
                         });
                     } else {
-                        // Si no coinciden, mostrar respuestas generales
                         const responseText = `<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> ${l2ResponsesArray.join(', ')}`;
                         responses.push(responseText);
                     }
                 }
             } else if (incident.l2_technicians && incident.l2_technicians.trim()) {
-                // L2 técnicos asignados pero sin respuesta aún
                 const l2TechniciansArray = incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t);
                 if (l2TechniciansArray.length > 0) {
                     responses.push(`<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> <span style="color: #999;">⏳ Esperando respuesta...</span>`);
@@ -728,13 +786,6 @@
             
             if (responses.length === 0) return '';
             
-            return `
-                <div class="response-section" style="background: #f8f9fa; border-left: 4px solid #007bff;">
-                    <div class="detail-label" style="margin-bottom: 8px;">Historial de Respuestas</div>
-                    ${responses.map(r => `<div style="margin: 6px 0; line-height: 1.4;">${r}</div>`).join('')}
-                </div>
-            `;
-        }
         
         // Renderizar estado de incidencia
         function renderIncidentStatus(incident) {
@@ -789,7 +840,6 @@
         
         // Obtener estado de incidencia para filtros
         function getIncidentStatus(incident) {
-            // Convertir escalation_level a número si viene como string
             const escalationLevel = parseInt(incident.escalation_level) || 0;
             
             if (incident.escalation_paused === true || incident.escalation_paused === "true") return 'help_requested';
@@ -833,7 +883,7 @@
             document.getElementById('resolvedCount').textContent = resolved;
         }
         
-        // Función de filtrado corregida
+        // Función de filtrado
         function filterIncidents(filter, buttonElement) {
             currentFilter = filter;
             
@@ -858,10 +908,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'assign_manual',
-                            supervisor: 'elena.vazquez@empresa.com',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
                             incident_id: incidentId,
-                            technician: technician,
-                            pin: '1234'
+                            technician: technician
                         })
                     });
                     
@@ -896,10 +945,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'resolve_help',
-                            supervisor: 'elena.vazquez@empresa.com',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
                             incident_id: incidentId,
-                            help_action: action,
-                            pin: '1234'
+                            help_action: action
                         })
                     });
                     
@@ -927,9 +975,8 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'cut_escalation',
-                            supervisor: 'elena.vazquez@empresa.com',
-                            incident_id: incidentId,
-                            pin: '1234'
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                            incident_id: incidentId
                         })
                     });
                     
@@ -959,10 +1006,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'resolve_directly',
-                            supervisor: 'elena.vazquez@empresa.com',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
                             incident_id: incidentId,
-                            solution: solution,
-                            pin: '1234'
+                            solution: solution
                         })
                     });
                     
@@ -1020,15 +1066,6 @@
                 refreshData();
             }
         }, 120000);
-        
-        // Auto-login en desarrollo
-        window.addEventListener('load', () => {
-            if (window.location.hostname === 'localhost') {
-                console.log('🔧 Modo desarrollo: auto-login disponible');
-                document.getElementById('pinInput').value = '1234';
-                // Descomentar para auto-login: setTimeout(() => verifyPin(), 500);
-            }
-        });
     </script>
 </body>
 </html>
