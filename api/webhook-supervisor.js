@@ -21,6 +21,8 @@ export default async function handler(req, res) {
             pin,            // PIN de acceso (para validación)
             incident_id,    // ID de incidencia (para acciones)
             technician,     // Email técnico (para asignaciones)
+            solution,       // Solución (para resolver directamente)
+            help_action,    // Tipo de ayuda (provide_tools, provide_consultation)
             data            // Datos adicionales según la acción
         } = req.body;
         
@@ -40,6 +42,8 @@ export default async function handler(req, res) {
             pin: pin,
             incident_id: incident_id,
             technician_email: technician,
+            solution: solution,
+            help_action: help_action,
             additional_data: data,
             user_agent: req.headers['user-agent'],
             ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress
@@ -77,13 +81,19 @@ export default async function handler(req, res) {
         const responseText = await makeResponse.text();
         console.log('📄 Make Response Text (raw):', responseText);
         console.log('📏 Response length:', responseText.length);
-        console.log('🔤 First 200 chars:', responseText.substring(0, 200));
-        console.log('🔤 Last 200 chars:', responseText.substring(responseText.length - 200));
+        console.log('📤 First 200 chars:', responseText.substring(0, 200));
+        console.log('📤 Last 200 chars:', responseText.substring(responseText.length - 200));
         
         // Intentar parsear JSON
         try {
             const makeData = JSON.parse(responseText);
             console.log('✅ JSON parsed successfully');
+            
+            // Validar que tenga la estructura esperada
+            if (makeData.incidents && Array.isArray(makeData.incidents)) {
+                console.log(`📊 Received ${makeData.incidents.length} incidents`);
+            }
+            
             return res.status(200).json(makeData);
         } catch (parseError) {
             console.error('❌ JSON Parse Error:', parseError.message);
@@ -128,52 +138,176 @@ function getDevResponse(action, payload) {
         case 'get_incidents':
             return {
                 status: 'success',
+                timestamp: new Date().toISOString(),
                 incidents: [
                     {
-                        id: 'INC-20/08-00045-CRÍTICA-ZNA-MT12',
-                        priority: 'CRÍTICA',
-                        status: 'help_requested',
+                        id: 'INC-20/08-00045',
+                        priority: '🔴 CRÍTICA',
                         equipment: 'Compresor Principal #3',
                         zone: 'Línea Norte A',
-                        time_elapsed: 8,
-                        technician_responses: [
-                            {
-                                level: 'L0',
-                                technician: 'Jorge',
-                                response: 'rechazo',
-                                reason: 'fuera_especialidad'
-                            },
-                            {
-                                level: 'L1',
-                                technician: 'Ana',
-                                response: 'ayuda',
-                                reason: 'herramientas_especiales'
-                            }
-                        ],
-                        escalation_paused: true
+                        status: '🔄 Asignada',
+                        escalation_level: 2,
+                        escalation_paused: true,
+                        time_elapsed: 45,
+                        assigned_technician: 'jorge@empresa.com',
+                        closed_by: 'No cerrada',
+                        l0_technician: 'jorge@empresa.com',
+                        l0_response: '❌ Rechazado',
+                        l0_reject_reason: 'Fuera de especialidad',
+                        l0_help_type: 'Sin ayuda',
+                        l1_technician: 'ana@empresa.com',
+                        l1_response: '🟡 Ayuda',
+                        l1_reject_reason: 'Sin motivo',
+                        l1_help_type: 'Herramientas especiales',
+                        l2_technicians: 'carlos@empresa.com, maria@empresa.com',
+                        l2_responses: '❌ Rechazado, ✅ Aceptado',
+                        l2_reject_reasons: 'Falta herramientas, Sin motivos',
+                        l2_technicians_notified: 'carlos@empresa.com, maria@empresa.com, pedro@empresa.com',
+                        l3_response: '⭕ Sin Respuesta',
+                        supervisor_phone: '+34666777888',
+                        url: 'https://notion.so/test-incident',
+                        description: 'Fallo en compresor principal con ruidos anómalos'
+                    },
+                    {
+                        id: 'INC-20/08-00046',
+                        priority: '🟠 ALTA',
+                        equipment: 'Motor Banda #7',
+                        zone: 'Línea Sur B',
+                        status: '🆕 Nueva',
+                        escalation_level: 1,
+                        escalation_paused: false,
+                        time_elapsed: 15,
+                        assigned_technician: 'Sin asignar',
+                        closed_by: 'No cerrada',
+                        l0_technician: 'carlos@empresa.com',
+                        l0_response: '⭕ Sin Respuesta',
+                        l0_reject_reason: 'Sin motivo',
+                        l0_help_type: 'Sin ayuda',
+                        l1_technician: 'Sin asignar',
+                        l1_response: '⭕ Sin Respuesta',
+                        l1_reject_reason: 'Sin motivo',
+                        l1_help_type: 'Sin ayuda',
+                        l2_response: '⭕ Sin Respuesta',
+                        l2_reject_reasons: 'Sin motivos',
+                        l2_technicians_notified: 'Ninguno',
+                        l3_response: '⭕ Sin Respuesta',
+                        supervisor_phone: '+34666777888',
+                        url: 'https://notion.so/test-incident-2',
+                        description: 'Sobrecalentamiento en motor de banda transportadora'
+                    },
+                    {
+                        id: 'INC-20/08-00047',
+                        priority: '🔴 CRÍTICA',
+                        equipment: 'Sistema Hidráulico Central',
+                        zone: 'Zona Este',
+                        status: '🚦 Escalado',
+                        escalation_level: 3,
+                        escalation_paused: false,
+                        time_elapsed: 120,
+                        assigned_technician: 'supervisor@empresa.com',
+                        closed_by: 'No cerrada',
+                        l0_technician: 'carlos@empresa.com',
+                        l0_response: '❌ Rechazado',
+                        l0_reject_reason: 'Sobrecarga trabajo',
+                        l0_help_type: 'Sin ayuda',
+                        l1_technician: 'maria@empresa.com',
+                        l1_response: '❌ Rechazado',
+                        l1_reject_reason: 'No disponible',
+                        l1_help_type: 'Sin ayuda',
+                        l2_technicians: 'pedro@empresa.com, luis@empresa.com, antonio@empresa.com',
+                        l2_responses: '❌ Rechazado, ❌ Rechazado, ❌ Rechazado',
+                        l2_reject_reasons: 'Falta herramientas, No disponible, Fuera especialidad',
+                        l2_technicians_notified: 'pedro@empresa.com, luis@empresa.com, antonio@empresa.com, manuel@empresa.com',
+                        l3_response: '⭕ Sin Respuesta',
+                        supervisor_phone: '+34666777888',
+                        url: 'https://notion.so/test-incident-3',
+                        description: 'Pérdida de presión crítica en sistema hidráulico principal'
+                    },
+                    {
+                        id: 'INC-19/08-00044',
+                        priority: '🟡 MEDIA',
+                        equipment: 'Sensor Temperatura #12',
+                        zone: 'Área Central',
+                        status: '✅ Resuelta',
+                        escalation_level: 1,
+                        escalation_paused: false,
+                        time_elapsed: 180,
+                        assigned_technician: 'luis@empresa.com',
+                        closed_by: 'luis@empresa.com',
+                        l0_technician: 'luis@empresa.com',
+                        l0_response: '✅ Aceptado',
+                        l0_reject_reason: 'Sin motivo',
+                        l0_help_type: 'Sin ayuda',
+                        l1_technician: 'Sin asignar',
+                        l1_response: '⭕ Sin Respuesta',
+                        l1_reject_reason: 'Sin motivo',
+                        l1_help_type: 'Sin ayuda',
+                        l2_technicians: 'Sin asignar',
+                        l2_responses: '⭕ Sin Respuesta',
+                        l2_reject_reasons: 'Sin motivos',
+                        l2_technicians_notified: 'Ninguno',
+                        l3_response: '⭕ Sin Respuesta',
+                        supervisor_phone: '+34666777888',
+                        url: 'https://notion.so/test-incident-4',
+                        description: 'Calibración de sensor de temperatura completada'
                     }
-                ],
-                last_update: new Date().toISOString()
+                ]
             };
             
         case 'assign_manual':
             return {
                 status: 'success',
-                message: `Incidencia ${payload.incident_id} asignada a ${payload.technician_email}`,
-                action_taken: 'manual_assignment'
+                message: `Incidencia ${payload.incident_id} asignada manualmente a ${payload.technician_email}`,
+                action_taken: 'manual_assignment',
+                incident_id: payload.incident_id,
+                technician: payload.technician_email,
+                timestamp: new Date().toISOString()
             };
             
         case 'resolve_help':
             return {
                 status: 'success',
                 message: 'Ayuda resuelta - Escalado reactivado',
-                action_taken: 'help_resolved'
+                action_taken: 'help_resolved',
+                incident_id: payload.incident_id,
+                help_action: payload.help_action,
+                escalation_resumed: true,
+                timestamp: new Date().toISOString()
+            };
+            
+        case 'cut_escalation':
+            return {
+                status: 'success',
+                message: `Escalado automático cortado para ${payload.incident_id}`,
+                action_taken: 'escalation_cut',
+                incident_id: payload.incident_id,
+                escalation_stopped: true,
+                timestamp: new Date().toISOString()
+            };
+            
+        case 'resolve_directly':
+            return {
+                status: 'success',
+                message: `Incidencia ${payload.incident_id} resuelta directamente por supervisor`,
+                action_taken: 'direct_resolution',
+                incident_id: payload.incident_id,
+                solution: payload.solution,
+                resolved_by: payload.supervisor_email,
+                timestamp: new Date().toISOString()
             };
             
         default:
             return {
                 status: 'error',
-                message: `Acción "${action}" no reconocida`
+                message: `Acción "${action}" no reconocida`,
+                available_actions: [
+                    'validate_pin',
+                    'get_incidents', 
+                    'assign_manual',
+                    'resolve_help',
+                    'cut_escalation',
+                    'resolve_directly'
+                ]
             };
     }
 }
