@@ -618,6 +618,8 @@
         
         // Renderizar detalles básicos
         function renderIncidentDetails(incident) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
             return `
                 <div class="incident-details">
                     <div class="detail-item">
@@ -642,7 +644,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Nivel de Escalado</div>
-                        <div class="detail-value">L${incident.escalation_level || 0}</div>
+                        <div class="detail-value">L${escalationLevel}</div>
                     </div>
                 </div>
             `;
@@ -656,11 +658,11 @@
             if (incident.l0_response && !incident.l0_response.includes('Sin Respuesta')) {
                 let responseText = `<strong>L0 (${incident.l0_technician}):</strong> ${incident.l0_response}`;
                 
-                if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason !== 'Sin motivo') {
-                    responseText += ` - ${incident.l0_reject_reason}`;
+                if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason && incident.l0_reject_reason !== 'Sin motivo') {
+                    responseText += ` - <em>${incident.l0_reject_reason}</em>`;
                 }
-                if (incident.l0_response.includes('Ayuda') && incident.l0_help_type !== 'Sin ayuda') {
-                    responseText += ` - ${incident.l0_help_type}`;
+                if (incident.l0_response.includes('Ayuda') && incident.l0_help_type && incident.l0_help_type !== 'Sin ayuda') {
+                    responseText += ` - <em>${incident.l0_help_type}</em>`;
                 }
                 responses.push(responseText);
             }
@@ -669,19 +671,19 @@
             if (incident.l1_response && !incident.l1_response.includes('Sin Respuesta')) {
                 let responseText = `<strong>L1 (${incident.l1_technician}):</strong> ${incident.l1_response}`;
                 
-                if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason !== 'Sin motivo') {
-                    responseText += ` - ${incident.l1_reject_reason}`;
+                if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason && incident.l1_reject_reason !== 'Sin motivo') {
+                    responseText += ` - <em>${incident.l1_reject_reason}</em>`;
                 }
-                if (incident.l1_response.includes('Ayuda') && incident.l1_help_type !== 'Sin ayuda') {
-                    responseText += ` - ${incident.l1_help_type}`;
+                if (incident.l1_response.includes('Ayuda') && incident.l1_help_type && incident.l1_help_type !== 'Sin ayuda') {
+                    responseText += ` - <em>${incident.l1_help_type}</em>`;
                 }
                 responses.push(responseText);
             }
             
-            // Respuestas L2 (Múltiples)
-            if (incident.l2_responses && !incident.l2_responses.includes('Sin Respuesta')) {
+            // Respuestas L2 (Múltiples o vacías)
+            if (incident.l2_responses && incident.l2_responses.trim() && !incident.l2_responses.includes('Sin Respuesta')) {
                 const l2ResponsesArray = incident.l2_responses.split(', ').filter(r => r.trim());
-                const l2TechniciansArray = incident.l2_technicians ? incident.l2_technicians.split(', ').filter(t => t.trim()) : [];
+                const l2TechniciansArray = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t) : [];
                 
                 if (l2ResponsesArray.length > 0) {
                     // Si hay igual número de técnicos y respuestas, emparejar
@@ -695,21 +697,27 @@
                         const responseText = `<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> ${l2ResponsesArray.join(', ')}`;
                         responses.push(responseText);
                     }
-                    
-                    // Agregar motivos de rechazo si existen
-                    if (incident.l2_reject_reasons && incident.l2_reject_reasons !== 'Sin motivos') {
-                        responses.push(`<span style="color: #666; font-size: 13px; margin-left: 20px;">Motivos: ${incident.l2_reject_reasons}</span>`);
-                    }
                 }
+            } else if (incident.l2_technicians && incident.l2_technicians.trim()) {
+                // L2 técnicos asignados pero sin respuesta aún
+                const l2TechniciansArray = incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t);
+                if (l2TechniciansArray.length > 0) {
+                    responses.push(`<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> <span style="color: #999;">⏳ Esperando respuesta...</span>`);
+                }
+            }
+            
+            // Agregar motivos de rechazo L2 si existen
+            if (incident.l2_reject_reasons && incident.l2_reject_reasons.trim() && incident.l2_reject_reasons !== 'Sin motivos') {
+                responses.push(`<span style="color: #666; font-size: 13px; margin-left: 20px;">Motivos L2: <em>${incident.l2_reject_reasons}</em></span>`);
             }
             
             // Mostrar técnicos L2 notificados (solo si hay más que los que actuaron)
             if (incident.l2_technicians_notified && incident.l2_technicians_notified !== 'Ninguno') {
-                const notifiedArray = incident.l2_technicians_notified.split(', ').filter(t => t.trim());
-                const actedArray = incident.l2_technicians ? incident.l2_technicians.split(', ').filter(t => t.trim()) : [];
+                const notifiedArray = incident.l2_technicians_notified.split(',').map(t => t.trim()).filter(t => t);
+                const actedArray = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t) : [];
                 
                 if (notifiedArray.length > actedArray.length) {
-                    responses.push(`<span style="color: #999; font-size: 12px; font-style: italic;">Técnicos L2 notificados: ${incident.l2_technicians_notified}</span>`);
+                    responses.push(`<span style="color: #999; font-size: 12px; font-style: italic;">📧 L2 notificados: ${incident.l2_technicians_notified}</span>`);
                 }
             }
             
@@ -730,25 +738,30 @@
         
         // Renderizar estado de incidencia
         function renderIncidentStatus(incident) {
-            if (incident.escalation_paused) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            const isPaused = incident.escalation_paused === true || incident.escalation_paused === "true";
+            
+            if (isPaused) {
                 return `<div class="status-section status-paused">⏸️ ESCALADO PAUSADO - REQUIERE INTERVENCIÓN</div>`;
-            } else if (incident.escalation_level >= 3) {
+            } else if (escalationLevel >= 3) {
                 return `<div class="status-section status-escalated">🚨 REQUIERE ASIGNACIÓN MANUAL INMEDIATA</div>`;
             } else if (incident.status && incident.status.includes('Asignada')) {
                 return `<div class="status-section status-assigned">✅ ${incident.assigned_technician} TRABAJANDO</div>`;
             } else if (incident.status && (incident.status.includes('Resuelta') || incident.status.includes('Cerrada'))) {
                 return `<div class="status-section status-assigned">✅ INCIDENCIA ${incident.status.toUpperCase()}</div>`;
             } else {
-                return `<div class="status-section status-pending">⏳ EN PROCESO DE ESCALADO</div>`;
+                return `<div class="status-section status-pending">⏳ EN PROCESO DE ESCALADO (L${escalationLevel})</div>`;
             }
         }
         
         // Renderizar acciones disponibles
         function renderIncidentActions(incident) {
             let actions = [];
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            const isPaused = incident.escalation_paused === true || incident.escalation_paused === "true";
             
             // Acciones para escalado pausado (ayuda requerida)
-            if (incident.escalation_paused) {
+            if (isPaused) {
                 actions.push(`<button class="btn btn-success" onclick="resolveHelp('${incident.id}', 'provide_tools')">🔧 PROPORCIONAR HERRAMIENTAS</button>`);
                 actions.push(`<button class="btn btn-success" onclick="resolveHelp('${incident.id}', 'provide_consultation')">📞 DAR CONSULTA</button>`);
             }
@@ -758,8 +771,8 @@
                 actions.push(`<button class="btn btn-warning" onclick="assignManually('${incident.id}')">👤 ASIGNAR MANUAL</button>`);
             }
             
-            // Cortar escalado (solo si no está pausado)
-            if (!incident.escalation_paused && incident.escalation_level > 0) {
+            // Cortar escalado (solo si no está pausado y hay escalado activo)
+            if (!isPaused && escalationLevel > 0) {
                 actions.push(`<button class="btn btn-danger" onclick="cutEscalation('${incident.id}')">✂️ CORTAR ESCALADO</button>`);
             }
             
@@ -776,8 +789,11 @@
         
         // Obtener estado de incidencia para filtros
         function getIncidentStatus(incident) {
-            if (incident.escalation_paused) return 'help_requested';
-            if (incident.escalation_level >= 3) return 'escalated';
+            // Convertir escalation_level a número si viene como string
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
+            if (incident.escalation_paused === true || incident.escalation_paused === "true") return 'help_requested';
+            if (escalationLevel >= 3) return 'escalated';
             if (incident.priority && incident.priority.includes('CRÍTICA')) return 'critical';
             if (incident.status && incident.status.includes('Asignada')) return 'assigned';
             if (incident.status && (incident.status.includes('Resuelta') || incident.status.includes('Cerrada'))) return 'resolved';
@@ -790,7 +806,10 @@
                 case 'critical':
                     return incidents.filter(i => i.priority && i.priority.includes('CRÍTICA'));
                 case 'escalated':
-                    return incidents.filter(i => i.escalation_level >= 3);
+                    return incidents.filter(i => {
+                        const escalationLevel = parseInt(i.escalation_level) || 0;
+                        return escalationLevel >= 3;
+                    });
                 case 'pending':
                     return incidents.filter(i => !i.assigned_technician || i.assigned_technician === 'Sin asignar');
                 default:
@@ -801,7 +820,10 @@
         // Actualizar estadísticas
         function updateStats(incidents) {
             const critical = incidents.filter(i => i.priority && i.priority.includes('CRÍTICA')).length;
-            const escalated = incidents.filter(i => i.escalation_level >= 3).length;
+            const escalated = incidents.filter(i => {
+                const escalationLevel = parseInt(i.escalation_level) || 0;
+                return escalationLevel >= 3;
+            }).length;
             const inProcess = incidents.filter(i => i.status && i.status.includes('Asignada')).length;
             const resolved = incidents.filter(i => i.status && (i.status.includes('Resuelta') || i.status.includes('Cerrada'))).length;
             
