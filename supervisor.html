@@ -832,7 +832,7 @@
             
             // Cortar escalado (solo si no está pausado y hay escalado activo)
             if (!isPaused && escalationLevel > 0) {
-                actions.push(`<button class="btn btn-danger" onclick="cutEscalation(incident.id, incident.escalation_paused)">✂️ CORTAR ESCALADO</button>`);
+                actions.push(`<button class="btn btn-danger" onclick="cutEscalation('${incident.id}', ${incident.escalation_paused})">✂️ CORTAR ESCALADO</button>`);
             }
             
             // Resolver directamente (siempre disponible para incidencias activas)
