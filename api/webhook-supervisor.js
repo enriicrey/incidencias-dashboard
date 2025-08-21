@@ -17,7 +17,9 @@ export default async function handler(req, res) {
     try {
         const {
             action,          // 'validate_pin', 'get_incidents', 'assign_manual', etc.
-            supervisor,      // Email del supervisor
+            supervisor,     // Email del supervisor
+            department,
+            supervisor_name,
             pin,            // PIN de acceso (para validación)
             incident_id,    // ID de incidencia (para acciones)
             technician,     // Email técnico (para asignaciones)
@@ -39,6 +41,8 @@ export default async function handler(req, res) {
             timestamp: new Date().toISOString(),
             action: action,
             supervisor_email: supervisor,
+            department: department,
+            supervisor_name: supervisor_name,
             pin: pin,
             incident_id: incident_id,
             technician_email: technician,
