@@ -285,6 +285,7 @@ function getDevResponse(action, payload) {
             };
             
         case 'pause_escalation':
+            console.log(response)
             return {
                 status: 'success',
                 message: `Escalado pausado para ${payload.incident_id}`,
