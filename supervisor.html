@@ -832,7 +832,7 @@
             
             // Cortar escalado (solo si no está pausado y hay escalado activo)
             if (!isPaused && escalationLevel > 0) {
-                actions.push(`<button class="btn btn-danger" onclick="cutEscalation('${incident.id}')">✂️ CORTAR ESCALADO</button>`);
+                actions.push(`<button class="btn btn-danger" onclick="cutEscalation(incident.id, incident.escalation_paused)">✂️ CORTAR ESCALADO</button>`);
             }
             
             // Resolver directamente (siempre disponible para incidencias activas)
@@ -975,7 +975,7 @@
         }
         
         // Cortar escalado
-        async function cutEscalation(incidentId) {
+        async function cutEscalation(incidentId,escalationPaused) {
             if (confirm(`¿Confirmas cortar el escalado automático para ${incidentId}?\n\nPodrás asignar manualmente o resolver directamente.`)) {
                 try {
                     const response = await fetch('/api/webhook-supervisor', {
@@ -984,7 +984,8 @@
                         body: JSON.stringify({
                             action: 'pause_escalation',
                             supervisor: supervisorEmail || document.getElementById('emailInput').value,
-                            incident_id: incidentId
+                            incident_id: incidentId,
+                            escalation: escalationPaused
                         })
                     });
                     
