@@ -19,7 +19,7 @@ export default async function handler(req, res) {
             action,          // 'get_incidents', 'assign_manual', etc.
             supervisor,     // Email del supervisor
             department,
-            escalation,
+            escalation_paused, //Escalado parado si o no (para paused_incidend action)
             supervisor_name,
             incident_id,    // ID de incidencia (para acciones)
             technician,     // Email técnico (para asignaciones)
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
             department: department,
             supervisor_name: supervisor_name,
             incident_id: incident_id,
-            escalation: escalation,
+            escalation_paused: escalation_paused,
             technician_email: technician,
             solution: solution,
             help_action: help_action,
@@ -290,7 +290,7 @@ function getDevResponse(action, payload) {
                 message: `Escalado pausado para ${payload.incident_id}`,
                 action_taken: 'pause_escalation',
                 incident_id: payload.incident_id,
-                escalation: false,
+                escalation_paused: escalation_paused,
                 timestamp: new Date().toISOString()
             };
             
