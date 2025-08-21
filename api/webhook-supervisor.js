@@ -19,7 +19,7 @@ export default async function handler(req, res) {
             action,          // 'get_incidents', 'assign_manual', etc.
             supervisor,     // Email del supervisor
             department,
-            escalado,
+            escalation,
             supervisor_name,
             incident_id,    // ID de incidencia (para acciones)
             technician,     // Email técnico (para asignaciones)
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
             department: department,
             supervisor_name: supervisor_name,
             incident_id: incident_id,
-            escalado: escalation,
+            escalation: escalation,
             technician_email: technician,
             solution: solution,
             help_action: help_action,
