@@ -282,11 +282,11 @@ function getDevResponse(action, payload) {
                 timestamp: new Date().toISOString()
             };
             
-        case 'cut_escalation':
+        case 'pause_escalation':
             return {
                 status: 'success',
                 message: `Escalado automático cortado para ${payload.incident_id}`,
-                action_taken: 'escalation_cut',
+                action_taken: 'pause_escalation',
                 incident_id: payload.incident_id,
                 escalation_stopped: true,
                 timestamp: new Date().toISOString()
@@ -311,7 +311,7 @@ function getDevResponse(action, payload) {
                     'get_incidents', 
                     'assign_manual',
                     'resolve_help',
-                    'cut_escalation',
+                    'pause_escalation',
                     'resolve_directly'
                 ]
             };
