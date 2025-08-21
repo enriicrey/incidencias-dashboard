@@ -291,7 +291,7 @@ function getDevResponse(action, payload) {
                 message: `Escalado pausado para ${payload.incident_id}`,
                 action_taken: 'pause_escalation',
                 incident_id: payload.incident_id,
-                escalation_paused: escalation_paused,
+                escalation_paused: payload.escalation_paused,
                 timestamp: new Date().toISOString()
             };
             
