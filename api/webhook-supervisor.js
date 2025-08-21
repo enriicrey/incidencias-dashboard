@@ -43,6 +43,7 @@ export default async function handler(req, res) {
             department: department,
             supervisor_name: supervisor_name,
             incident_id: incident_id,
+            escalado: escalation,
             technician_email: technician,
             solution: solution,
             help_action: help_action,
