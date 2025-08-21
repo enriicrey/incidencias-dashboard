@@ -585,24 +585,18 @@
             refreshBtn.disabled = true;
             
             try {
-                console.log('🔍 currentSupervisor:', currentSupervisor);
-console.log('🔍 department:', currentSupervisor?.department);
-console.log('🔍 name:', currentSupervisor?.name);
-                 // Crear payload separado para debug
-    const payload = {
+               console.log('📡 Respuesta incidencias:', data);
+                 
+                const response = await fetch('/api/webhook-supervisor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
         action: 'get_incidents',
         supervisor: supervisorEmail || document.getElementById('emailInput').value,
         department: currentSupervisor?.department || 'Sin departamento',
         supervisor_name: currentSupervisor?.name || 'Sin nombre'
-    };
-    console.log('📨 Payload enviado:', payload);
-                
-                  // ✅ WEBHOOK DASHBOARD: Solo obtener incidencias (SIN PIN)
-    const response = await fetch('/api/webhook-supervisor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+    })
+});
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
