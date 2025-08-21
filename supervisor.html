@@ -591,7 +591,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'get_incidents',
-                        supervisor: supervisorEmail || document.getElementById('emailInput').value
+                        supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                        department: currentSupervisor?.department || 'Sin departamento'
                     })
                 });
                 
