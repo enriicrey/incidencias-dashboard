@@ -592,7 +592,8 @@
                     body: JSON.stringify({
                         action: 'get_incidents',
                         supervisor: supervisorEmail || document.getElementById('emailInput').value,
-                        department: currentSupervisor?.department || 'Sin departamento'
+                        department: currentSupervisor?.department || 'Sin departamento',
+                        supervisor_name: currentSupervisor?.name || 'Sin nombre'
                     })
                 });
                 
