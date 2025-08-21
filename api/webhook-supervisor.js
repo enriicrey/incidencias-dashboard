@@ -16,11 +16,10 @@ export default async function handler(req, res) {
     
     try {
         const {
-            action,          // 'validate_pin', 'get_incidents', 'assign_manual', etc.
+            action,          // 'get_incidents', 'assign_manual', etc.
             supervisor,     // Email del supervisor
             department,
             supervisor_name,
-            pin,            // PIN de acceso (para validación)
             incident_id,    // ID de incidencia (para acciones)
             technician,     // Email técnico (para asignaciones)
             solution,       // Solución (para resolver directamente)
@@ -43,7 +42,6 @@ export default async function handler(req, res) {
             supervisor_email: supervisor,
             department: department,
             supervisor_name: supervisor_name,
-            pin: pin,
             incident_id: incident_id,
             technician_email: technician,
             solution: solution,
@@ -144,19 +142,7 @@ export default async function handler(req, res) {
 // Función para simular respuestas en desarrollo
 function getDevResponse(action, payload) {
     switch (action) {
-        case 'validate_pin':
-            const isValidPin = payload.pin === '1234';
-            return {
-                status: isValidPin ? 'success' : 'error',
-                message: isValidPin ? 'PIN válido' : 'PIN incorrecto',
-                supervisor: isValidPin ? {
-                    name: 'Elena Vázquez',
-                    email: payload.supervisor_email,
-                    department: 'Supervisor'
-                } : null
-            };
-            
-        case 'get_incidents':
+      case 'get_incidents':
             return {
                 status: 'success',
                 timestamp: new Date().toISOString(),
@@ -322,7 +308,6 @@ function getDevResponse(action, payload) {
                 status: 'error',
                 message: `Acción "${action}" no reconocida`,
                 available_actions: [
-                    'validate_pin',
                     'get_incidents', 
                     'assign_manual',
                     'resolve_help',
