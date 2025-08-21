@@ -718,7 +718,7 @@
             // Respuesta L0
             if (incident.l0_response && !incident.l0_response.includes('Sin Respuesta')) {
                 let responseText = `<strong>L0 (${incident.l0_technician}):</strong> ${incident.l0_response}`;
-            }
+            
                 if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason && incident.l0_reject_reason !== 'Sin motivo') {
                     responseText += ` - <em>${incident.l0_reject_reason}</em>`;
                 }
@@ -786,6 +786,13 @@
             
             if (responses.length === 0) return '';
             
+            return `
+    <div class="response-section" style="background: #f8f9fa; border-left: 4px solid #007bff;">
+        <div class="detail-label" style="margin-bottom: 8px;">Historial de Respuestas</div>
+        ${responses.map(r => `<div style="margin: 6px 0; line-height: 1.4;">${r}</div>`).join('')}
+    </div>
+`;
+}
         
         // Renderizar estado de incidencia
         function renderIncidentStatus(incident) {
