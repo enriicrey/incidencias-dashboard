@@ -285,10 +285,10 @@ function getDevResponse(action, payload) {
         case 'pause_escalation':
             return {
                 status: 'success',
-                message: `Escalado automático cortado para ${payload.incident_id}`,
+                message: `Escalado pausado para ${payload.incident_id}`,
                 action_taken: 'pause_escalation',
                 incident_id: payload.incident_id,
-                escalation_stopped: true,
+                escalation: false,
                 timestamp: new Date().toISOString()
             };
             
