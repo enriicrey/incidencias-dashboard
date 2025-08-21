@@ -1074,7 +1074,13 @@
              //   refreshData();
           //  }
        // }, 120000);
-           
+        
+           // Solo auto-refresh si hay críticas activas
+setInterval(() => {
+    if (document.getElementById('criticalCount').textContent > 0) {
+        refreshData();
+    }
+}, 300000);
 
     </script>
 </body>
