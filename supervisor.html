@@ -1069,19 +1069,18 @@
             }, 4000);
         }
         
-        // Auto-refresh cada 2 minutos
-        //setInterval(() => {
-           // if (document.getElementById('loginScreen').style.display === 'none') {
-             //   refreshData();
-          //  }
-       // }, 120000);
-        
-           // Solo auto-refresh si hay críticas activas
+        // Auto-Refresh cada 5 minutos en caso de incidencias escaladas o críticas:
 setInterval(() => {
-    if (document.getElementById('criticalCount').textContent > 0) {
+    const criticalCount = parseInt(document.getElementById('criticalCount').textContent) || 0;
+    const escalatedCount = parseInt(document.getElementById('escalatedCount').textContent) || 0;
+    
+    // Auto-refresh solo si hay críticas O escaladas L3
+    if (criticalCount > 0 || escalatedCount > 0) {
+        console.log(`🔄 Auto-refresh: ${criticalCount} críticas, ${escalatedCount} escaladas`);
         refreshData();
     }
-}, 300000);
+}, 300000); // 5 minutos
+       
 
     </script>
 </body>
