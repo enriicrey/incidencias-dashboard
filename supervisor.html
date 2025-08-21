@@ -982,7 +982,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            action: 'cut_escalation',
+                            action: 'pause_escalation',
                             supervisor: supervisorEmail || document.getElementById('emailInput').value,
                             incident_id: incidentId
                         })
