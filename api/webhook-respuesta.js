@@ -1,4 +1,4 @@
-// API para manejar respuestas de técnicos - VERSIÓN COMPLETA
+// API para manejar respuestas de técnicos - CON VALIDACIÓN PIN
 export default async function handler(req, res) {
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,12 +19,13 @@ export default async function handler(req, res) {
         const data = req.method === 'POST' ? req.body : req.query;
         
         const {
-            action,              // 'acepto', 'rechazo', 'ayuda', 'get_assigned_incidents'
-            incident_id,         // ID de la incidencia
-            technician_email,    // Email del técnico
-            reason,              // Motivo específico
-            escalation_level,    // Nivel de escalado (0, 1, 2)
-            read_only           // Solo consulta
+            action,                    // Acción a realizar
+            incident_id,               // ID de la incidencia
+            technician_email,          // Email del técnico
+            reason,                    // Motivo específico
+            pin,                       // PIN del técnico
+            escalation_level,          // Nivel de escalado (0, 1, 2)
+            read_only                  // Solo consulta (sin PIN)
         } = data;
         
         // Validar datos básicos
@@ -32,7 +33,10 @@ export default async function handler(req, res) {
             return res.status(400).json({
                 status: 'error',
                 error: 'Falta parámetro action',
-                available_actions: ['acepto', 'rechazo', 'ayuda', 'get_assigned_incidents']
+                available_actions: [
+                    'acepto', 'rechazo', 'ayuda', 
+                    'get_assigned_incidents', 'validate_technician_pin'
+                ]
             });
         }
         
@@ -43,6 +47,7 @@ export default async function handler(req, res) {
             incident_id: incident_id,
             technician_email: technician_email,
             reason: reason || null,
+            pin: pin,
             escalation_level: parseInt(escalation_level) || 0,
             read_only: read_only === true || read_only === 'true',
             user_agent: req.headers['user-agent'],
@@ -124,7 +129,7 @@ function getDevResponse(action, payload) {
                         priority: 'Crítica',
                         zone: 'Zona Norte - MT12',
                         equipment: 'Motor Principal #3',
-                        description: 'Vibración anormal detectada en motor principal. Posible desalineación.',
+                        description: 'Vibración anormal detectada en motor principal. Posible desalineación que requiere inspección inmediata.',
                         l0_technician: payload.technician_email,
                         sla_l0_end: new Date(Date.now() + 15 * 60000).toISOString(), // 15 min
                         requires_response: true,
@@ -135,16 +140,53 @@ function getDevResponse(action, payload) {
                         priority: 'Alta',
                         zone: 'Zona Sur - EL05',
                         equipment: 'Panel Eléctrico A',
-                        description: 'Caída de tensión intermitente en línea principal.',
+                        description: 'Caída de tensión intermitente en línea principal que afecta la producción.',
                         assigned_technician: payload.technician_email,
                         can_request_help: true,
                         type: 'working'
+                    },
+                    {
+                        incident_id: 'INC-20/08-00047-MEDIA-ZCE-MEC02',
+                        priority: 'Media',
+                        zone: 'Zona Centro - MEC02',
+                        equipment: 'Bomba Hidráulica B',
+                        description: 'Ruido anormal en bomba hidráulica durante operación.',
+                        l1_technician: payload.technician_email,
+                        sla_l1_backup_end: new Date(Date.now() + 30 * 60000).toISOString(), // 30 min
+                        requires_response: true,
+                        assigned_level: 'backup'
                     }
                 ],
                 technician: {
                     email: payload.technician_email,
-                    name: payload.technician_email.split('@')[0]
+                    name: payload.technician_email.split('@')[0],
+                    department: 'Mantenimiento'
                 },
+                timestamp: new Date().toISOString()
+            };
+
+        case 'validate_technician_pin':
+            // Simular validación de PIN de técnico
+            const validTechnicians = {
+                'jorge@empresa.com': '1234',
+                'maria@empresa.com': '5678',
+                'carlos@empresa.com': '9012',
+                'ana@empresa.com': '3456'
+            };
+            
+            const isValidPin = validTechnicians[payload.technician_email] === payload.pin;
+            
+            return {
+                status: isValidPin ? 'success' : 'error',
+                message: isValidPin ? 'PIN válido' : 'PIN incorrecto',
+                technician: isValidPin ? {
+                    email: payload.technician_email,
+                    name: payload.technician_email.split('@')[0],
+                    department: 'Mantenimiento',
+                    level: 'Técnico',
+                    pin_verified: true,
+                    verified_at: new Date().toISOString()
+                } : null,
                 timestamp: new Date().toISOString()
             };
             
@@ -195,7 +237,10 @@ function getDevResponse(action, payload) {
             return {
                 status: 'error',
                 message: `Acción "${action}" no reconocida`,
-                available_actions: ['acepto', 'rechazo', 'ayuda', 'get_assigned_incidents']
+                available_actions: [
+                    'acepto', 'rechazo', 'ayuda', 
+                    'get_assigned_incidents', 'validate_technician_pin'
+                ]
             };
     }
 }
@@ -203,6 +248,19 @@ function getDevResponse(action, payload) {
 // Función para generar respuestas de éxito en producción
 function getSuccessResponse(action, payload) {
     switch(action) {
+        case 'validate_technician_pin':
+            return {
+                status: 'success',
+                message: 'PIN verificado correctamente',
+                technician: {
+                    email: payload.technician_email,
+                    name: payload.technician_email.split('@')[0],
+                    pin_verified: true,
+                    verified_at: new Date().toISOString()
+                },
+                timestamp: new Date().toISOString()
+            };
+            
         case 'acepto':
             return {
                 status: 'success',
@@ -238,6 +296,18 @@ function getSuccessResponse(action, payload) {
                 reason_text: getReasonText(payload.reason),
                 next_step: 'Un supervisor se pondrá en contacto contigo.',
                 escalation_paused: true,
+                timestamp: new Date().toISOString()
+            };
+            
+        case 'get_assigned_incidents':
+            return {
+                status: 'success',
+                incidents: [],
+                message: 'No hay incidencias asignadas en este momento',
+                technician: {
+                    email: payload.technician_email,
+                    name: payload.technician_email.split('@')[0]
+                },
                 timestamp: new Date().toISOString()
             };
             
