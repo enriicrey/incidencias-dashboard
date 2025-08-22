@@ -706,6 +706,7 @@
             // Verificar si hay parámetros en la URL (acceso desde email)
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('tecnico') || urlParams.get('technician_email');
+            const nombre = urlParams.get('nombre') || urlParams.get('technician_name');
             const incidentId = urlParams.get('id') || urlParams.get('incident_id');
             
             if (email) {
@@ -716,6 +717,11 @@
                     console.log('🔗 Acceso desde email detectado');
                     loginQuickAccess();
                 }
+                if (nombre) {
+            currentTechnician = {
+                email: email,
+                name: decodeURIComponent(nombre) };
+        }
             }
         });
 
@@ -804,6 +810,7 @@
                     body: JSON.stringify({
                         action: 'validate_technician_pin',
                         technician_email: email,
+                        technician_name: currentTechnician?.name || email.split('@')[0],
                         pin: pin
                     })
                 });
@@ -851,6 +858,7 @@
                     body: JSON.stringify({
                         action: 'get_assigned_incidents',
                         technician_email: email,
+                        technician_name: currentTechnician?.name || email.split('@')[0],
                         read_only: !withPIN
                     })
                 });
@@ -859,7 +867,7 @@
                 console.log('📋 Respuesta del servidor:', data);
 
                 if (data.status === 'success') {
-                    currentTechnician = { email: email, name: email.split('@')[0] };
+                    currentTechnician = { email: email, name: data.technician.name, department: data.technician.department, level: data.technician.level };
                     
                     // Mostrar dashboard
                     document.getElementById('loginContainer').style.display = 'none';
@@ -1264,6 +1272,7 @@
                         action: pendingAction,
                         incident_id: currentIncident.incident_id,
                         technician_email: currentTechnician.email,
+                        technician_name: currentTechnician.name,
                         reason: selectedReason,
                         escalation_level: getCurrentEscalationLevel()
                     })
