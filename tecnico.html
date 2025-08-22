@@ -16,6 +16,37 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #2c3e50;
+            overflow-x: hidden;
+        }
+
+        /* === ANIMACIONES GLOBALES === */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+            }
         }
 
         /* === LOADING === */
@@ -141,99 +172,135 @@
 
         /* === MAIN DASHBOARD === */
         .main-container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             display: none;
+            animation: slideInUp 0.6s ease-out;
         }
 
         .dashboard-header {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            backdrop-filter: blur(15px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-header:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
         .dashboard-header h1 {
             color: #2c3e50;
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .dashboard-header .subtitle {
             color: #7f8c8d;
-            font-size: 16px;
+            font-size: 18px;
+            font-weight: 500;
         }
 
-        /* === SLA TIMER === */
+        /* === SLA TIMER MEJORADO === */
         .sla-timer {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
             text-align: center;
             border: 3px solid #17a2b8;
+            transition: all 0.3s ease;
+            animation: slideInUp 0.6s ease-out 0.2s both;
+        }
+
+        .sla-timer:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
         .sla-timer.warning {
             border-color: #ffc107;
-            background: rgba(255, 243, 205, 0.95);
+            background: linear-gradient(135deg, rgba(255, 243, 205, 0.95), rgba(255, 255, 255, 0.95));
+            animation: pulse 2s infinite;
         }
 
         .sla-timer.critical {
             border-color: #dc3545;
-            background: rgba(248, 215, 218, 0.95);
+            background: linear-gradient(135deg, rgba(248, 215, 218, 0.95), rgba(255, 255, 255, 0.95));
+            animation: glow 1.5s infinite;
         }
 
         .sla-timer.expired {
             border-color: #6c757d;
-            background: rgba(226, 227, 229, 0.95);
+            background: linear-gradient(135deg, rgba(226, 227, 229, 0.95), rgba(255, 255, 255, 0.95));
         }
 
         .timer-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-size: 40px;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
         }
 
         .timer-label {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             color: #495057;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
         .timer-display {
-            font-size: 36px;
-            font-weight: 700;
+            font-size: 42px;
+            font-weight: 800;
             color: #2c3e50;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .timer-subtitle {
-            font-size: 14px;
+            font-size: 16px;
             color: #6c757d;
+            font-weight: 500;
         }
 
         .timer-warning {
             color: #856404;
-            font-weight: 600;
+            font-weight: 700;
+            animation: pulse 1s infinite;
         }
 
-        /* === INCIDENT DETAILS === */
+        /* === INCIDENT CARD MEJORADO === */
         .incident-card {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
             overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideInUp 0.6s ease-out 0.4s both;
+        }
+
+        .incident-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
         .incident-header {
@@ -433,37 +500,72 @@
             margin: 25px 0;
         }
 
+        /* === BOTONES MEJORADOS === */
         .btn {
-            padding: 15px 25px;
+            padding: 18px 30px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
         .btn-accept {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-accept:hover {
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.6);
         }
 
         .btn-reject {
             background: linear-gradient(135deg, #dc3545, #c82333);
             color: white;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-reject:hover {
+            box-shadow: 0 10px 25px rgba(220, 53, 69, 0.6);
         }
 
         .btn-help {
             background: linear-gradient(135deg, #ffc107, #e0a800);
             color: #212529;
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
+        }
+
+        .btn-help:hover {
+            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.6);
         }
 
         .btn-secondary {
@@ -1409,7 +1511,7 @@
             }
         }
 
-        // === MANEJO DE RESPUESTAS ===
+        // === MANEJO DE RESPUESTAS (CON NIVEL) ===
         async function handleResponse(action, reason = null) {
             if (!isAuthenticated) {
                 requestAuthentication(action);
@@ -1426,7 +1528,8 @@
                         action: action,
                         id: currentIncident.id,
                         tecnico: currentTechnician,
-                        reason: reason
+                        reason: reason,
+                        escalation_level: parseInt(currentIncident.escalation_level) || 0 // ← AÑADIR NIVEL
                     })
                 });
 
