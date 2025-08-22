@@ -138,124 +138,158 @@ display: none;
 }
 
 .dashboard-header {
-background: white;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
 border-radius: 16px;
 padding: 25px;
 margin-bottom: 20px;
 text-align: center;
-box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .dashboard-title {
-font-size: 20px;
-color: #2c3e50;
-margin-bottom: 5px;
+font-size: 22px;
+color: white;
+margin-bottom: 8px;
+font-weight: 700;
 }
 
 .dashboard-subtitle {
-color: #7f8c8d;
-font-size: 14px;
+color: rgba(255,255,255,0.9);
+font-size: 15px;
+font-weight: 500;
 }
 
 .refresh-info {
-background: #e3f2fd;
+background: linear-gradient(135deg, #e3f2fd, #f8f9ff);
 border: 1px solid #bbdefb;
-padding: 12px;
-border-radius: 8px;
+padding: 15px;
+border-radius: 12px;
 margin-bottom: 20px;
 text-align: center;
-font-size: 13px;
+font-size: 14px;
 color: #1976d2;
+box-shadow: 0 4px 12px rgba(25,118,210,0.1);
 }
 
 .refresh-btn {
-background: #f8f9fa;
-border: 1px solid #dee2e6;
+background: linear-gradient(135deg, #2196f3, #1976d2);
+color: white;
+border: none;
 padding: 8px 16px;
-border-radius: 6px;
+border-radius: 8px;
 cursor: pointer;
 font-size: 12px;
-color: #6c757d;
+font-weight: 600;
 margin-left: 10px;
+transition: all 0.3s;
+box-shadow: 0 2px 8px rgba(33,150,243,0.3);
 }
 
 .refresh-btn:hover {
-background: #e9ecef;
+transform: translateY(-1px);
+box-shadow: 0 4px 12px rgba(33,150,243,0.4);
 }
 
 .auth-status {
-background: #fff3cd;
-border: 1px solid #ffeaa7;
-padding: 15px;
-border-radius: 8px;
+background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+border: 1px solid #ffd54f;
+padding: 16px;
+border-radius: 12px;
 margin-bottom: 20px;
 text-align: center;
+box-shadow: 0 4px 12px rgba(255,193,7,0.2);
 }
 
 .auth-status.authenticated {
-background: #d4edda;
-border-color: #c3e6cb;
+background: linear-gradient(135deg, #d4edda, #c3e6cb);
+border-color: #a5d6a7;
 color: #155724;
+box-shadow: 0 4px 12px rgba(76,175,80,0.2);
 }
 
 .auth-status.unauthenticated {
-background: #f8d7da;
-border-color: #f5c6cb;
+background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+border-color: #ef5350;
 color: #721c24;
+box-shadow: 0 4px 12px rgba(244,67,54,0.2);
 }
 
 /* Incident Sections */
 .incidents-container {
-background: white;
+background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
 border-radius: 16px;
 overflow: hidden;
 margin-bottom: 20px;
-box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+border: 1px solid rgba(102,126,234,0.1);
 }
 
 .section-header {
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
 padding: 20px 25px;
-border-bottom: 1px solid #f0f0f0;
 display: flex;
 align-items: center;
 justify-content: space-between;
 }
 
 .section-title {
-font-size: 18px;
-color: #2c3e50;
+font-size: 16px;
+font-weight: 700;
 display: flex;
 align-items: center;
 gap: 10px;
+letter-spacing: 0.5px;
 }
 
 .section-count {
-background: #e9ecef;
-color: #495057;
-padding: 4px 12px;
+background: rgba(255,255,255,0.2);
+color: white;
+padding: 6px 14px;
 border-radius: 20px;
 font-size: 13px;
-font-weight: 600;
+font-weight: 700;
+backdrop-filter: blur(10px);
 }
 
-.section-count.pending { background: #fff3cd; color: #856404; }
-.section-count.working { background: #d4edda; color: #155724; }
-.section-count.expired { background: #f8d7da; color: #721c24; }
+.section-count.pending { 
+background: linear-gradient(135deg, #ff9800, #f57c00); 
+box-shadow: 0 2px 8px rgba(255,152,0,0.3);
+}
+.section-count.working { 
+background: linear-gradient(135deg, #4caf50, #388e3c); 
+box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+}
+.section-count.expired { 
+background: linear-gradient(135deg, #f44336, #d32f2f); 
+box-shadow: 0 2px 8px rgba(244,67,54,0.3);
+animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+0% { transform: scale(1); }
+50% { transform: scale(1.05); }
+100% { transform: scale(1); }
+}
 
 .section-content {
 padding: 0;
+background: white;
 }
 
 /* Incident Items */
 .incident-item {
-padding: 20px 25px;
-border-bottom: 1px solid #f8f9fa;
-cursor: pointer;
-transition: background-color 0.3s;
+padding: 24px;
+border-bottom: 1px solid #f5f7fa;
+transition: all 0.3s ease;
+position: relative;
 }
 
 .incident-item:hover {
-background: #f8f9ff;
+background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+transform: translateY(-1px);
+box-shadow: 0 4px 20px rgba(102,126,234,0.08);
 }
 
 .incident-item:last-child {
@@ -263,211 +297,331 @@ border-bottom: none;
 }
 
 .incident-item.expired {
-background: #fff5f5;
-border-left: 4px solid #e53e3e;
+background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+border-left: 4px solid #f44336;
+position: relative;
+}
+
+.incident-item.expired::before {
+content: '🚨';
+position: absolute;
+top: 10px;
+right: 10px;
+font-size: 20px;
+animation: blink 2s infinite;
+}
+
+@keyframes blink {
+0%, 50% { opacity: 1; }
+51%, 100% { opacity: 0.3; }
 }
 
 .incident-item.working {
-background: #f0fff4;
-border-left: 4px solid #38a169;
+background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
+border-left: 4px solid #4caf50;
 }
 
 .incident-header {
 display: flex;
 justify-content: space-between;
 align-items: center;
-margin-bottom: 10px;
+margin-bottom: 12px;
 }
 
 .incident-id {
 font-weight: 700;
-color: #2d3748;
+color: #1a237e;
 font-size: 15px;
+background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+padding: 6px 12px;
+border-radius: 8px;
+border: 1px solid #9fa8da;
 }
 
 .priority-badge {
-padding: 4px 10px;
+padding: 6px 12px;
 border-radius: 12px;
 font-size: 11px;
-font-weight: 600;
+font-weight: 700;
 text-transform: uppercase;
+letter-spacing: 0.5px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .priority-critica {
-background: #fed7d7;
-color: #c53030;
+background: linear-gradient(135deg, #f44336, #d32f2f);
+color: white;
+animation: urgentPulse 3s infinite;
+}
+
+@keyframes urgentPulse {
+0%, 100% { box-shadow: 0 2px 8px rgba(244,67,54,0.3); }
+50% { box-shadow: 0 4px 16px rgba(244,67,54,0.6); }
 }
 
 .priority-alta {
-background: #feebc8;
-color: #dd6b20;
+background: linear-gradient(135deg, #ff9800, #f57c00);
+color: white;
 }
 
 .priority-media {
-background: #fefcbf;
-color: #d69e2e;
+background: linear-gradient(135deg, #ffc107, #ff8f00);
+color: white;
 }
 
 .priority-baja {
-background: #c6f6d5;
-color: #38a169;
+background: linear-gradient(135deg, #4caf50, #388e3c);
+color: white;
 }
 
 .incident-info {
-margin-bottom: 15px;
+margin-bottom: 16px;
 }
 
 .incident-equipment {
-font-weight: 600;
-color: #4a5568;
-margin-bottom: 5px;
+font-weight: 700;
+color: #1565c0;
+margin-bottom: 8px;
+font-size: 16px;
 }
 
 .incident-zone {
-color: #718096;
+color: #424242;
 font-size: 13px;
-margin-bottom: 5px;
+margin-bottom: 8px;
+background: #f5f5f5;
+padding: 4px 8px;
+border-radius: 6px;
+display: inline-block;
 }
 
 .incident-description {
-color: #718096;
+color: #616161;
 font-size: 13px;
-line-height: 1.4;
+line-height: 1.5;
+background: #fafafa;
+padding: 10px;
+border-radius: 8px;
+border-left: 3px solid #e0e0e0;
 }
 
 /* SLA Timer */
 .sla-timer {
-background: white;
-border-radius: 12px;
-padding: 15px;
-margin-bottom: 15px;
+background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+border-radius: 16px;
+padding: 20px;
+margin-bottom: 20px;
 text-align: center;
-border: 2px solid #e2e8f0;
+border: 2px solid #e8eaf6;
+box-shadow: 0 8px 24px rgba(102,126,234,0.12);
 }
 
 .sla-time {
-font-size: 24px;
-font-weight: bold;
-margin-bottom: 5px;
+font-size: 28px;
+font-weight: 800;
+margin-bottom: 8px;
 font-family: 'Courier New', monospace;
+text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.sla-time.good { color: #38a169; }
-.sla-time.warning { color: #d69e2e; }
-.sla-time.critical { color: #e53e3e; }
+.sla-time.good { 
+color: #4caf50; 
+text-shadow: 0 2px 8px rgba(76,175,80,0.3);
+}
+.sla-time.warning { 
+color: #ff9800; 
+text-shadow: 0 2px 8px rgba(255,152,0,0.3);
+animation: warningPulse 2s infinite;
+}
+.sla-time.critical { 
+color: #f44336; 
+text-shadow: 0 2px 8px rgba(244,67,54,0.3);
+animation: criticalPulse 1s infinite;
+}
+
+@keyframes warningPulse {
+0%, 100% { transform: scale(1); }
+50% { transform: scale(1.02); }
+}
+
+@keyframes criticalPulse {
+0%, 100% { transform: scale(1); }
+25%, 75% { transform: scale(1.05); }
+}
 
 .sla-label {
-color: #718096;
-font-size: 12px;
+color: #666;
+font-size: 13px;
+font-weight: 600;
+margin-bottom: 8px;
 }
 
 .sla-level {
-background: #e2e8f0;
-color: #4a5568;
-padding: 4px 8px;
-border-radius: 8px;
-font-size: 11px;
-font-weight: 600;
+background: linear-gradient(135deg, #667eea, #764ba2);
+color: white;
+padding: 6px 12px;
+border-radius: 12px;
+font-size: 12px;
+font-weight: 700;
 display: inline-block;
-margin-top: 5px;
+letter-spacing: 0.5px;
+box-shadow: 0 2px 8px rgba(102,126,234,0.3);
 }
 
 /* Expired Timer */
 .expired-timer {
-background: #fed7d7;
-border: 2px solid #feb2b2;
-border-radius: 12px;
-padding: 15px;
-margin-bottom: 15px;
+background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+border: 2px solid #ef5350;
+border-radius: 16px;
+padding: 20px;
+margin-bottom: 20px;
 text-align: center;
+box-shadow: 0 8px 24px rgba(244,67,54,0.2);
+animation: expiredGlow 3s infinite;
+}
+
+@keyframes expiredGlow {
+0%, 100% { box-shadow: 0 8px 24px rgba(244,67,54,0.2); }
+50% { box-shadow: 0 12px 32px rgba(244,67,54,0.4); }
 }
 
 .expired-time {
-font-size: 20px;
-font-weight: bold;
-color: #c53030;
-margin-bottom: 5px;
+font-size: 24px;
+font-weight: 800;
+color: #d32f2f;
+margin-bottom: 8px;
+text-shadow: 0 2px 4px rgba(211,47,47,0.3);
 }
 
 .expired-label {
-color: #c53030;
-font-size: 12px;
-font-weight: 600;
+color: #d32f2f;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.5px;
 }
 
 .escalation-info {
-background: #edf2f7;
-padding: 12px;
-border-radius: 8px;
-margin-bottom: 15px;
+background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+padding: 16px;
+border-radius: 12px;
+margin-bottom: 20px;
 font-size: 13px;
-color: #4a5568;
+color: #e65100;
 text-align: center;
+border-left: 4px solid #ff9800;
+font-weight: 600;
+box-shadow: 0 4px 16px rgba(255,152,0,0.15);
 }
 
 /* Action Buttons */
 .action-buttons {
 display: grid;
 grid-template-columns: 1fr 1fr;
-gap: 10px;
-margin-top: 15px;
+gap: 12px;
+margin-top: 20px;
 }
 
 .action-btn {
-padding: 12px;
+padding: 14px 20px;
 border: none;
-border-radius: 8px;
+border-radius: 12px;
 font-size: 14px;
-font-weight: 600;
+font-weight: 700;
 cursor: pointer;
-transition: all 0.3s;
+transition: all 0.3s ease;
 display: flex;
 align-items: center;
 justify-content: center;
-gap: 6px;
+gap: 8px;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .action-btn.locked {
 opacity: 0.6;
 cursor: not-allowed;
-background: #6c757d !important;
+background: linear-gradient(135deg, #9e9e9e, #757575) !important;
+box-shadow: 0 2px 8px rgba(158,158,158,0.3) !important;
 }
 
 .btn-accept {
-background: linear-gradient(45deg, #38a169, #48bb78);
+background: linear-gradient(135deg, #4caf50, #388e3c);
 color: white;
+}
+
+.btn-accept:hover:not(.locked) {
+background: linear-gradient(135deg, #66bb6a, #4caf50);
+transform: translateY(-2px);
+box-shadow: 0 8px 20px rgba(76,175,80,0.4);
 }
 
 .btn-reject {
-background: linear-gradient(45deg, #e53e3e, #f56565);
+background: linear-gradient(135deg, #f44336, #d32f2f);
 color: white;
 }
 
+.btn-reject:hover:not(.locked) {
+background: linear-gradient(135deg, #ef5350, #f44336);
+transform: translateY(-2px);
+box-shadow: 0 8px 20px rgba(244,67,54,0.4);
+}
+
 .btn-help {
-background: linear-gradient(45deg, #dd6b20, #ed8936);
+background: linear-gradient(135deg, #ff9800, #f57c00);
 color: white;
 grid-column: 1 / -1;
 }
 
-.action-btn:hover:not(.locked) {
-transform: translateY(-1px);
-box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.btn-help:hover:not(.locked) {
+background: linear-gradient(135deg, #ffb74d, #ff9800);
+transform: translateY(-2px);
+box-shadow: 0 8px 20px rgba(255,152,0,0.4);
 }
 
 /* Phone Buttons */
 .phone-buttons {
 display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 10px;
-margin-top: 15px;
+grid-template-columns: 1fr;
+gap: 12px;
+margin-top: 20px;
 }
 
 .phone-btn {
-padding: 12px;
-background: linear-gradient(45deg, #3182ce, #4299e1);
+padding: 14px 20px;
+background: linear-gradient(135deg, #2196f3, #1976d2);
 color: white;
 border: none;
-border-radius: 8px;
+border-radius: 12px;
+font-size: 14px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.3s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+text-decoration: none;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+}
+
+.phone-btn:hover {
+background: linear-gradient(135deg, #42a5f5, #2196f3);
+transform: translateY(-2px);
+box-shadow: 0 8px 20px rgba(33,150,243,0.4);
+}
+
+.phone-btn.supervisor {
+background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+box-shadow: 0 4px 12px rgba(156,39,176,0.3);
+}
+
+.phone-btn.supervisor:hover {
+background: linear-gradient(135deg, #ab47bc, #9c27b0);
+box-shadow: 0 8px 20px rgba(156,39,176,0.4);
+}-radius: 8px;
 font-size: 14px;
 font-weight: 600;
 cursor: pointer;
@@ -730,26 +884,79 @@ to { transform: rotate(360deg); }
 
 /* No incidents */
 .no-incidents {
-background: white;
-border-radius: 16px;
-padding: 40px;
+background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+border-radius: 20px;
+padding: 50px 30px;
 text-align: center;
-box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+box-shadow: 0 12px 40px rgba(102,126,234,0.15);
+border: 1px solid rgba(102,126,234,0.1);
 }
 
 .no-incidents-icon {
-font-size: 64px;
-margin-bottom: 20px;
+font-size: 80px;
+margin-bottom: 25px;
+filter: drop-shadow(0 4px 12px rgba(102,126,234,0.2));
 }
 
 .no-incidents-title {
-font-size: 20px;
-color: #2c3e50;
-margin-bottom: 10px;
+font-size: 22px;
+color: #1a237e;
+margin-bottom: 12px;
+font-weight: 700;
 }
 
 .no-incidents-description {
-color: #7f8c8d;
+color: #5c6bc0;
+font-size: 16px;
+line-height: 1.5;
+}
+
+/* Additional info styles */
+.assigned-info, .closed-info, .status-info {
+background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+padding: 10px 14px;
+border-radius: 8px;
+margin: 8px 0;
+font-size: 13px;
+color: #495057;
+border-left: 4px solid #6c757d;
+font-weight: 500;
+}
+
+.response-info {
+background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 30%);
+padding: 12px 16px;
+border-radius: 10px;
+margin: 10px 0;
+font-size: 13px;
+color: #0d47a1;
+border-left: 4px solid #2196f3;
+font-weight: 600;
+box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+}
+
+.reject-reason, .help-type {
+background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 30%);
+padding: 8px 12px;
+border-radius: 6px;
+margin: 6px 0;
+font-size: 12px;
+color: #e65100;
+border-left: 3px solid #ff9800;
+font-weight: 500;
+}
+
+.contact-info {
+background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 30%);
+padding: 12px 16px;
+border-radius: 10px;
+margin: 10px 0;
+font-size: 13px;
+color: #1b5e20;
+border-left: 4px solid #4caf50;
+text-align: center;
+font-weight: 600;
+box-shadow: 0 2px 8px rgba(76,175,80,0.15);
 }
 
 /* Responsive */
@@ -1189,7 +1396,7 @@ const specificIncidentId = urlParams.get('id') || urlParams.get('incident_id');
 
 // Si hay ID específico en URL, mostrar solo esa incidencia
 if (specificIncidentId) {
-const specificIncident = incidents.find(inc => inc.incident_id === specificIncidentId);
+const specificIncident = incidents.find(inc => inc.id === specificIncidentId);
 if (specificIncident) {
 renderSingleIncident(specificIncident);
 return;
@@ -1254,15 +1461,44 @@ incidents.forEach(incident => {
 // Verificar si está asignado a mí
 if (!isAssignedToMe(incident)) return;
 
-if (incident.assigned_technician === currentTechnician.email) {
+// Verificar si ya está trabajando (asignado definitivamente)
+if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' && incident.assigned_technician !== '' && incident.assigned_technician === currentTechnician.name) {
 // Ya trabajando
 working.push(incident);
 } else {
-// Verificar si SLA vencido
-const slaEnd = getSlaEndTime(incident);
-const isExpired = slaEnd && new Date(slaEnd) < new Date();
+// Verificar si SLA vencido basándose en time_elapsed y nivel de escalado
+const timeElapsed = incident.time_elapsed || 0;
+const escalationLevel = incident.escalation_level || 0;
+const escalationPaused = incident.escalation_paused === 'true';
+const status = incident.status || '';
 
-if (isExpired) {
+// Determinar si está vencida
+let isExpired = false;
+
+// Si el escalado está pausado, no está vencida
+if (escalationPaused) {
+isExpired = false;
+} else {
+// Determinar SLA según el nivel del técnico
+let slaMinutes = 30; // Default L0
+if (getIncidentLevel(incident) === 'L1') slaMinutes = 45;
+if (getIncidentLevel(incident) === 'L2') slaMinutes = 60;
+
+isExpired = timeElapsed > slaMinutes;
+}
+
+// Verificar si ya ha respondido
+let hasResponded = false;
+const level = getIncidentLevel(incident);
+if (level === 'L0' && incident.l0_response && incident.l0_response !== '⭕ Sin Respuesta') {
+hasResponded = true;
+} else if (level === 'L1' && incident.l1_response && incident.l1_response !== '⭕ Sin Respuesta') {
+hasResponded = true;
+} else if (level === 'L2' && incident.l2_responses && incident.l2_responses !== '') {
+hasResponded = true;
+}
+
+if (hasResponded || isExpired || escalationLevel > getCurrentEscalationLevel()) {
 expired.push(incident);
 } else {
 pending.push(incident);
@@ -1306,65 +1542,156 @@ const level = getIncidentLevel(incident);
 let actionContent = '';
 let timerContent = '';
 
+// Determinar información de respuesta según el nivel
+let responseInfo = '';
+if (level === 'L0') {
+    if (incident.l0_response && incident.l0_response !== '⭕ Sin Respuesta') {
+        responseInfo = `<div class="response-info">Respuesta L0: ${incident.l0_response}</div>`;
+        if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason !== 'Sin motivo') {
+            responseInfo += `<div class="reject-reason">Motivo: ${incident.l0_reject_reason}</div>`;
+        }
+        if (incident.l0_response.includes('Ayuda') && incident.l0_help_type !== 'Sin ayuda') {
+            responseInfo += `<div class="help-type">Tipo ayuda: ${incident.l0_help_type}</div>`;
+        }
+    }
+} else if (level === 'L1') {
+    if (incident.l1_response && incident.l1_response !== '⭕ Sin Respuesta') {
+        responseInfo = `<div class="response-info">Respuesta L1: ${incident.l1_response}</div>`;
+        if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason !== 'Sin motivo') {
+            responseInfo += `<div class="reject-reason">Motivo: ${incident.l1_reject_reason}</div>`;
+        }
+        if (incident.l1_response.includes('Ayuda') && incident.l1_help_type !== 'Sin ayuda') {
+            responseInfo += `<div class="help-type">Tipo ayuda: ${incident.l1_help_type}</div>`;
+        }
+    }
+} else if (level === 'L2') {
+    if (incident.l2_responses && incident.l2_responses !== '') {
+        responseInfo = `<div class="response-info">Respuestas L2: ${incident.l2_responses}</div>`;
+        if (incident.l2_reject_reasons !== 'Sin motivos') {
+            responseInfo += `<div class="reject-reason">Motivos: ${incident.l2_reject_reasons}</div>`;
+        }
+    }
+}
+
 if (type === 'pending') {
-// Botones de acción + timer SLA
-const canRespond = (accessMode === 'full_access');
-const acceptIcon = canRespond ? '✅' : '🔒';
-const rejectIcon = canRespond ? '❌' : '🔒';
-const helpIcon = canRespond ? '🆘' : '🔒';
-const lockClass = canRespond ? '' : ' locked';
+    // Botones de acción + timer SLA
+    const canRespond = (accessMode === 'full_access');
+    const acceptIcon = canRespond ? '✅' : '🔒';
+    const rejectIcon = canRespond ? '❌' : '🔒';
+    const helpIcon = canRespond ? '🆘' : '🔒';
+    const lockClass = canRespond ? '' : ' locked';
 
-actionContent = '<div class="action-buttons">' +
-'<button class="action-btn btn-accept' + lockClass + '" onclick="handleAction(\'acepto\', \'' + incident.incident_id + '\')">' +
-acceptIcon + ' Acepto</button>' +
-'<button class="action-btn btn-reject' + lockClass + '" onclick="handleAction(\'rechazo\', \'' + incident.incident_id + '\')">' +
-rejectIcon + ' Rechazo</button>' +
-'<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.incident_id + '\')">' +
-helpIcon + ' Solicitar Ayuda</button>' +
-'</div>';
-timerContent = renderSLATimer(incident, level);
+    actionContent = '<div class="action-buttons">' +
+    '<button class="action-btn btn-accept' + lockClass + '" onclick="handleAction(\'acepto\', \'' + incident.id + '\')">' +
+    acceptIcon + ' Acepto</button>' +
+    '<button class="action-btn btn-reject' + lockClass + '" onclick="handleAction(\'rechazo\', \'' + incident.id + '\')">' +
+    rejectIcon + ' Rechazo</button>' +
+    '<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.id + '\')">' +
+    helpIcon + ' Solicitar Ayuda</button>' +
+    '</div>';
+    timerContent = renderSLATimer(incident, level);
 } else if (type === 'working') {
-// Solo botón de ayuda
-const canRespond = (accessMode === 'full_access');
-const helpIcon = canRespond ? '🆘' : '🔒';
-const lockClass = canRespond ? '' : ' locked';
-actionContent = '<div class="action-buttons">' +
-'<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.incident_id + '\')">' +
-helpIcon + ' Solicitar Ayuda</button>' +
-'</div>';
+    // Solo botón de ayuda
+    const canRespond = (accessMode === 'full_access');
+    const helpIcon = canRespond ? '🆘' : '🔒';
+    const lockClass = canRespond ? '' : ' locked';
+    actionContent = '<div class="action-buttons">' +
+    '<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.id + '\')">' +
+    helpIcon + ' Solicitar Ayuda</button>' +
+    '</div>';
 } else if (type === 'expired') {
-// Botones telefónicos + info escalado
-const slaEnd = getSlaEndTime(incident);
-const expiredTime = getExpiredTime(slaEnd);
-timerContent = '<div class="expired-timer">' +
-'<div class="expired-time">⏰ ' + expiredTime + '</div>' +
-'<div class="expired-label">VENCIDA - SLA SUPERADO</div>' +
-'</div>';
+    // Información de escalado y contacto telefónico
+    const timeElapsed = incident.time_elapsed || 0;
+    const hoursElapsed = Math.floor(timeElapsed / 60);
+    const minutesElapsed = timeElapsed % 60;
+    
+    timerContent = '<div class="expired-timer">' +
+    '<div class="expired-time">⏰ Hace ' + hoursElapsed + 'h ' + minutesElapsed + 'm</div>' +
+    '<div class="expired-label">VENCIDA - SLA SUPERADO</div>' +
+    '</div>';
 
-const escalationInfo = getEscalationInfo(incident, level);
-if (escalationInfo) {
-timerContent += '<div class="escalation-info">' + escalationInfo + '</div>';
+    // Información de escalado
+    const escalationLevel = incident.escalation_level || 0;
+    const escalationPaused = incident.escalation_paused === 'true';
+    
+    let escalationInfo = '';
+    if (escalationPaused) {
+        escalationInfo = '🚦 Escalado pausado por supervisor';
+    } else if (escalationLevel > 0) {
+        escalationInfo = `⚠️ Escalado a nivel L${escalationLevel} - Contacta por teléfono para coordinar`;
+    } else {
+        escalationInfo = '⚠️ Incidencia vencida - Contacta por teléfono para coordinar';
+    }
+    
+    if (escalationInfo) {
+        timerContent += '<div class="escalation-info">' + escalationInfo + '</div>';
+    }
+
+    // Botones telefónicos
+    actionContent = '<div class="phone-buttons">';
+    
+    // Prioridad: Supervisor -> Encargado -> Reportador
+    let hasPhoneContact = false;
+    
+    if (incident.supervisor_phone && incident.supervisor_phone !== 'Sin teléfono') {
+        actionContent += '<a href="tel:' + incident.supervisor_phone + '" class="phone-btn supervisor">📞 Supervisor</a>';
+        hasPhoneContact = true;
+    }
+    
+    if (incident.manager_phone && incident.manager_phone !== 'Sin teléfono') {
+        actionContent += '<a href="tel:' + incident.manager_phone + '" class="phone-btn">📞 Encargado</a>';
+        hasPhoneContact = true;
+    }
+    
+    if (!hasPhoneContact && incident.reporter_phone && incident.reporter_phone !== 'Sin teléfono') {
+        actionContent += '<a href="tel:' + incident.reporter_phone + '" class="phone-btn">📞 Reportador</a>';
+        hasPhoneContact = true;
+    }
+    
+    if (!hasPhoneContact) {
+        actionContent += '<div class="contact-info">⚠️ No hay teléfonos disponibles</div>';
+    }
+    
+    // Información de contacto adicional
+    if (incident.supervisor && incident.supervisor !== 'Sin supervisor') {
+        actionContent += '<div class="contact-info">👤 Supervisor: ' + incident.supervisor + '</div>';
+    }
+    
+    if (incident.reporter && incident.reporter !== 'Sin reportador') {
+        actionContent += '<div class="contact-info">📋 Reportador: ' + incident.reporter + '</div>';
+    }
+    
+    actionContent += '</div>';
 }
 
-actionContent = '<div class="phone-buttons">';
-if (incident.telefono_encargado) {
-actionContent += '<a href="tel:' + incident.telefono_encargado + '" class="phone-btn">📞 Encargado</a>';
-}
-if (incident.telefono_supervisor) {
-actionContent += '<a href="tel:' + incident.telefono_supervisor + '" class="phone-btn supervisor">📞 Supervisor</a>';
-}
-actionContent += '</div>';
+// Información adicional para contexto
+let additionalInfo = '';
+if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' && incident.assigned_technician !== '') {
+    additionalInfo += '<div class="assigned-info">👤 Asignado a: ' + incident.assigned_technician + '</div>';
 }
 
-return '<div class="incident-item ' + type + '" data-incident-id="' + incident.incident_id + '">' +
+if (incident.closed_by && incident.closed_by !== 'No cerrada') {
+    additionalInfo += '<div class="closed-info">✅ Cerrado por: ' + incident.closed_by + '</div>';
+}
+
+// Estado de la incidencia
+let statusInfo = '';
+if (incident.status && incident.status !== '🆕 Nueva') {
+    statusInfo = '<div class="status-info">Estado: ' + incident.status + '</div>';
+}
+
+return '<div class="incident-item ' + type + '" data-incident-id="' + incident.id + '">' +
 '<div class="incident-header">' +
-'<div class="incident-id">' + incident.incident_id + '</div>' +
+'<div class="incident-id">' + incident.id + '</div>' +
 '<div class="priority-badge priority-' + priorityClass + '">' + (incident.priority || 'MEDIA') + '</div>' +
 '</div>' +
 '<div class="incident-info">' +
 '<div class="incident-equipment">' + (incident.equipment || 'Equipo no especificado') + '</div>' +
 '<div class="incident-zone">📍 ' + (incident.zone || 'Sin zona') + '</div>' +
-'<div class="incident-description">' + ((incident.description || '').substring(0, 100)) + (incident.description && incident.description.length > 100 ? '...' : '') + '</div>' +
+'<div class="incident-description">' + ((incident.description || '').substring(0, 150)) + (incident.description && incident.description.length > 150 ? '...' : '') + '</div>' +
+statusInfo +
+additionalInfo +
+responseInfo +
 '</div>' +
 timerContent +
 actionContent +
@@ -1439,7 +1766,7 @@ setInterval(updateTimer, 1000);
 // === MANEJO DE ACCIONES ===
 function handleAction(action, incidentId) {
 // Encontrar la incidencia
-currentIncident = allIncidents.find(inc => inc.incident_id === incidentId);
+currentIncident = allIncidents.find(inc => inc.id === incidentId);
 if (!currentIncident) {
 console.error('Incidencia no encontrada:', incidentId);
 return;
@@ -1601,7 +1928,7 @@ method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
 action: pendingAction,
-incident_id: currentIncident.incident_id,
+incident_id: currentIncident.id,
 technician_email: currentTechnician.email,
 technician_name: currentTechnician.name,
 reason: selectedReason,
