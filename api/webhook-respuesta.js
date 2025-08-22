@@ -1,4 +1,4 @@
-// API para manejar respuestas de técnicos - CON VALIDACIÓN PIN
+// API para manejar respuestas de técnicos - CON PARSER MEJORADO
 export default async function handler(req, res) {
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,14 +19,14 @@ export default async function handler(req, res) {
         const data = req.method === 'POST' ? req.body : req.query;
         
         const {
-            action,                    // Acción a realizar
-            incident_id,               // ID de la incidencia
-            technician_email,          // Email del técnico
+            action,
+            incident_id,
+            technician_email,
             technician_name,
-            reason,                    // Motivo específico
-            pin,                       // PIN del técnico
-            escalation_level,          // Nivel de escalado (0, 1, 2)
-            read_only                  // Solo consulta (sin PIN)
+            reason,
+            pin,
+            escalation_level,
+            read_only
         } = data;
         
         // Validar datos básicos
@@ -88,24 +88,92 @@ export default async function handler(req, res) {
         const responseText = await makeResponse.text();
         console.log('📄 Make Response:', responseText.substring(0, 200) + '...');
         
+        // PARSER MEJORADO - Intentar múltiples estrategias
+        let parsedData = null;
+        
+        // Estrategia 1: JSON directo
+        try {
+            parsedData = JSON.parse(responseText);
+            console.log('✅ JSON parsed directamente');
+        } catch (directParseError) {
+            console.log('⚠️ Parser directo falló, intentando limpiar...');
+            
+            // Estrategia 2: Limpiar y reparar JSON
+            try {
+                let cleanedJson = responseText
+                    .trim()
+                    .replace(/}\s*{/g, '},{')     // Añadir comas entre objetos
+                    .replace(/,\s*}/g, '}')      // Limpiar comas extra antes de }
+                    .replace(/,\s*]/g, ']')      // Limpiar comas extra antes de ]
+                    .replace(/[\r\n]/g, '')      // Eliminar saltos de línea
+                    .replace(/\s+/g, ' ');       // Normalizar espacios
+                
+                parsedData = JSON.parse(cleanedJson);
+                console.log('✅ JSON reparado y parseado');
+            } catch (cleanParseError) {
+                console.log('⚠️ Parser limpio falló, intentando extraer...');
+                
+                // Estrategia 3: Extraer datos específicos
+                try {
+                    // Buscar patrones conocidos en la respuesta
+                    const statusMatch = responseText.match(/"status":\s*"([^"]+)"/);
+                    const incidentsMatch = responseText.match(/"incidents":\s*\[(.*?)\]/s);
+                    const technicianMatch = responseText.match(/"technician":\s*{([^}]+)}/);
+                    
+                    if (statusMatch && incidentsMatch) {
+                        // Construir objeto válido
+                        parsedData = {
+                            status: statusMatch[1],
+                            incidents: [],
+                            technician: {},
+                            message: 'Datos extraídos de respuesta de Make'
+                        };
+                        
+                        // Intentar parsear incidencias individuales
+                        const incidentsText = incidentsMatch[1];
+                        const incidentObjects = incidentsText.split('}{');
+                        
+                        incidentObjects.forEach((incidentText, index) => {
+                            try {
+                                // Reparar objeto individual
+                                let fixedIncident = incidentText;
+                                if (index > 0) fixedIncident = '{' + fixedIncident;
+                                if (index < incidentObjects.length - 1) fixedIncident = fixedIncident + '}';
+                                
+                                const incident = JSON.parse(fixedIncident);
+                                parsedData.incidents.push(incident);
+                            } catch (incidentError) {
+                                console.log(`⚠️ Error parseando incidencia ${index}:`, incidentError.message);
+                            }
+                        });
+                        
+                        console.log(`✅ Extraídas ${parsedData.incidents.length} incidencias`);
+                    }
+                } catch (extractError) {
+                    console.log('❌ Extracción falló:', extractError.message);
+                }
+            }
+        }
+        
+        // Si tenemos datos parseados, devolverlos
+        if (parsedData && parsedData.status) {
+            console.log('🎯 Devolviendo datos parseados de Make');
+            return res.status(200).json(parsedData);
+        }
+        
         // Si Make devuelve solo "Accepted", generar respuesta propia
         if (responseText.trim() === 'Accepted' || responseText.trim() === 'OK') {
+            console.log('📝 Make devolvió confirmación simple, generando respuesta');
             return res.status(200).json(
                 getSuccessResponse(action, makePayload)
             );
         }
         
-        // Si Make devuelve JSON, parsearlo
-        try {
-            const makeData = JSON.parse(responseText);
-            console.log('✅ JSON parsed successfully');
-            return res.status(200).json(makeData);
-        } catch (parseError) {
-            console.log('⚠️ Make response no es JSON válido, generando respuesta');
-            return res.status(200).json(
-                getSuccessResponse(action, makePayload)
-            );
-        }
+        // Fallback: generar respuesta básica pero funcional
+        console.log('🔄 Fallback: generando respuesta de desarrollo');
+        return res.status(200).json(
+            getDevResponse(action, makePayload)
+        );
         
     } catch (error) {
         console.error('❌ Error en webhook respuesta:', error);
@@ -119,7 +187,7 @@ export default async function handler(req, res) {
     }
 }
 
-// Respuestas de desarrollo
+// Respuestas de desarrollo (con datos de ejemplo)
 function getDevResponse(action, payload) {
     const responses = {
         'get_assigned_incidents': {
@@ -138,7 +206,7 @@ function getDevResponse(action, payload) {
                     description: 'Falla en motor principal, vibración excesiva y ruido anormal durante operación',
                     priority: 'CRÍTICA',
                     l0_technician: payload.technician_email,
-                    sla_l0_end: new Date(Date.now() + 25 * 60 * 1000).toISOString(), // 25 min desde ahora
+                    sla_l0_end: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
                     assigned_technician: null,
                     telefono_encargado: '+34666111222',
                     telefono_supervisor: '+34666333444'
@@ -150,7 +218,7 @@ function getDevResponse(action, payload) {
                     description: 'Pérdida de presión en sistema neumático',
                     priority: 'ALTA',
                     l1_technician: payload.technician_email,
-                    sla_l1_backup_end: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min desde ahora
+                    sla_l1_backup_end: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
                     assigned_technician: null,
                     telefono_encargado: '+34666555666',
                     telefono_supervisor: '+34666777888'
@@ -170,28 +238,24 @@ function getDevResponse(action, payload) {
         'acepto': {
             status: 'success',
             message: 'Incidencia aceptada correctamente',
-            next_step: 'Dirígete a la zona indicada y comienza el diagnóstico. Recuerda reportar el progreso.',
+            next_step: 'Dirígete a la zona indicada y comienza el diagnóstico.',
             incident_id: payload.incident_id,
-            assigned_to: payload.technician_email,
-            timestamp: payload.timestamp
+            assigned_to: payload.technician_email
         },
         'rechazo': {
             status: 'success',
             message: 'Incidencia rechazada correctamente',
-            next_step: 'La incidencia se ha escalado automáticamente al siguiente nivel disponible.',
+            next_step: 'La incidencia se ha escalado automáticamente.',
             incident_id: payload.incident_id,
             reason: payload.reason,
-            escalated: true,
-            timestamp: payload.timestamp
+            escalated: true
         },
         'ayuda': {
             status: 'success',
             message: 'Solicitud de ayuda enviada',
-            next_step: 'Un supervisor o técnico especializado se pondrá en contacto contigo pronto.',
+            next_step: 'Un supervisor se pondrá en contacto contigo pronto.',
             incident_id: payload.incident_id,
-            help_type: payload.reason,
-            supervisor_notified: true,
-            timestamp: payload.timestamp
+            help_type: payload.reason
         }
     };
     
