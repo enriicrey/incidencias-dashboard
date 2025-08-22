@@ -1010,10 +1010,66 @@ const response = await fetch('/api/webhook-respuesta', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
+action: 'validate_technician_pin',
+technician_email: email,
+technician_name: currentTechnician?.name || email.split('@')[0],
+pin: pin
+})
+});
+
+const data = await response.json();
+
+if (data.status === 'success') {
+isAuthenticated = true;
+accessMode = 'full_access';
+closePINModal();
+
+// Actualizar datos del técnico
+currentTechnician = {
+email: email,
+name: data.technician.name,
+department: data.technician.department,
+level: data.technician.level
+};
+
+if (pendingAction) {
+// Continuar con la acción pendiente
+if (pendingAction === 'acepto') {
+confirmAction();
+} else {
+showReasonModal(pendingAction);
+}
+} else {
+// Cargar dashboard completo - CORRECCIÓN DEL ERROR
+await loadTechnicianDashboard(email, true);
+updateAuthStatus();
+}
+} else {
+showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
+}
+
+} catch (error) {
+console.error('Error verificando PIN:', error);
+showError('Error de conexión. Inténtalo más tarde.', document.getElementById('pinError'));
+} finally {
+verifyBtn.disabled = false;
+verifyBtn.textContent = 'Verificar';
+}
+}
+
+// === CARGAR DASHBOARD ===
+async function loadTechnicianDashboard(email, useFullAccess = false) {
+try {
+showLoading('Cargando tus incidencias...');
+
+const response = await fetch('/api/webhook-respuesta', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
 action: 'get_assigned_incidents',
 technician_email: email,
 technician_name: currentTechnician?.name || email.split('@')[0],
-read_only: !withPIN
+read_only: !useFullAccess
 })
 });
 
@@ -1745,60 +1801,4 @@ clearInterval(slaInterval);
 });
 </script>
 </body>
-</html>respuesta', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-action: 'validate_technician_pin',
-technician_email: email,
-technician_name: currentTechnician?.name || email.split('@')[0],
-pin: pin
-})
-});
-
-const data = await response.json();
-
-if (data.status === 'success') {
-isAuthenticated = true;
-accessMode = 'full_access';
-closePINModal();
-
-// Actualizar datos del técnico
-currentTechnician = {
-email: email,
-name: data.technician.name,
-department: data.technician.department,
-level: data.technician.level
-};
-
-if (pendingAction) {
-// Continuar con la acción pendiente
-if (pendingAction === 'acepto') {
-confirmAction();
-} else {
-showReasonModal(pendingAction);
-}
-} else {
-// Cargar dashboard completo
-await loadTechnicianDashboard(email, true);
-updateAuthStatus();
-}
-} else {
-showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
-}
-
-} catch (error) {
-console.error('Error verificando PIN:', error);
-showError('Error de conexión. Inténtalo más tarde.', document.getElementById('pinError'));
-} finally {
-verifyBtn.disabled = false;
-verifyBtn.textContent = 'Verificar';
-}
-}
-
-// === CARGAR DASHBOARD ===
-async function loadTechnicianDashboard(email, withPIN = false) {
-try {
-showLoading('Cargando tus incidencias...');
-
-const response = await fetch('/api/webhook-
+</html>
