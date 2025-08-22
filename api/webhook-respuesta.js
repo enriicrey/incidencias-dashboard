@@ -19,13 +19,14 @@ export default async function handler(req, res) {
         const data = req.method === 'POST' ? req.body : req.query;
         
         const {
-            action,           // 'acepto', 'rechazo', 'ayuda', 'validate_pin', 'get_incident_details', 'get_assigned_incidents'
+            action,           // 'acepto', 'rechazo', 'ayuda', 'validate_technician_pin', 'get_incident_details', 'get_technician_incidents'
             id,              // ID de la incidencia
             incident_id,     // Alias para id
             tecnico,         // Email del técnico
             technician_email, // Alias para tecnico
             reason,          // Motivo específico (opcional)
             pin,             // PIN del técnico
+            escalation_level, // Nivel de escalado (0, 1, 2) ← AÑADIDO
             read_only        // Solo lectura (sin autenticación)
         } = data;
         
@@ -41,7 +42,7 @@ export default async function handler(req, res) {
                 error: 'Falta parámetro action',
                 available_actions: [
                     'acepto', 'rechazo', 'ayuda', 
-                    'validate_pin', 'get_incident_details', 'get_assigned_incidents'
+                    'validate_technician_pin', 'get_incident_details', 'get_technician_incidents'
                 ]
             });
         }
@@ -54,6 +55,7 @@ export default async function handler(req, res) {
             technician_email: finalTechnicianEmail,
             reason: reason || null,
             pin: pin,
+            escalation_level: parseInt(escalation_level) || 0, // ← AÑADIR NIVEL
             read_only: read_only === true || read_only === 'true',
             user_agent: req.headers['user-agent'],
             ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress
@@ -160,7 +162,7 @@ function getDevResponse(action, payload) {
                 timestamp: new Date().toISOString()
             };
             
-        case 'validate_pin':
+        case 'validate_technician_pin':
             const isValidPin = payload.pin === '1234'; // PIN de prueba
             return {
                 status: isValidPin ? 'success' : 'error',
@@ -174,7 +176,7 @@ function getDevResponse(action, payload) {
                 timestamp: new Date().toISOString()
             };
             
-        case 'get_assigned_incidents':
+        case 'get_technician_incidents':
             return {
                 status: 'success',
                 message: 'Incidencias del técnico obtenidas',
@@ -257,6 +259,7 @@ function getDevResponse(action, payload) {
                 technician: payload.technician_email,
                 reason: payload.reason,
                 reason_text: reasonText,
+                escalation_level: payload.escalation_level, // ← Nivel para Make
                 next_step: 'La incidencia se escalará automáticamente al siguiente nivel disponible.',
                 timestamp: new Date().toISOString()
             };
@@ -271,6 +274,7 @@ function getDevResponse(action, payload) {
                 technician: payload.technician_email,
                 reason: payload.reason,
                 reason_text: helpReasonText,
+                escalation_level: payload.escalation_level, // ← Nivel para Make
                 next_step: 'El escalado se ha pausado. Un supervisor se pondrá en contacto contigo.',
                 escalation_paused: true,
                 timestamp: new Date().toISOString()
@@ -282,7 +286,7 @@ function getDevResponse(action, payload) {
                 message: `Acción "${action}" no reconocida`,
                 available_actions: [
                     'acepto', 'rechazo', 'ayuda', 
-                    'validate_pin', 'get_incident_details', 'get_assigned_incidents'
+                    'validate_technician_pin', 'get_incident_details', 'get_technician_incidents'
                 ]
             };
     }
