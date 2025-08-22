@@ -3,1029 +3,670 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔧 Dashboard Técnico - Sistema de Incidencias</title>
+    <title>🔧 Dashboard Técnico</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #2c3e50;
-            overflow-x: hidden;
+            color: #333;
         }
-
-        /* === ANIMACIONES GLOBALES === */
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        @keyframes glow {
-            0%, 100% {
-                box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-            }
-            50% {
-                box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
-            }
-        }
-
-        /* === LOADING === */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .loading-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* === LOGIN OVERLAY === */
-        .login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
+        
+        /* Login Screen */
         .login-container {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 40px 30px;
             text-align: center;
-            max-width: 400px;
-            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-top: 50px;
         }
-
-        .login-container h2 {
-            color: #2c3e50;
-            margin-bottom: 30px;
+        
+        .login-title {
             font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
-
-        .form-group {
+        
+        .login-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
             margin-bottom: 20px;
             text-align: left;
         }
-
-        .form-group label {
+        
+        .input-label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #555;
+            color: #34495e;
         }
-
-        .form-group input {
+        
+        .input-field {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
+            padding: 15px;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
-
-        .form-group input:focus {
+        
+        .input-field:focus {
             outline: none;
             border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
-
+        
         .verify-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
             color: white;
-            padding: 15px 30px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .verify-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .quick-access-btn {
             width: 100%;
+            padding: 12px;
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
             transition: all 0.3s;
         }
-
-        .verify-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        
+        .quick-access-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
         }
-
+        
         .error-message {
-            background: #e74c3c;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
+            background: #fee;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
             margin-top: 15px;
+            border: 1px solid #fed7d7;
+        }
+        
+        .success-message {
+            background: #f0fff4;
+            color: #22543d;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #c6f6d5;
+        }
+        
+        /* Dashboard */
+        .main-container {
+            display: none;
+        }
+        
+        .dashboard-header {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .dashboard-subtitle {
+            color: #7f8c8d;
             font-size: 14px;
         }
-
-        /* === MAIN DASHBOARD === */
-        .main-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            display: none;
-            animation: slideInUp 0.6s ease-out;
-        }
-
-        .dashboard-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
+        
+        .auth-status {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
         }
-
-        .dashboard-header:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        
+        .auth-status.authenticated {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
         }
-
-        .dashboard-header h1 {
-            color: #2c3e50;
-            font-size: 32px;
-            margin-bottom: 12px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        
+        .auth-status.unauthenticated {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
         }
-
-        .dashboard-header .subtitle {
-            color: #7f8c8d;
-            font-size: 18px;
-            font-weight: 500;
-        }
-
-        /* === SLA TIMER MEJORADO === */
+        
+        /* SLA Timer */
         .sla-timer {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
             text-align: center;
-            border: 3px solid #17a2b8;
-            transition: all 0.3s ease;
-            animation: slideInUp 0.6s ease-out 0.2s both;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-
-        .sla-timer:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        
+        .sla-time {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
-
-        .sla-timer.warning {
-            border-color: #ffc107;
-            background: linear-gradient(135deg, rgba(255, 243, 205, 0.95), rgba(255, 255, 255, 0.95));
-            animation: pulse 2s infinite;
+        
+        .sla-critical { color: #e74c3c; }
+        .sla-warning { color: #f39c12; }
+        .sla-normal { color: #27ae60; }
+        
+        .sla-label {
+            color: #7f8c8d;
+            font-size: 14px;
         }
-
-        .sla-timer.critical {
-            border-color: #dc3545;
-            background: linear-gradient(135deg, rgba(248, 215, 218, 0.95), rgba(255, 255, 255, 0.95));
-            animation: glow 1.5s infinite;
-        }
-
-        .sla-timer.expired {
-            border-color: #6c757d;
-            background: linear-gradient(135deg, rgba(226, 227, 229, 0.95), rgba(255, 255, 255, 0.95));
-        }
-
-        .timer-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-            animation: pulse 2s infinite;
-        }
-
-        .timer-label {
-            font-size: 16px;
-            font-weight: 700;
-            color: #495057;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
-        .timer-display {
-            font-size: 42px;
-            font-weight: 800;
-            color: #2c3e50;
-            margin-bottom: 12px;
-            font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .timer-subtitle {
-            font-size: 16px;
-            color: #6c757d;
-            font-weight: 500;
-        }
-
-        .timer-warning {
-            color: #856404;
-            font-weight: 700;
-            animation: pulse 1s infinite;
-        }
-
-        /* === INCIDENT CARD MEJORADO === */
+        
+        /* Incident Card */
         .incident-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
+            background: white;
+            border-radius: 16px;
             overflow: hidden;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: slideInUp 0.6s ease-out 0.4s both;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-
-        .incident-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
+        
         .incident-header {
-            padding: 25px;
-            border-bottom: 2px solid #f8f9fa;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .incident-header h2 {
-            color: #2c3e50;
-            font-size: 24px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .priority-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .priority-crítica {
-            background: #dc3545;
+            background: linear-gradient(45deg, #3498db, #2980b9);
             color: white;
+            padding: 20px;
+            text-align: center;
         }
-
-        .priority-alta {
-            background: #fd7e14;
-            color: white;
-        }
-
-        .priority-media {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .priority-baja {
-            background: #28a745;
-            color: white;
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+        
+        .incident-content {
             padding: 25px;
         }
-
-        .detail-item {
+        
+        .incident-detail {
+            margin-bottom: 15px;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
             border-left: 4px solid #3498db;
         }
-
-        .detail-item strong {
-            display: block;
+        
+        .detail-label {
+            font-weight: 600;
             color: #2c3e50;
             margin-bottom: 5px;
-            font-size: 14px;
         }
-
-        .detail-item span {
-            color: #495057;
-            font-size: 16px;
+        
+        .detail-value {
+            color: #555;
         }
-
-        .level-badge {
-            background: #3498db;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .level-inicial {
-            background: #17a2b8;
-        }
-
-        .level-backup {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .level-equipo {
-            background: #fd7e14;
-        }
-
-        /* === DESCRIPTION === */
-        .description-section {
-            padding: 25px;
-            border-top: 2px solid #f8f9fa;
-        }
-
-        .description-section h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .description-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #17a2b8;
-            line-height: 1.6;
-            color: #495057;
-        }
-
-        /* === CONTACTS === */
-        .contact-section {
-            padding: 25px;
-            border-top: 2px solid #f8f9fa;
-        }
-
-        .contact-section h3 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-
-        .contact-grid {
+        
+        .priority-critical { border-left-color: #e74c3c; }
+        .priority-high { border-left-color: #f39c12; }
+        .priority-medium { border-left-color: #f1c40f; }
+        .priority-low { border-left-color: #27ae60; }
+        
+        /* Action Buttons */
+        .action-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-top: 25px;
         }
-
-        .contact-card {
-            background: #e8f4f8;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 2px solid #17a2b8;
-        }
-
-        .contact-card strong {
-            display: block;
-            color: #0c5460;
-            margin-bottom: 8px;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .contact-card div {
-            color: #495057;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .phone-link {
-            color: #17a2b8;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .phone-link:hover {
-            color: #0c5460;
-            text-decoration: underline;
-        }
-
-        /* === RESPONSE SECTION === */
-        .response-section {
-            padding: 25px;
-            border-top: 2px solid #f8f9fa;
-            text-align: center;
-        }
-
-        .response-question h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 20px;
-        }
-
-        .auth-notice {
-            background: #fff3cd;
-            color: #856404;
+        
+        .action-btn {
             padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #ffeaa7;
-        }
-
-        .response-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 25px 0;
-        }
-
-        /* === BOTONES MEJORADOS === */
-        .btn {
-            padding: 18px 30px;
             border: none;
             border-radius: 12px;
             font-size: 16px;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-accept {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
-        }
-
-        .btn-accept:hover {
-            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.6);
-        }
-
-        .btn-reject {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
-        }
-
-        .btn-reject:hover {
-            box-shadow: 0 10px 25px rgba(220, 53, 69, 0.6);
-        }
-
-        .btn-help {
-            background: linear-gradient(135deg, #ffc107, #e0a800);
-            color: #212529;
-            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
-        }
-
-        .btn-help:hover {
-            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.6);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn.locked {
+        
+        .action-btn.locked {
             opacity: 0.6;
             cursor: not-allowed;
-            position: relative;
+            background: #6c757d !important;
         }
-
-        .btn.locked:hover {
-            transform: none;
-            box-shadow: none;
+        
+        .btn-accept {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
         }
-
-        .alternative-actions {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+        
+        .btn-reject {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
         }
-
-        /* === RESPONSE SUCCESS === */
-        .response-success {
-            background: #d1ecf1;
-            border: 2px solid #17a2b8;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
+        
+        .btn-help {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+            grid-column: 1 / -1;
         }
-
-        .success-icon {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 15px;
+        
+        .action-btn:hover:not(.locked) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-
-        .success-message {
-            font-size: 18px;
-            color: #0c5460;
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-
-        .success-reason {
-            background: rgba(23, 162, 184, 0.1);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 15px 0;
-            font-size: 14px;
-            color: #0c5460;
-        }
-
-        .success-timestamp {
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 20px;
-        }
-
-        .success-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* === PIN MODAL === */
-        .pin-modal {
+        
+        /* PIN Modal */
+        .pin-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1500;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
         }
-
-        .pin-modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        
+        .pin-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
-
-        .pin-modal-content {
-            position: relative;
+        
+        .pin-modal {
             background: white;
-            border-radius: 15px;
+            border-radius: 16px;
+            padding: 30px;
             max-width: 400px;
             width: 90%;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s;
         }
-
-        .pin-modal-header {
-            padding: 25px 25px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        
+        .pin-modal-overlay.active .pin-modal {
+            transform: scale(1);
         }
-
-        .pin-modal-header h3 {
-            color: #2c3e50;
-            margin: 0;
+        
+        .pin-modal-title {
             font-size: 20px;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-btn:hover {
-            color: #e74c3c;
-        }
-
-        .pin-modal-body {
-            padding: 25px;
-        }
-
-        .pin-input-group {
-            margin-bottom: 20px;
-        }
-
-        .pin-input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .pin-input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .pin-input-group input:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .pin-input-group input[readonly] {
-            background: #f8f9fa;
-            color: #6c757d;
-        }
-
-        .pin-error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .pin-modal-footer {
-            padding: 0 25px 25px;
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-        }
-
-        /* === RESPONSIVE === */
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 10px;
-            }
-
-            .incident-header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .detail-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .contact-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .response-buttons {
-                gap: 10px;
-            }
-
-            .success-actions {
-                flex-direction: column;
-            }
-
-            .timer-display {
-                font-size: 28px;
-            }
-
-            .pin-modal-footer {
-                flex-direction: column;
-            }
-        }
-
-        /* === REASON MODAL === */
-        .reason-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1600;
-        }
-
-        .reason-modal-content {
-            position: relative;
-            background: white;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .reason-modal-header {
-            padding: 25px;
-            border-bottom: 2px solid #f8f9fa;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .reason-modal-header h3 {
             color: #2c3e50;
-            margin: 0;
-            font-size: 20px;
+            margin-bottom: 10px;
         }
-
-        .reason-options {
-            padding: 25px;
+        
+        .pin-modal-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 25px;
         }
-
-        .reason-option {
-            display: flex;
-            align-items: center;
+        
+        .pin-input {
+            width: 100%;
             padding: 15px;
             border: 2px solid #e9ecef;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .pin-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .pin-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .pin-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
         }
-
-        .reason-option:hover {
-            border-color: #3498db;
+        
+        .pin-btn-cancel {
             background: #f8f9fa;
-        }
-
-        .reason-option.selected {
-            border-color: #3498db;
-            background: #e7f3ff;
-        }
-
-        .reason-option .icon {
-            font-size: 24px;
-            margin-right: 15px;
-            width: 40px;
-            text-align: center;
-        }
-
-        .reason-option .text {
-            flex: 1;
-        }
-
-        .reason-option .title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .reason-option .description {
-            font-size: 14px;
             color: #6c757d;
-            line-height: 1.4;
         }
-
-        .reason-actions {
-            padding: 25px;
-            border-top: 2px solid #f8f9fa;
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
+        
+        .pin-btn-verify {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
         }
-
-        .btn:disabled {
+        
+        .pin-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
-        /* === INCIDENT DASHBOARD GRID === */
-        .incidents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }
-
-        .incident-item {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .incident-item:hover {
-            border-color: #3498db;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .incident-item.pending {
-            border-left: 5px solid #e74c3c;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-        }
-
-        .incident-item.working {
-            border-left: 5px solid #28a745;
-            background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
-        }
-
-        .incident-item-header {
+        
+        /* Reason Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
         }
-
-        .incident-item-header strong {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-title {
+            font-size: 20px;
             color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
         }
-
-        .incident-item-content {
-            margin-bottom: 12px;
-        }
-
-        .incident-item-content > div:first-child {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .incident-meta {
-            font-size: 12px;
-            color: #6c757d;
-            line-height: 1.4;
-        }
-
-        .incident-action {
-            padding-top: 10px;
-            border-top: 1px solid #f8f9fa;
-        }
-
-        .action-required {
-            color: #e74c3c;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .working-status {
-            color: #28a745;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .incident-section {
+        
+        .reason-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             margin-bottom: 25px;
         }
-
-        .incident-section h3 {
+        
+        .reason-option {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+        
+        .reason-option:hover {
+            border-color: #3498db;
+            background: #f8f9ff;
+        }
+        
+        .reason-option.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        
+        .reason-icon {
+            font-size: 24px;
+            min-width: 30px;
+        }
+        
+        .reason-text {
+            flex: 1;
+        }
+        
+        .reason-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 3px;
+        }
+        
+        .reason-description {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-cancel {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .btn-confirm {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e9ecef;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* No incidents */
+        .no-incidents {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .no-incidents-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .no-incidents-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .no-incidents-description {
+            color: #7f8c8d;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-help {
+                grid-column: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div id="loadingMessage">Cargando...</div>
-        </div>
-    </div>
-
-    <!-- Login Overlay (Modo B - Dashboard completo) -->
-    <div class="login-overlay" id="loginOverlay">
+    <!-- Login Container -->
+    <div class="container" id="loginContainer">
         <div class="login-container">
-            <h2>🔧 Acceso Técnico</h2>
-            <div class="form-group">
-                <label for="technicianEmail">Email:</label>
-                <input type="email" id="technicianEmail" placeholder="tu.email@empresa.com">
+            <h1 class="login-title">🔧 Dashboard Técnico</h1>
+            <p class="login-subtitle">Accede con tu email para gestionar incidencias</p>
+            
+            <div class="input-group">
+                <label class="input-label" for="emailInput">Email Técnico</label>
+                <input type="email" 
+                       class="input-field" 
+                       id="emailInput" 
+                       placeholder="ejemplo@empresa.com"
+                       autocomplete="email">
             </div>
-            <div class="form-group">
-                <label for="technicianPin">PIN:</label>
-                <input type="password" id="technicianPin" maxlength="4" placeholder="4 dígitos">
-            </div>
-            <button onclick="verifyTechnicianLogin()" class="verify-btn">
-                🔐 Acceder al Dashboard
+            
+            <button onclick="loginWithPIN()" class="verify-btn" id="loginBtn">
+                🔐 Acceder con PIN (Dashboard Completo)
             </button>
+            
+            <button onclick="loginQuickAccess()" class="quick-access-btn" id="quickBtn">
+                👁️ Ver incidencia específica (desde email)
+            </button>
+            
             <div id="loginError" class="error-message" style="display: none;"></div>
+            <div id="loginSuccess" class="success-message" style="display: none;"></div>
         </div>
     </div>
 
     <!-- Main Dashboard Container -->
-    <div class="main-container" id="mainContainer">
+    <div class="container main-container" id="mainContainer">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
-            <h1 id="dashboardTitle">🔧 Dashboard Técnico</h1>
-            <div class="subtitle" id="dashboardSubtitle">Sistema de Respuesta a Incidencias</div>
+            <h1 class="dashboard-title" id="dashboardTitle">🔧 Dashboard Técnico</h1>
+            <div class="dashboard-subtitle" id="dashboardSubtitle">Sistema de Respuesta a Incidencias</div>
+        </div>
+
+        <!-- Auth Status -->
+        <div class="auth-status" id="authStatus">
+            <div id="authMessage">⚠️ Solo lectura - Introduce PIN para responder</div>
         </div>
 
         <!-- SLA Timer -->
         <div class="sla-timer" id="slaTimer" style="display: none;">
-            <!-- Se llena dinámicamente -->
+            <div class="sla-time" id="slaTimeDisplay">--:--</div>
+            <div class="sla-label">Tiempo restante para responder</div>
         </div>
 
-        <!-- Incident Details -->
-        <div class="incident-card" id="incidentCard" style="display: none;">
+        <!-- Incident Card -->
+        <div id="incidentCard">
             <!-- Se llena dinámicamente -->
+        </div>
+    </div>
+
+    <!-- PIN Modal -->
+    <div class="pin-modal-overlay" id="pinModal">
+        <div class="pin-modal">
+            <h3 class="pin-modal-title">🔐 Verificación de Seguridad</h3>
+            <p class="pin-modal-subtitle">Introduce tu PIN de 4 dígitos para responder</p>
+            <input type="password" 
+                   class="pin-input" 
+                   id="pinInput" 
+                   maxlength="4" 
+                   placeholder="••••"
+                   autocomplete="off">
+            <div class="pin-actions">
+                <button class="pin-btn pin-btn-cancel" onclick="closePINModal()">
+                    Cancelar
+                </button>
+                <button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>
+                    Verificar
+                </button>
+            </div>
+            <div id="pinError" class="error-message" style="display: none; margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- Reason Selection Modal -->
+    <div class="modal-overlay" id="reasonModal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">Selecciona el motivo</h3>
+            <div class="reason-options" id="reasonOptions">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeReasonModal()">
+                    Cancelar
+                </button>
+                <button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>
+                    Confirmar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1034,8 +675,10 @@
         let currentIncident = null;
         let currentTechnician = null;
         let isAuthenticated = false;
-        let intendedAction = null;
+        let slaInterval = null;
+        let pendingAction = null;
         let selectedReason = null;
+        let accessMode = 'none'; // 'none', 'read_only', 'full_access'
 
         // === MOTIVOS DE RESPUESTA ===
         const rejectReasons = [
@@ -1050,360 +693,116 @@
         const helpReasons = [
             { id: 'apoyo_tecnico', icon: '👥', title: 'Necesito apoyo técnico', description: 'Requiero asistencia de otro técnico especializado' },
             { id: 'consulta_supervisor', icon: '🎯', title: 'Consulta con supervisor', description: 'Necesito autorización o guía del supervisor' },
-            { id: 'herramientas_especiales', icon: '🔧', title: 'Herramientas especiales', description: 'Requiero herramientas que no tengo disponibles' },
+            { id: 'herramientas_especiales', icon: '🔧', title: 'Herramientas especiales', description: 'Requiero herramientas específicas no disponibles' },
             { id: 'procedimiento_dudas', icon: '📋', title: 'Dudas sobre procedimiento', description: 'No estoy seguro del procedimiento correcto' },
-            { id: 'seguridad_riesgo', icon: '⚠️', title: 'Problema de seguridad', description: 'Hay riesgos de seguridad que debo consultar' },
-            { id: 'repuestos_urgentes', icon: '📦', title: 'Repuestos urgentes', description: 'Necesito repuestos que no están disponibles' }
+            { id: 'seguridad_riesgo', icon: '⚠️', title: 'Problema de seguridad', description: 'Hay riesgos de seguridad que requieren evaluación' },
+            { id: 'repuestos_urgentes', icon: '📦', title: 'Repuestos urgentes', description: 'Necesito repuestos específicos urgentemente' }
         ];
 
         // === INICIALIZACIÓN ===
-        window.addEventListener('load', async () => {
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard Técnico iniciado');
+            
+            // Verificar si hay parámetros en la URL (acceso desde email)
             const urlParams = new URLSearchParams(window.location.search);
-            const incidentId = urlParams.get('id');
-            const technicianEmail = urlParams.get('tech');
-
-            if (incidentId && technicianEmail) {
-                // MODO A: Vista específica de incidencia
-                currentTechnician = technicianEmail;
-                await loadIncidentReadOnly(incidentId);
-            } else {
-                // MODO B: Dashboard completo - Requiere login
-                showTechnicianLogin();
+            const email = urlParams.get('tecnico') || urlParams.get('technician_email');
+            const incidentId = urlParams.get('id') || urlParams.get('incident_id');
+            
+            if (email) {
+                document.getElementById('emailInput').value = email;
+                
+                if (incidentId) {
+                    // Acceso desde email - modo solo lectura inicialmente
+                    console.log('🔗 Acceso desde email detectado');
+                    loginQuickAccess();
+                }
             }
         });
 
-        // === MODO A: CARGAR INCIDENCIA ESPECÍFICA (SIN AUTH) ===
-        async function loadIncidentReadOnly(incidentId) {
-            try {
-                showLoading('Cargando incidencia...');
-
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'get_incident_details',
-                        incident_id: incidentId,
-                        read_only: true
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success' && data.incident) {
-                    currentIncident = data.incident;
-                    renderIncidentDetails(data.incident);
-                    initSLATimer(data.incident);
-                    showResponseActions();
-                    document.getElementById('mainContainer').style.display = 'block';
-                } else {
-                    showError(data.message || 'Incidencia no encontrada');
-                }
-
-            } catch (error) {
-                console.error('Error cargando incidencia:', error);
-                showError('Error de conexión. Inténtalo más tarde.');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // === RENDERIZAR DETALLES DE INCIDENCIA ===
-        function renderIncidentDetails(incident) {
-            const incidentCard = document.getElementById('incidentCard');
+        // === FUNCIONES DE LOGIN ===
+        async function loginWithPIN() {
+            const email = document.getElementById('emailInput').value.trim();
             
-            // Determinar nivel de escalado
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            let levelText, levelClass;
-            
-            switch(escalationLevel) {
-                case 0: levelText = 'inicial'; levelClass = 'level-inicial'; break;
-                case 1: levelText = 'backup'; levelClass = 'level-backup'; break;
-                case 2: levelText = 'equipo'; levelClass = 'level-equipo'; break;
-                default: levelText = 'supervisor'; levelClass = 'level-supervisor'; break;
-            }
-
-            incidentCard.innerHTML = `
-                <div class="incident-header">
-                    <h2>${incident.id}</h2>
-                    <div class="priority-badge priority-${incident.priority?.toLowerCase() || 'media'}">
-                        ${incident.priority || 'MEDIA'}
-                    </div>
-                </div>
-
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <strong>🏭 Equipo Afectado:</strong>
-                        <span>${incident.equipment || 'No especificado'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>📍 Zona:</strong>
-                        <span>${incident.zone || 'No especificada'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>⏰ Reportado:</strong>
-                        <span>${incident.created_date ? new Date(incident.created_date).toLocaleString() : 'No disponible'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>👤 Nivel Asignado:</strong>
-                        <span class="level-badge ${levelClass}">${levelText.toUpperCase()}</span>
-                    </div>
-                </div>
-
-                <div class="description-section">
-                    <h3>📋 Descripción del Problema</h3>
-                    <div class="description-box">
-                        ${incident.description || 'Sin descripción disponible'}
-                    </div>
-                </div>
-
-                <div class="contact-section">
-                    <h3>📞 Contactos de Apoyo</h3>
-                    <div class="contact-grid">
-                        <div class="contact-card">
-                            <strong>Encargado de Zona</strong>
-                            <div>${incident.zone_manager || incident.encargado_zona || 'No asignado'}</div>
-                            ${incident.zone_manager_phone || incident.telefono_encargado ? `<a href="tel:${incident.zone_manager_phone || incident.telefono_encargado}" class="phone-link">${incident.zone_manager_phone || incident.telefono_encargado}</a>` : ''}
-                        </div>
-                        <div class="contact-card">
-                            <strong>Supervisor</strong>
-                            <div>${incident.supervisor || 'No asignado'}</div>
-                            ${incident.supervisor_phone || incident.telefono_supervisor ? `<a href="tel:${incident.supervisor_phone || incident.telefono_supervisor}" class="phone-link">${incident.supervisor_phone || incident.telefono_supervisor}</a>` : ''}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="response-section" id="responseSection">
-                    <!-- Se llena dinámicamente -->
-                </div>
-            `;
-
-            incidentCard.style.display = 'block';
-        }
-
-        // === TIMER SLA ===
-        function initSLATimer(incident) {
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            let slaEndDate, slaLabel;
-
-            // Determinar SLA según nivel actual
-            switch(escalationLevel) {
-                case 0:
-                    slaEndDate = incident.sla_l0_end ? new Date(incident.sla_l0_end) : null;
-                    slaLabel = "SLA NIVEL INICIAL";
-                    break;
-                case 1:
-                    slaEndDate = incident.sla_l1_backup_end ? new Date(incident.sla_l1_backup_end) : null;
-                    slaLabel = "SLA BACKUP";
-                    break;
-                case 2:
-                    slaEndDate = incident.sla_l2_equipo_end ? new Date(incident.sla_l2_equipo_end) : null;
-                    slaLabel = "SLA EQUIPO";
-                    break;
-                case 3:
-                    showEscalatedState();
-                    return;
-            }
-
-            if (slaEndDate) {
-                startSLACountdown(slaEndDate, slaLabel);
-            } else {
-                // Si no hay fecha SLA, mostrar estado sin timer
-                document.getElementById('slaTimer').innerHTML = `
-                    <div class="timer-icon">⏱️</div>
-                    <div class="timer-label">${slaLabel}</div>
-                    <div class="timer-display">SIN LÍMITE</div>
-                    <div class="timer-subtitle">No hay límite de tiempo configurado</div>
-                `;
-                document.getElementById('slaTimer').style.display = 'block';
-            }
-        }
-
-        function startSLACountdown(endDate, label) {
-            const timerElement = document.getElementById('slaTimer');
-            timerElement.style.display = 'block';
-
-            const updateTimer = () => {
-                const now = new Date();
-                const timeLeft = endDate - now;
-
-                if (timeLeft <= 0) {
-                    // SLA vencido
-                    timerElement.innerHTML = `
-                        <div class="timer-icon">⏰</div>
-                        <div class="timer-label">${label}</div>
-                        <div class="timer-display">VENCIDO</div>
-                        <div class="timer-warning">⚠️ Se escalará automáticamente</div>
-                    `;
-                    timerElement.className = 'sla-timer expired';
-                    return;
-                }
-
-                // Calcular tiempo restante
-                const totalMinutes = Math.floor(timeLeft / (1000 * 60));
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = totalMinutes % 60;
-                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                // Formato display
-                let display;
-                if (hours > 0) {
-                    display = `${hours}h ${minutes}m`;
-                } else if (minutes > 0) {
-                    display = `${minutes}m ${seconds}s`;
-                } else {
-                    display = `${seconds}s`;
-                }
-
-                // Determinar estado del timer
-                let timerClass, urgencyMessage;
-                if (timeLeft > 30 * 60 * 1000) { // > 30 min
-                    timerClass = 'sla-timer';
-                    urgencyMessage = 'Tiempo suficiente para responder';
-                } else if (timeLeft > 10 * 60 * 1000) { // > 10 min
-                    timerClass = 'sla-timer warning';
-                    urgencyMessage = 'Tiempo limitado - Responder pronto';
-                } else {
-                    timerClass = 'sla-timer critical';
-                    urgencyMessage = '⚠️ URGENTE - Responder ahora';
-                }
-
-                timerElement.innerHTML = `
-                    <div class="timer-icon">⏱️</div>
-                    <div class="timer-label">${label}</div>
-                    <div class="timer-display">${display}</div>
-                    <div class="timer-subtitle">${urgencyMessage}</div>
-                `;
-                timerElement.className = timerClass;
-            };
-
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        }
-
-        function showEscalatedState() {
-            const timerElement = document.getElementById('slaTimer');
-            timerElement.innerHTML = `
-                <div class="timer-icon">🚨</div>
-                <div class="timer-label">ESCALADO AL SUPERVISOR</div>
-                <div class="timer-display">NIVEL 3</div>
-                <div class="timer-subtitle">La incidencia ha sido escalada al supervisor</div>
-            `;
-            timerElement.className = 'sla-timer expired';
-            timerElement.style.display = 'block';
-        }
-
-        // === MOSTRAR ACCIONES DE RESPUESTA ===
-        function showResponseActions() {
-            const responseSection = document.getElementById('responseSection');
-
-            responseSection.innerHTML = `
-                <div class="response-question">
-                    <h3>¿Puedes hacerte cargo de esta incidencia?</h3>
-                    <div class="auth-notice" id="authNotice">
-                        Para responder, necesitas introducir tu PIN de técnico
-                    </div>
-                </div>
-
-                <div class="response-buttons">
-                    <button class="btn btn-accept locked" onclick="requestAuthentication('acepto')">
-                        🔒 ✅ ACEPTO LA INCIDENCIA
-                    </button>
-
-                    <button class="btn btn-reject locked" onclick="requestAuthentication('rechazo')">
-                        🔒 ❌ NO PUEDO HACERME CARGO
-                    </button>
-
-                    <button class="btn btn-help locked" onclick="requestAuthentication('ayuda')">
-                        🔒 🆘 NECESITO AYUDA
-                    </button>
-                </div>
-
-                <div class="alternative-actions">
-                    <button class="btn btn-secondary" onclick="showTechnicianDashboard()">
-                        📋 Ver Mis Otras Incidencias
-                    </button>
-                </div>
-            `;
-        }
-
-        // === SOLICITAR AUTENTICACIÓN ===
-        function requestAuthentication(action) {
-            if (isAuthenticated) {
-                // Ya autenticado, proceder con la acción
-                if (action === 'acepto') {
-                    handleResponse('acepto');
-                } else {
-                    showReasonModal(action);
-                }
+            if (!email || !email.includes('@')) {
+                showError('Por favor ingresa un email válido', document.getElementById('loginError'));
                 return;
             }
-
+            
             // Mostrar modal de PIN
-            intendedAction = action;
-            showPINModal();
+            showPINModal('dashboard');
         }
 
-        function showPINModal() {
-            const modal = document.createElement('div');
-            modal.className = 'pin-modal';
-            modal.id = 'pinModal';
-
-            modal.innerHTML = `
-                <div class="pin-modal-overlay" onclick="closePINModal()"></div>
-                <div class="pin-modal-content">
-                    <div class="pin-modal-header">
-                        <h3>🔐 Autenticación de Técnico</h3>
-                        <button onclick="closePINModal()" class="close-btn">✕</button>
-                    </div>
-
-                    <div class="pin-modal-body">
-                        <p>Para responder a incidencias, introduce tu PIN de técnico:</p>
-
-                        <div class="pin-input-group">
-                            <label>Email:</label>
-                            <input type="email" id="technicianEmailInput" value="${currentTechnician}" readonly>
-                        </div>
-
-                        <div class="pin-input-group">
-                            <label>PIN:</label>
-                            <input type="password" id="technicianPINInput" maxlength="4" placeholder="4 dígitos">
-                        </div>
-
-                        <div class="pin-error" id="pinError" style="display: none;"></div>
-                    </div>
-
-                    <div class="pin-modal-footer">
-                        <button onclick="closePINModal()" class="btn btn-secondary">Cancelar</button>
-                        <button onclick="verifyTechnicianPIN()" class="btn btn-primary">Verificar</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-            document.getElementById('technicianPINInput').focus();
-
-            // Permitir Enter para verificar
-            document.getElementById('technicianPINInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') verifyTechnicianPIN();
-            });
-        }
-
-        // === VERIFICAR PIN ===
-        async function verifyTechnicianPIN() {
-            const email = document.getElementById('technicianEmailInput').value;
-            const pin = document.getElementById('technicianPINInput').value;
-
-            if (!pin || pin.length !== 4) {
-                showPINError('Introduce un PIN de 4 dígitos');
+        async function loginQuickAccess() {
+            const email = document.getElementById('emailInput').value.trim();
+            
+            if (!email || !email.includes('@')) {
+                showError('Por favor ingresa un email válido', document.getElementById('loginError'));
                 return;
             }
+            
+            // Acceso rápido sin PIN (solo lectura)
+            accessMode = 'read_only';
+            await loadTechnicianDashboard(email, false);
+        }
 
+        // === MODAL DE PIN ===
+        function showPINModal(purpose = 'action') {
+            const modal = document.getElementById('pinModal');
+            const pinInput = document.getElementById('pinInput');
+            const verifyBtn = document.getElementById('verifyPinBtn');
+            
+            pinInput.value = '';
+            verifyBtn.disabled = true;
+            hideMessage(document.getElementById('pinError'));
+            
+            // Configurar según el propósito
+            if (purpose === 'dashboard') {
+                document.querySelector('.pin-modal-title').textContent = '🔐 Acceso al Dashboard';
+                document.querySelector('.pin-modal-subtitle').textContent = 'Introduce tu PIN para acceso completo';
+            } else {
+                document.querySelector('.pin-modal-title').textContent = '🔐 Confirmar Acción';
+                document.querySelector('.pin-modal-subtitle').textContent = 'Introduce tu PIN para responder';
+            }
+            
+            modal.classList.add('active');
+            pinInput.focus();
+            
+            // Eventos de teclado
+            pinInput.oninput = function() {
+                verifyBtn.disabled = this.value.length !== 4;
+            };
+            
+            pinInput.onkeypress = function(e) {
+                if (e.key === 'Enter' && this.value.length === 4) {
+                    verifyPIN();
+                }
+            };
+        }
+
+        function closePINModal() {
+            document.getElementById('pinModal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        async function verifyPIN() {
+            const pin = document.getElementById('pinInput').value;
+            const email = document.getElementById('emailInput').value;
+            const verifyBtn = document.getElementById('verifyPinBtn');
+            
+            if (pin.length !== 4) {
+                showError('Introduce un PIN de 4 dígitos', document.getElementById('pinError'));
+                return;
+            }
+            
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = '🔄 Verificando...';
+            
             try {
                 const response = await fetch('/api/webhook-respuesta', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'validate_pin',
+                        action: 'validate_technician_pin',
                         technician_email: email,
                         pin: pin
                     })
@@ -1412,239 +811,37 @@
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    // PIN válido
                     isAuthenticated = true;
+                    accessMode = 'full_access';
                     closePINModal();
-                    unlockResponseActions();
-
-                    // Proceder con la acción original
-                    if (intendedAction === 'acepto') {
-                        handleResponse('acepto');
+                    
+                    if (pendingAction) {
+                        // Continuar con la acción pendiente
+                        if (pendingAction === 'acepto') {
+                            confirmAction();
+                        } else {
+                            showReasonModal(pendingAction);
+                        }
                     } else {
-                        showReasonModal(intendedAction);
+                        // Cargar dashboard completo
+                        await loadTechnicianDashboard(email, true);
+                        updateAuthStatus();
                     }
-
                 } else {
-                    showPINError(data.message || 'PIN incorrecto');
+                    showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
                 }
 
             } catch (error) {
                 console.error('Error verificando PIN:', error);
-                showPINError('Error de conexión. Inténtalo más tarde.');
-            }
-        }
-
-        // === DESBLOQUEAR ACCIONES ===
-        function unlockResponseActions() {
-            const buttons = document.querySelectorAll('.response-buttons .btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('locked');
-                btn.innerHTML = btn.innerHTML.replace('🔒 ', '');
-            });
-
-            document.getElementById('authNotice').innerHTML = 
-                '✅ <strong>Autenticado correctamente</strong> - Puedes responder a la incidencia';
-            document.getElementById('authNotice').style.background = '#d4edda';
-            document.getElementById('authNotice').style.color = '#155724';
-            document.getElementById('authNotice').style.border = '1px solid #c3e6cb';
-        }
-
-        // === MODAL DE MOTIVOS ===
-        function showReasonModal(action) {
-            const modal = document.createElement('div');
-            modal.className = 'reason-modal';
-            modal.id = 'reasonModal';
-
-            const reasons = action === 'rechazo' ? rejectReasons : helpReasons;
-            const title = action === 'rechazo' ? '❌ ¿Por qué no puedes hacerte cargo?' : '🆘 ¿Qué tipo de ayuda necesitas?';
-
-            modal.innerHTML = `
-                <div class="pin-modal-overlay" onclick="closeReasonModal()"></div>
-                <div class="reason-modal-content">
-                    <div class="reason-modal-header">
-                        <h3>${title}</h3>
-                        <button onclick="closeReasonModal()" class="close-btn">✕</button>
-                    </div>
-
-                    <div class="reason-options" id="reasonOptions">
-                        ${reasons.map(reason => `
-                            <div class="reason-option" onclick="selectReason('${reason.id}', this)">
-                                <div class="icon">${reason.icon}</div>
-                                <div class="text">
-                                    <div class="title">${reason.title}</div>
-                                    <div class="description">${reason.description}</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="reason-actions">
-                        <button onclick="closeReasonModal()" class="btn btn-secondary">Cancelar</button>
-                        <button onclick="confirmReason('${action}')" class="btn btn-primary" id="confirmReasonBtn" disabled>
-                            Confirmar
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-        }
-
-        function selectReason(reasonId, element) {
-            // Deseleccionar todos
-            document.querySelectorAll('.reason-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-
-            // Seleccionar el actual
-            element.classList.add('selected');
-            selectedReason = reasonId;
-
-            // Habilitar botón de confirmar
-            document.getElementById('confirmReasonBtn').disabled = false;
-        }
-
-        function confirmReason(action) {
-            if (selectedReason) {
-                closeReasonModal();
-                handleResponse(action, selectedReason);
-            }
-        }
-
-        // === MANEJO DE RESPUESTAS (CON NIVEL) ===
-        async function handleResponse(action, reason = null) {
-            if (!isAuthenticated) {
-                requestAuthentication(action);
-                return;
-            }
-
-            try {
-                showLoading(`Enviando respuesta: ${action}...`);
-
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: action,
-                        id: currentIncident.id,
-                        tecnico: currentTechnician,
-                        reason: reason,
-                        escalation_level: parseInt(currentIncident.escalation_level) || 0 // ← AÑADIR NIVEL
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    showSuccessResponse(action, reason);
-                } else {
-                    showError(data.message || 'Error procesando respuesta');
-                }
-
-            } catch (error) {
-                console.error('Error enviando respuesta:', error);
-                showError('Error de conexión. Inténtalo más tarde.');
+                showError('Error de conexión. Inténtalo más tarde.', document.getElementById('pinError'));
             } finally {
-                hideLoading();
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verificar';
             }
         }
 
-        // === MOSTRAR CONFIRMACIÓN ===
-        function showSuccessResponse(action, reason) {
-            const responseSection = document.getElementById('responseSection');
-
-            let message, nextStep, color;
-
-            switch(action) {
-                case 'acepto':
-                    message = '✅ Incidencia Aceptada';
-                    nextStep = 'Te has asignado a esta incidencia. Puedes empezar a trabajar en ella.';
-                    color = '#28a745';
-                    break;
-
-                case 'rechazo':
-                    message = '❌ Incidencia Rechazada';
-                    nextStep = 'La incidencia se escalará automáticamente al siguiente nivel disponible.';
-                    color = '#dc3545';
-                    break;
-
-                case 'ayuda':
-                    message = '🆘 Ayuda Solicitada';
-                    nextStep = 'El escalado se ha pausado. Un supervisor se pondrá en contacto contigo.';
-                    color = '#ffc107';
-                    break;
-            }
-
-            responseSection.innerHTML = `
-                <div class="response-success" style="border-color: ${color};">
-                    <div class="success-icon" style="color: ${color};">${message}</div>
-                    <div class="success-message">${nextStep}</div>
-                    ${reason ? `<div class="success-reason"><strong>Motivo:</strong> ${formatReason(reason)}</div>` : ''}
-                    <div class="success-timestamp">
-                        Respondido el ${new Date().toLocaleString()}
-                    </div>
-
-                    <div class="success-actions">
-                        <button class="btn btn-secondary" onclick="location.reload()">
-                            🔄 Ver Estado Actual
-                        </button>
-                        <button class="btn btn-primary" onclick="showTechnicianDashboard()">
-                            📋 Mis Otras Incidencias
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // === MODO B: DASHBOARD COMPLETO ===
-        function showTechnicianLogin() {
-            document.getElementById('loginOverlay').style.display = 'flex';
-        }
-
-        async function verifyTechnicianLogin() {
-            const email = document.getElementById('technicianEmail').value;
-            const pin = document.getElementById('technicianPin').value;
-
-            if (!email || !email.includes('@')) {
-                showLoginError('Introduce un email válido');
-                return;
-            }
-
-            if (!pin || pin.length !== 4) {
-                showLoginError('Introduce un PIN de 4 dígitos');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'validate_pin',
-                        technician_email: email,
-                        pin: pin
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    // PIN válido - Cargar dashboard completo
-                    currentTechnician = email;
-                    isAuthenticated = true;
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    await loadTechnicianDashboard(email);
-                } else {
-                    showLoginError(data.message || 'PIN incorrecto');
-                }
-
-            } catch (error) {
-                console.error('Error verificando login:', error);
-                showLoginError('Error de conexión. Inténtalo más tarde.');
-            }
-        }
-
-        async function loadTechnicianDashboard(email) {
+        // === CARGAR DASHBOARD ===
+        async function loadTechnicianDashboard(email, withPIN = false) {
             try {
                 showLoading('Cargando tus incidencias...');
 
@@ -1653,263 +850,571 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'get_assigned_incidents',
-                        technician_email: email
+                        technician_email: email,
+                        read_only: !withPIN
                     })
                 });
 
                 const data = await response.json();
+                console.log('📋 Respuesta del servidor:', data);
 
                 if (data.status === 'success') {
-                    // Clasificar incidencias en frontend
-                    const classifiedIncidents = classifyIncidents(data.incidents || [], email);
-                    renderTechnicianDashboard(classifiedIncidents, email);
+                    currentTechnician = { email: email, name: email.split('@')[0] };
+                    
+                    // Mostrar dashboard
+                    document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('mainContainer').style.display = 'block';
+                    
+                    // Actualizar header
+                    document.getElementById('dashboardTitle').textContent = `🔧 Dashboard de ${currentTechnician.name}`;
+                    
+                    // Actualizar estado de autenticación
+                    updateAuthStatus();
+                    
+                    // Renderizar incidencias
+                    renderIncidents(data.incidents || []);
+                    
                 } else {
-                    showError(data.message || 'Error cargando dashboard');
+                    throw new Error(data.message || 'Error cargando dashboard');
                 }
 
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
-                showError('Error de conexión. Inténtalo más tarde.');
+                showError('Error de conexión. Inténtalo más tarde.', document.getElementById('loginError'));
             } finally {
                 hideLoading();
             }
         }
 
-        // === CLASIFICAR INCIDENCIAS EN FRONTEND ===
-        function classifyIncidents(incidents, technicianEmail) {
-            const pending = [];
-            const working = [];
+        // === ACTUALIZAR ESTADO DE AUTENTICACIÓN ===
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('authStatus');
+            const messageDiv = document.getElementById('authMessage');
+            
+            if (accessMode === 'full_access') {
+                statusDiv.className = 'auth-status authenticated';
+                messageDiv.innerHTML = '✅ <strong>Autenticado</strong> - Puedes responder a incidencias';
+            } else if (accessMode === 'read_only') {
+                statusDiv.className = 'auth-status unauthenticated';
+                messageDiv.innerHTML = '👁️ <strong>Solo lectura</strong> - Introduce PIN para responder';
+            } else {
+                statusDiv.className = 'auth-status';
+                messageDiv.innerHTML = '⚠️ Sin autenticar';
+            }
+        }
 
-            incidents.forEach(incident => {
-                if (incident.assigned_technician === technicianEmail) {
-                    // Ya asignada - Está trabajando en ella
-                    working.push({
-                        ...incident,
-                        type: 'working',
-                        can_request_help: true,
-                        requires_response: false
-                    });
+        // === RENDERIZADO DE INCIDENCIAS ===
+        function renderIncidents(incidents) {
+            const container = document.getElementById('incidentCard');
+            const urlParams = new URLSearchParams(window.location.search);
+            const specificIncidentId = urlParams.get('id') || urlParams.get('incident_id');
+            
+            // Si hay ID específico en URL, mostrar solo esa incidencia
+            if (specificIncidentId) {
+                const specificIncident = incidents.find(inc => inc.incident_id === specificIncidentId);
+                if (specificIncident) {
+                    renderSingleIncident(specificIncident);
+                    return;
                 } else {
-                    // Pendiente de respuesta - Determinar nivel
-                    let assignedLevel = 'desconocido';
-                    let slaEnd = null;
-
-                    if (incident.l0_technician === technicianEmail) {
-                        assignedLevel = 'inicial';
-                        slaEnd = incident.sla_l0_end;
-                    } else if (incident.l1_technician === technicianEmail) {
-                        assignedLevel = 'backup';
-                        slaEnd = incident.sla_l1_backup_end;
-                    } else if (incident.l2_technicians_notified?.includes?.(technicianEmail) || 
-                               (typeof incident.l2_technicians_notified === 'string' && 
-                                incident.l2_technicians_notified.includes(technicianEmail))) {
-                        assignedLevel = 'equipo';
-                        slaEnd = incident.sla_l2_equipo_end;
-                    }
-
-                    pending.push({
-                        ...incident,
-                        type: 'pending',
-                        assigned_level: assignedLevel,
-                        sla_end: slaEnd,
-                        requires_response: true,
-                        can_request_help: false
-                    });
+                    container.innerHTML = `
+                        <div class="no-incidents">
+                            <div class="no-incidents-icon">❓</div>
+                            <h3 class="no-incidents-title">Incidencia No Encontrada</h3>
+                            <p class="no-incidents-description">
+                                La incidencia ${specificIncidentId} no existe o no está asignada a ti
+                            </p>
+                        </div>
+                    `;
+                    return;
                 }
-            });
-
-            return {
-                pending_incidents: pending,
-                working_incidents: working,
-                technician: {
-                    email: technicianEmail,
-                    name: technicianEmail.split('@')[0]
-                }
-            };
-        }
-
-        function renderTechnicianDashboard(data, email) {
-            const totalPending = data.pending_incidents?.length || 0;
-            const totalWorking = data.working_incidents?.length || 0;
+            }
             
-            document.getElementById('dashboardTitle').textContent = `🔧 Dashboard de ${email.split('@')[0]}`;
-            document.getElementById('dashboardSubtitle').textContent = `${totalPending} pendiente(s) • ${totalWorking} trabajando`;
-
-            const incidentCard = document.getElementById('incidentCard');
+            // Filtrar incidencias pendientes de respuesta
+            const pendingIncidents = incidents.filter(inc => 
+                inc.requires_response === true || 
+                (inc.assigned_technician !== currentTechnician.email && 
+                 (inc.l0_technician === currentTechnician.email || 
+                  inc.l1_technician === currentTechnician.email || 
+                  (inc.l2_technicians_notified && inc.l2_technicians_notified.includes(currentTechnician.email))))
+            );
             
-            if (totalPending === 0 && totalWorking === 0) {
-                incidentCard.innerHTML = `
-                    <div style="padding: 40px; text-align: center;">
-                        <h3>✅ Sin Incidencias</h3>
-                        <p>No tienes incidencias pendientes ni asignadas en este momento</p>
+            const workingIncidents = incidents.filter(inc => 
+                inc.assigned_technician === currentTechnician.email
+            );
+            
+            document.getElementById('dashboardSubtitle').textContent = 
+                `${pendingIncidents.length} pendiente(s) • ${workingIncidents.length} trabajando`;
+            
+            if (pendingIncidents.length === 0 && workingIncidents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-incidents">
+                        <div class="no-incidents-icon">✅</div>
+                        <h3 class="no-incidents-title">Sin Incidencias</h3>
+                        <p class="no-incidents-description">No tienes incidencias pendientes ni asignadas en este momento</p>
                     </div>
                 `;
+                return;
+            }
+            
+            // Mostrar lista de todas las incidencias
+            if (accessMode === 'full_access') {
+                renderAllIncidents(pendingIncidents, workingIncidents);
             } else {
-                incidentCard.innerHTML = `
+                // Solo mostrar la primera pendiente
+                if (pendingIncidents.length > 0) {
+                    renderSingleIncident(pendingIncidents[0]);
+                } else if (workingIncidents.length > 0) {
+                    renderWorkingIncident(workingIncidents[0]);
+                }
+            }
+        }
+
+        function renderAllIncidents(pendingIncidents, workingIncidents) {
+            const container = document.getElementById('incidentCard');
+            
+            let html = '';
+            
+            if (pendingIncidents.length > 0) {
+                html += `
+                    <div class="incident-card">
+                        <div class="incident-header">
+                            <h2>⏳ Pendientes de Respuesta (${pendingIncidents.length})</h2>
+                        </div>
+                        <div class="incident-content">
+                `;
+                
+                pendingIncidents.forEach((incident, index) => {
+                    const priorityClass = getPriorityClass(incident.priority);
+                    html += `
+                        <div class="incident-detail ${priorityClass}" style="cursor: pointer;" onclick="selectIncident('${incident.incident_id}')">
+                            <div class="detail-label">📋 ${incident.incident_id}</div>
+                            <div class="detail-value">
+                                <strong>${incident.priority || 'Media'}</strong> | ${incident.zone || 'Sin zona'}<br>
+                                ${incident.equipment || 'Sin equipo'}<br>
+                                <small>${(incident.description || '').substring(0, 100)}...</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (workingIncidents.length > 0) {
+                html += `
+                    <div class="incident-card">
+                        <div class="incident-header">
+                            <h2>🔧 Trabajando (${workingIncidents.length})</h2>
+                        </div>
+                        <div class="incident-content">
+                `;
+                
+                workingIncidents.forEach((incident, index) => {
+                    const priorityClass = getPriorityClass(incident.priority);
+                    html += `
+                        <div class="incident-detail ${priorityClass}" style="cursor: pointer;" onclick="selectIncident('${incident.incident_id}')">
+                            <div class="detail-label">🔧 ${incident.incident_id}</div>
+                            <div class="detail-value">
+                                <strong>${incident.priority || 'Media'}</strong> | ${incident.zone || 'Sin zona'}<br>
+                                ${incident.equipment || 'Sin equipo'}<br>
+                                <small>${(incident.description || '').substring(0, 100)}...</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function selectIncident(incidentId) {
+            // Recargar la página con el incidente específico
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('id', incidentId);
+            window.location.href = currentUrl.toString();
+        }
+
+        function renderSingleIncident(incident) {
+            currentIncident = incident;
+            
+            const priorityClass = getPriorityClass(incident.priority);
+            const slaEnd = getSlaEndTime(incident);
+            const canRespond = (accessMode === 'full_access');
+            
+            // Determinar tipo de incidencia
+            const isWorking = incident.assigned_technician === currentTechnician?.email;
+            const isPending = !isWorking && incident.requires_response;
+            
+            document.getElementById('incidentCard').innerHTML = `
+                <div class="incident-card">
                     <div class="incident-header">
-                        <h2>📋 Mis Incidencias</h2>
+                        <h2>📋 ${incident.incident_id || 'Incidencia'}</h2>
+                        <div>${isWorking ? 'Trabajando en esta incidencia' : 'Requiere tu respuesta'}</div>
                     </div>
-                    <div style="padding: 25px;">
-                        ${totalPending > 0 ? `
-                        <div class="incident-section">
-                            <h3 style="color: #e74c3c; margin-bottom: 15px; font-size: 18px;">
-                                ⏰ Pendientes de Respuesta (${totalPending})
-                            </h3>
-                            <div class="incidents-grid">
-                                ${data.pending_incidents.map(incident => `
-                                    <div class="incident-item pending" onclick="loadSpecificIncident('${incident.id}')">
-                                        <div class="incident-item-header">
-                                            <strong>${incident.id}</strong>
-                                            <span class="priority-badge priority-${incident.priority?.toLowerCase() || 'media'}">${incident.priority || 'MEDIA'}</span>
-                                        </div>
-                                        <div class="incident-item-content">
-                                            <div>${incident.equipment || 'Equipo no especificado'}</div>
-                                            <div class="incident-meta">
-                                                📍 ${incident.zone || 'Sin zona'} • 
-                                                🎯 Nivel ${incident.assigned_level || 'inicial'} •
-                                                ⏰ ${incident.sla_end ? `SLA: ${formatSLATime(incident.sla_end)}` : 'Sin límite'}
-                                            </div>
-                                        </div>
-                                        <div class="incident-action">
-                                            <span class="action-required">⚡ REQUIERE RESPUESTA</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                    <div class="incident-content">
+                        <div class="incident-detail ${priorityClass}">
+                            <div class="detail-label">🚨 Prioridad</div>
+                            <div class="detail-value">${incident.priority || 'Media'}</div>
                         </div>
-                        ` : ''}
                         
-                        ${totalWorking > 0 ? `
-                        <div class="incident-section" ${totalPending > 0 ? 'style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #f8f9fa;"' : ''}>
-                            <h3 style="color: #28a745; margin-bottom: 15px; font-size: 18px;">
-                                🔧 Trabajando (${totalWorking})
-                            </h3>
-                            <div class="incidents-grid">
-                                ${data.working_incidents.map(incident => `
-                                    <div class="incident-item working" onclick="loadSpecificIncident('${incident.id}')">
-                                        <div class="incident-item-header">
-                                            <strong>${incident.id}</strong>
-                                            <span class="priority-badge priority-${incident.priority?.toLowerCase() || 'media'}">${incident.priority || 'MEDIA'}</span>
-                                        </div>
-                                        <div class="incident-item-content">
-                                            <div>${incident.equipment || 'Equipo no especificado'}</div>
-                                            <div class="incident-meta">
-                                                📍 ${incident.zone || 'Sin zona'} • 
-                                                📅 Asignada: ${incident.assigned_date ? new Date(incident.assigned_date).toLocaleDateString() : 'Hoy'} •
-                                                📊 ${incident.status || 'En proceso'}
-                                            </div>
-                                        </div>
-                                        <div class="incident-action">
-                                            <span class="working-status">✅ ASIGNADA - Puedes solicitar ayuda si necesario</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                        <div class="incident-detail">
+                            <div class="detail-label">📍 Zona</div>
+                            <div class="detail-value">${incident.zone || 'No especificada'}</div>
                         </div>
-                        ` : ''}
+                        
+                        <div class="incident-detail">
+                            <div class="detail-label">🔧 Equipo</div>
+                            <div class="detail-value">${incident.equipment || 'No especificado'}</div>
+                        </div>
+                        
+                        <div class="incident-detail">
+                            <div class="detail-label">📝 Descripción</div>
+                            <div class="detail-value">${incident.description || 'Sin descripción disponible'}</div>
+                        </div>
+                        
+                        ${renderActionButtons(isWorking, isPending, canRespond)}
+                    </div>
+                </div>
+            `;
+            
+            // Iniciar timer SLA si hay tiempo límite
+            if (slaEnd) {
+                startSlaTimer(slaEnd);
+            }
+        }
+
+        function renderActionButtons(isWorking, isPending, canRespond) {
+            if (isWorking) {
+                // Ya está trabajando - solo puede pedir ayuda
+                return `
+                    <div class="action-buttons">
+                        <button class="action-btn btn-help ${canRespond ? '' : 'locked'}" 
+                                onclick="handleAction('ayuda')">
+                            ${canRespond ? '🆘' : '🔐'} Solicitar Ayuda
+                        </button>
                     </div>
                 `;
-            }
-
-            incidentCard.style.display = 'block';
-        }
-
-        function loadSpecificIncident(incidentId) {
-            window.location.href = `/tecnico?id=${incidentId}&tech=${currentTechnician}`;
-        }
-
-        function showTechnicianDashboard() {
-            if (currentTechnician && isAuthenticated) {
-                loadTechnicianDashboard(currentTechnician);
+            } else if (isPending) {
+                // Pendiente de respuesta - todas las opciones
+                return `
+                    <div class="action-buttons">
+                        <button class="action-btn btn-accept ${canRespond ? '' : 'locked'}" 
+                                onclick="handleAction('acepto')">
+                            ${canRespond ? '✅' : '🔐'} Acepto
+                        </button>
+                        <button class="action-btn btn-reject ${canRespond ? '' : 'locked'}" 
+                                onclick="handleAction('rechazo')">
+                            ${canRespond ? '❌' : '🔐'} Rechazo
+                        </button>
+                        <button class="action-btn btn-help ${canRespond ? '' : 'locked'}" 
+                                onclick="handleAction('ayuda')">
+                            ${canRespond ? '🆘' : '🔐'} Solicitar Ayuda
+                        </button>
+                    </div>
+                `;
             } else {
-                showTechnicianLogin();
+                return '<p style="text-align: center; color: #7f8c8d; margin-top: 20px;">Esta incidencia no requiere acción por tu parte.</p>';
             }
         }
 
-        // === UTILIDADES ===
-        function formatSLATime(slaEndDate) {
-            const now = new Date();
-            const endDate = new Date(slaEndDate);
-            const timeLeft = endDate - now;
+        function renderWorkingIncident(incident) {
+            renderSingleIncident(incident);
+        }
+
+        // === SLA TIMER ===
+        function startSlaTimer(endTime) {
+            const timerElement = document.getElementById('slaTimer');
+            const timeDisplay = document.getElementById('slaTimeDisplay');
             
-            if (timeLeft <= 0) {
-                return 'VENCIDO';
+            if (!endTime) return;
+            
+            timerElement.style.display = 'block';
+            
+            function updateTimer() {
+                const now = new Date();
+                const end = new Date(endTime);
+                const diff = end - now;
+                
+                if (diff <= 0) {
+                    timeDisplay.textContent = '00:00';
+                    timeDisplay.className = 'sla-time sla-critical';
+                    clearInterval(slaInterval);
+                    return;
+                }
+                
+                const minutes = Math.floor(diff / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (minutes < 5) {
+                    timeDisplay.className = 'sla-time sla-critical';
+                } else if (minutes < 15) {
+                    timeDisplay.className = 'sla-time sla-warning';
+                } else {
+                    timeDisplay.className = 'sla-time sla-normal';
+                }
             }
             
-            const totalMinutes = Math.floor(timeLeft / (1000 * 60));
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
+            updateTimer();
+            slaInterval = setInterval(updateTimer, 1000);
+        }
+
+        // === MANEJO DE ACCIONES ===
+        function handleAction(action) {
+            if (accessMode !== 'full_access') {
+                // Requiere PIN
+                pendingAction = action;
+                showPINModal('action');
+                return;
+            }
             
-            if (hours > 0) {
-                return `${hours}h ${minutes}m`;
+            // Ya autenticado, proceder
+            if (action === 'acepto') {
+                confirmAction();
             } else {
-                return `${minutes}m`;
+                showReasonModal(action);
             }
         }
 
-        function formatReason(reason) {
-            const reasons = {
-                'ocupado_otra': 'Ocupado con otra incidencia',
-                'fuera_especialidad': 'Fuera de especialidad',
-                'no_disponible': 'No disponible',
-                'falta_herramientas': 'Faltan herramientas/repuestos',
-                'ubicacion_lejos': 'Muy lejos de ubicación',
-                'sobrecarga_trabajo': 'Sobrecarga de trabajo',
-                'apoyo_tecnico': 'Necesita apoyo técnico',
-                'consulta_supervisor': 'Consulta con supervisor',
-                'herramientas_especiales': 'Herramientas especiales',
-                'procedimiento_dudas': 'Dudas sobre procedimiento',
-                'seguridad_riesgo': 'Problema de seguridad',
-                'repuestos_urgentes': 'Repuestos urgentes'
-            };
-
-            return reasons[reason] || reason;
+        // === MODAL DE MOTIVOS ===
+        function showReasonModal(action) {
+            pendingAction = action;
+            selectedReason = null;
+            
+            const modal = document.getElementById('reasonModal');
+            const title = document.getElementById('modalTitle');
+            const options = document.getElementById('reasonOptions');
+            const confirmBtn = document.getElementById('confirmBtn');
+            
+            // Configurar título y motivos según la acción
+            let reasons = [];
+            switch(action) {
+                case 'rechazo':
+                    title.textContent = '❌ Motivo del Rechazo';
+                    reasons = rejectReasons;
+                    confirmBtn.textContent = 'Rechazar';
+                    break;
+                    
+                case 'ayuda':
+                    title.textContent = '🆘 Tipo de Ayuda Requerida';
+                    reasons = helpReasons;
+                    confirmBtn.textContent = 'Solicitar Ayuda';
+                    break;
+            }
+            
+            // Renderizar opciones de motivos
+            options.innerHTML = reasons.map(reason => `
+                <div class="reason-option" onclick="selectReason('${reason.id}')">
+                    <div class="reason-icon">${reason.icon}</div>
+                    <div class="reason-text">
+                        <div class="reason-title">${reason.title}</div>
+                        <div class="reason-description">${reason.description}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            confirmBtn.disabled = true;
+            modal.classList.add('active');
         }
 
-        function showLoading(message = 'Cargando...') {
-            document.getElementById('loadingMessage').textContent = message;
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        function showError(message) {
-            alert('❌ ' + message);
-        }
-
-        function showPINError(message) {
-            const errorDiv = document.getElementById('pinError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => errorDiv.style.display = 'none', 5000);
-        }
-
-        function showLoginError(message) {
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => errorDiv.style.display = 'none', 5000);
-        }
-
-        function closePINModal() {
-            const modal = document.getElementById('pinModal');
-            if (modal) modal.remove();
+        function selectReason(reasonId) {
+            selectedReason = reasonId;
+            
+            // Actualizar UI
+            document.querySelectorAll('.reason-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            event.currentTarget.classList.add('selected');
+            document.getElementById('confirmBtn').disabled = false;
         }
 
         function closeReasonModal() {
-            const modal = document.getElementById('reasonModal');
-            if (modal) modal.remove();
+            document.getElementById('reasonModal').classList.remove('active');
+            pendingAction = null;
             selectedReason = null;
         }
 
-        // Permitir Enter en campos de login
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('technicianPin').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') verifyTechnicianLogin();
-            });
+        // === CONFIRMAR ACCIÓN ===
+        async function confirmAction() {
+            if (!pendingAction || !currentIncident) return;
+            
+            const confirmBtn = document.getElementById('confirmBtn');
+            const originalText = confirmBtn?.textContent || 'Confirmar';
+            
+            try {
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = '🔄 Procesando...';
+                }
+                
+                const response = await fetch('/api/webhook-respuesta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: pendingAction,
+                        incident_id: currentIncident.incident_id,
+                        technician_email: currentTechnician.email,
+                        reason: selectedReason,
+                        escalation_level: getCurrentEscalationLevel()
+                    })
+                });
+
+                const data = await response.json();
+                console.log('📤 Respuesta enviada:', data);
+
+                if (data.status === 'success') {
+                    closeReasonModal();
+                    showSuccessAndReload(data);
+                } else {
+                    throw new Error(data.message || 'Error procesando respuesta');
+                }
+
+            } catch (error) {
+                console.error('Error enviando respuesta:', error);
+                showError('Error de conexión. Inténtalo más tarde.');
+            } finally {
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = originalText;
+                }
+            }
+        }
+
+        function showSuccessAndReload(data) {
+            const messages = {
+                'acepto': '✅ Incidencia aceptada correctamente. ¡Puedes empezar a trabajar!',
+                'rechazo': '❌ Incidencia rechazada. Se escalará automáticamente.',
+                'ayuda': '🆘 Ayuda solicitada. Un supervisor se pondrá en contacto contigo.'
+            };
+            
+            // Mostrar mensaje de éxito
+            document.getElementById('incidentCard').innerHTML = `
+                <div class="incident-card">
+                    <div class="incident-header" style="background: linear-gradient(45deg, #27ae60, #2ecc71);">
+                        <h2>✅ Acción Completada</h2>
+                    </div>
+                    <div class="incident-content" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">
+                            ${pendingAction === 'acepto' ? '✅' : pendingAction === 'rechazo' ? '❌' : '🆘'}
+                        </div>
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">
+                            ${messages[pendingAction]}
+                        </h3>
+                        <p style="color: #7f8c8d; margin-bottom: 25px;">
+                            ${data.next_step || 'La acción se ha procesado correctamente.'}
+                        </p>
+                        <button class="action-btn btn-accept" onclick="location.reload()" style="max-width: 200px; margin: 0 auto;">
+                            🔄 Actualizar Dashboard
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Ocultar SLA timer
+            document.getElementById('slaTimer').style.display = 'none';
+            if (slaInterval) {
+                clearInterval(slaInterval);
+            }
+        }
+
+        // === FUNCIONES AUXILIARES ===
+        function getCurrentEscalationLevel() {
+            if (!currentIncident) return 0;
+            
+            if (currentIncident.l0_technician === currentTechnician?.email) return 0;
+            if (currentIncident.l1_technician === currentTechnician?.email) return 1;
+            if (currentIncident.l2_technicians_notified?.includes?.(currentTechnician?.email)) return 2;
+            
+            return 0;
+        }
+
+        function getSlaEndTime(incident) {
+            if (incident.l0_technician === currentTechnician?.email) {
+                return incident.sla_l0_end;
+            }
+            if (incident.l1_technician === currentTechnician?.email) {
+                return incident.sla_l1_backup_end;
+            }
+            if (incident.l2_technicians_notified?.includes?.(currentTechnician?.email)) {
+                return incident.sla_l2_equipo_end;
+            }
+            return null;
+        }
+
+        function getPriorityClass(priority) {
+            switch(priority?.toLowerCase()) {
+                case 'crítica': case 'critical': return 'priority-critical';
+                case 'alta': case 'high': return 'priority-high';
+                case 'media': case 'medium': return 'priority-medium';
+                case 'baja': case 'low': return 'priority-low';
+                default: return 'priority-medium';
+            }
+        }
+
+        function showLoading(message = 'Cargando...') {
+            document.getElementById('incidentCard').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            // Se oculta cuando se renderiza contenido
+        }
+
+        function showError(message, element) {
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            } else {
+                console.error('Error:', message);
+            }
+        }
+
+        function hideMessage(element) {
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+
+        // === EVENTOS DE TECLADO ===
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
+                const emailInput = document.getElementById('emailInput');
+                if (emailInput.value.trim()) {
+                    loginQuickAccess();
+                }
+            }
+            
+            if (e.key === 'Escape') {
+                closeReasonModal();
+                closePINModal();
+            }
+        });
+
+        // Cerrar modales al hacer click fuera
+        document.getElementById('reasonModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReasonModal();
+            }
+        });
+
+        document.getElementById('pinModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePINModal();
+            }
         });
     </script>
 </body>
