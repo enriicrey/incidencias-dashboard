@@ -22,6 +22,7 @@ export default async function handler(req, res) {
             action,                    // Acción a realizar
             incident_id,               // ID de la incidencia
             technician_email,          // Email del técnico
+            technician_name,
             reason,                    // Motivo específico
             pin,                       // PIN del técnico
             escalation_level,          // Nivel de escalado (0, 1, 2)
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
             action: action,
             incident_id: incident_id,
             technician_email: technician_email,
+            technician_name: technician_name || technician_email.split('@')[0],
             reason: reason || null,
             pin: pin,
             escalation_level: parseInt(escalation_level) || 0,
