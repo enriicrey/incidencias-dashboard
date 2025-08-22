@@ -78,7 +78,7 @@ export default async function handler(req, res) {
             body: JSON.stringify(makePayload)
         });
         
-        console.log('🔥 Make Response Status:', makeResponse.status);
+        console.log('📥 Make Response Status:', makeResponse.status);
         
         if (!makeResponse.ok) {
             throw new Error(`Error en Make: ${makeResponse.status}`);
@@ -113,235 +113,112 @@ export default async function handler(req, res) {
         return res.status(500).json({
             status: 'error',
             message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Error procesando acción',
-            action: req.body?.action || req.query?.action || 'unknown'
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Error procesando respuesta',
+            action: req.body?.action || 'unknown'
         });
     }
 }
 
-// Función para generar respuestas en desarrollo
+// Respuestas de desarrollo
 function getDevResponse(action, payload) {
-    switch(action) {
-        case 'get_assigned_incidents':
-            return {
-                status: 'success',
-                incidents: [
-                    {
-                        incident_id: 'INC-20/08-00045-CRÍTICA-ZNA-MT12',
-                        priority: 'Crítica',
-                        zone: 'Zona Norte - MT12',
-                        equipment: 'Motor Principal #3',
-                        description: 'Vibración anormal detectada en motor principal. Posible desalineación que requiere inspección inmediata.',
-                        l0_technician: payload.technician_email,
-                        sla_l0_end: new Date(Date.now() + 15 * 60000).toISOString(), // 15 min
-                        requires_response: true,
-                        assigned_level: 'inicial'
-                    },
-                    {
-                        incident_id: 'INC-20/08-00046-ALTA-ZSU-EL05',
-                        priority: 'Alta',
-                        zone: 'Zona Sur - EL05',
-                        equipment: 'Panel Eléctrico A',
-                        description: 'Caída de tensión intermitente en línea principal que afecta la producción.',
-                        assigned_technician: payload.technician_email,
-                        can_request_help: true,
-                        type: 'working'
-                    },
-                    {
-                        incident_id: 'INC-20/08-00047-MEDIA-ZCE-MEC02',
-                        priority: 'Media',
-                        zone: 'Zona Centro - MEC02',
-                        equipment: 'Bomba Hidráulica B',
-                        description: 'Ruido anormal en bomba hidráulica durante operación.',
-                        l1_technician: payload.technician_email,
-                        sla_l1_backup_end: new Date(Date.now() + 30 * 60000).toISOString(), // 30 min
-                        requires_response: true,
-                        assigned_level: 'backup'
-                    }
-                ],
-                technician: {
-                    email: payload.technician_email,
-                    name: payload.technician_email.split('@')[0],
-                    department: 'Mantenimiento'
+    const responses = {
+        'get_assigned_incidents': {
+            status: 'success',
+            message: 'Incidencias cargadas correctamente',
+            technician: {
+                name: payload.technician_name,
+                email: payload.technician_email,
+                department: 'Mantenimiento'
+            },
+            incidents: [
+                {
+                    incident_id: 'INC-20/08-00045',
+                    equipment: 'Transportadora MT-12',
+                    zone: 'Zona A - Planta Principal',
+                    description: 'Falla en motor principal, vibración excesiva y ruido anormal durante operación',
+                    priority: 'CRÍTICA',
+                    l0_technician: payload.technician_email,
+                    sla_l0_end: new Date(Date.now() + 25 * 60 * 1000).toISOString(), // 25 min desde ahora
+                    assigned_technician: null,
+                    telefono_encargado: '+34666111222',
+                    telefono_supervisor: '+34666333444'
                 },
-                timestamp: new Date().toISOString()
-            };
-
-        case 'validate_technician_pin':
-            // Simular validación de PIN de técnico
-            const validTechnicians = {
-                'jorge@empresa.com': '1234',
-                'maria@empresa.com': '5678',
-                'carlos@empresa.com': '9012',
-                'ana@empresa.com': '3456'
-            };
-            
-            const isValidPin = validTechnicians[payload.technician_email] === payload.pin;
-            
-            return {
-                status: isValidPin ? 'success' : 'error',
-                message: isValidPin ? 'PIN válido' : 'PIN incorrecto',
-                technician: isValidPin ? {
-                    email: payload.technician_email,
-                    name: payload.technician_email.split('@')[0],
-                    department: 'Mantenimiento',
-                    level: 'Técnico',
-                    pin_verified: true,
-                    verified_at: new Date().toISOString()
-                } : null,
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'acepto':
-            return {
-                status: 'success',
-                message: `Incidencia ${payload.incident_id} aceptada correctamente`,
-                action_taken: 'accepted',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                escalation_level: payload.escalation_level,
-                next_step: 'Puedes empezar a trabajar en ella.',
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'rechazo':
-            const reasonText = getReasonText(payload.reason);
-            return {
-                status: 'success',
-                message: `Incidencia ${payload.incident_id} rechazada`,
-                action_taken: 'rejected',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                reason: payload.reason,
-                reason_text: reasonText,
-                escalation_level: payload.escalation_level,
-                next_step: 'La incidencia se escalará automáticamente al siguiente nivel disponible.',
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'ayuda':
-            const helpReasonText = getReasonText(payload.reason);
-            return {
-                status: 'success',
-                message: `Ayuda solicitada para ${payload.incident_id}`,
-                action_taken: 'help_requested',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                reason: payload.reason,
-                reason_text: helpReasonText,
-                escalation_level: payload.escalation_level,
-                next_step: 'El escalado se ha pausado. Un supervisor se pondrá en contacto contigo.',
-                escalation_paused: true,
-                timestamp: new Date().toISOString()
-            };
-            
-        default:
-            return {
-                status: 'error',
-                message: `Acción "${action}" no reconocida`,
-                available_actions: [
-                    'acepto', 'rechazo', 'ayuda', 
-                    'get_assigned_incidents', 'validate_technician_pin'
-                ]
-            };
-    }
-}
-
-// Función para generar respuestas de éxito en producción
-function getSuccessResponse(action, payload) {
-    switch(action) {
-        case 'validate_technician_pin':
-            return {
-                status: 'success',
-                message: 'PIN verificado correctamente',
-                technician: {
-                    email: payload.technician_email,
-                    name: payload.technician_email.split('@')[0],
-                    pin_verified: true,
-                    verified_at: new Date().toISOString()
-                },
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'acepto':
-            return {
-                status: 'success',
-                message: `Incidencia aceptada correctamente`,
-                action_taken: 'accepted',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                next_step: 'Puedes empezar a trabajar en la incidencia.',
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'rechazo':
-            return {
-                status: 'success',
-                message: `Incidencia rechazada`,
-                action_taken: 'rejected',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                reason: payload.reason,
-                reason_text: getReasonText(payload.reason),
-                next_step: 'La incidencia se escalará automáticamente.',
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'ayuda':
-            return {
-                status: 'success',
-                message: `Solicitud de ayuda enviada`,
-                action_taken: 'help_requested',
-                incident_id: payload.incident_id,
-                technician: payload.technician_email,
-                reason: payload.reason,
-                reason_text: getReasonText(payload.reason),
-                next_step: 'Un supervisor se pondrá en contacto contigo.',
-                escalation_paused: true,
-                timestamp: new Date().toISOString()
-            };
-            
-        case 'get_assigned_incidents':
-            return {
-                status: 'success',
-                incidents: [],
-                message: 'No hay incidencias asignadas en este momento',
-                technician: {
-                    email: payload.technician_email,
-                    name: payload.technician_email.split('@')[0]
-                },
-                timestamp: new Date().toISOString()
-            };
-            
-        default:
-            return {
-                status: 'success',
-                message: `Acción ${action} procesada correctamente`,
-                action: action,
-                timestamp: new Date().toISOString()
-            };
-    }
-}
-
-// Función auxiliar para obtener texto legible de motivos
-function getReasonText(reason) {
-    const reasons = {
-        // Motivos de rechazo
-        'ocupado_otra': 'Ocupado con otra incidencia',
-        'fuera_especialidad': 'Fuera de mi especialidad',
-        'no_disponible': 'No disponible ahora',
-        'falta_herramientas': 'Faltan herramientas/repuestos',
-        'ubicacion_lejos': 'Muy lejos de mi ubicación',
-        'sobrecarga_trabajo': 'Sobrecarga de trabajo',
-        
-        // Motivos de ayuda
-        'apoyo_tecnico': 'Necesito apoyo técnico',
-        'consulta_supervisor': 'Consulta con supervisor',
-        'herramientas_especiales': 'Herramientas especiales',
-        'procedimiento_dudas': 'Dudas sobre procedimiento',
-        'seguridad_riesgo': 'Problema de seguridad',
-        'repuestos_urgentes': 'Repuestos urgentes'
+                {
+                    incident_id: 'INC-20/08-00046',
+                    equipment: 'Compresora CP-08',
+                    zone: 'Zona B - Mantenimiento',
+                    description: 'Pérdida de presión en sistema neumático',
+                    priority: 'ALTA',
+                    l1_technician: payload.technician_email,
+                    sla_l1_backup_end: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min desde ahora
+                    assigned_technician: null,
+                    telefono_encargado: '+34666555666',
+                    telefono_supervisor: '+34666777888'
+                }
+            ]
+        },
+        'validate_technician_pin': {
+            status: payload.pin === '1234' ? 'success' : 'error',
+            message: payload.pin === '1234' ? 'PIN correcto' : 'PIN incorrecto',
+            technician: payload.pin === '1234' ? {
+                name: payload.technician_name,
+                email: payload.technician_email,
+                department: 'Mantenimiento',
+                level: 'Técnico Senior'
+            } : null
+        },
+        'acepto': {
+            status: 'success',
+            message: 'Incidencia aceptada correctamente',
+            next_step: 'Dirígete a la zona indicada y comienza el diagnóstico. Recuerda reportar el progreso.',
+            incident_id: payload.incident_id,
+            assigned_to: payload.technician_email,
+            timestamp: payload.timestamp
+        },
+        'rechazo': {
+            status: 'success',
+            message: 'Incidencia rechazada correctamente',
+            next_step: 'La incidencia se ha escalado automáticamente al siguiente nivel disponible.',
+            incident_id: payload.incident_id,
+            reason: payload.reason,
+            escalated: true,
+            timestamp: payload.timestamp
+        },
+        'ayuda': {
+            status: 'success',
+            message: 'Solicitud de ayuda enviada',
+            next_step: 'Un supervisor o técnico especializado se pondrá en contacto contigo pronto.',
+            incident_id: payload.incident_id,
+            help_type: payload.reason,
+            supervisor_notified: true,
+            timestamp: payload.timestamp
+        }
     };
     
-    return reasons[reason] || reason || 'Sin motivo especificado';
+    return responses[action] || {
+        status: 'success',
+        message: `Acción ${action} procesada en modo desarrollo`,
+        action: action,
+        timestamp: payload.timestamp
+    };
+}
+
+// Respuestas de éxito generales
+function getSuccessResponse(action, payload) {
+    const messages = {
+        'acepto': 'Incidencia aceptada correctamente',
+        'rechazo': 'Incidencia rechazada y escalada',
+        'ayuda': 'Solicitud de ayuda enviada al supervisor',
+        'get_assigned_incidents': 'Incidencias obtenidas correctamente',
+        'validate_technician_pin': 'PIN validado correctamente'
+    };
+    
+    return {
+        status: 'success',
+        message: messages[action] || `Acción ${action} procesada correctamente`,
+        action: action,
+        incident_id: payload.incident_id,
+        technician: payload.technician_email,
+        timestamp: payload.timestamp
+    };
 }
