@@ -177,25 +177,56 @@ function getDevResponse(action, payload) {
         case 'get_assigned_incidents':
             return {
                 status: 'success',
-                message: 'Incidencias asignadas obtenidas',
+                message: 'Incidencias del técnico obtenidas',
                 incidents: [
                     {
                         id: 'INC-20/08-00045',
                         priority: '🔴 CRÍTICA',
                         equipment: 'Sistema Hidráulico Central',
                         zone: 'Zona Este',
-                        status: 'En Proceso',
-                        escalation_level: 2,
-                        created_date: '2024-08-20T10:30:00Z'
+                        status: 'Escalada L0',
+                        escalation_level: 0,
+                        created_date: '2024-08-20T10:30:00Z',
+                        assigned_technician: null, // No asignada aún
+                        l0_technician: payload.technician_email, // Técnico L0 debe responder
+                        l1_technician: 'maria@empresa.com',
+                        l2_technicians_notified: 'carlos@empresa.com, pedro@empresa.com',
+                        sla_l0_end: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min
+                        sla_l1_backup_end: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                        sla_l2_equipo_end: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                        description: 'Presión irregular en sistema hidráulico'
                     },
                     {
                         id: 'INC-20/08-00046',
                         priority: '🟡 MEDIA',
                         equipment: 'Sensor Temperatura #7',
                         zone: 'Zona Norte',
-                        status: 'Asignada',
+                        status: 'En Proceso',
                         escalation_level: 0,
-                        created_date: '2024-08-20T12:15:00Z'
+                        created_date: '2024-08-20T08:15:00Z',
+                        assigned_technician: payload.technician_email, // YA asignada - trabajando
+                        l0_technician: payload.technician_email,
+                        l1_technician: null,
+                        l2_technicians_notified: null,
+                        assigned_date: '2024-08-20T09:00:00Z',
+                        description: 'Calibración de sensor de temperatura'
+                    },
+                    {
+                        id: 'INC-20/08-00047',
+                        priority: '🟠 ALTA',
+                        equipment: 'Motor Banda Transportadora',
+                        zone: 'Zona Central',
+                        status: 'Escalada L2',
+                        escalation_level: 2,
+                        created_date: '2024-08-20T11:00:00Z',
+                        assigned_technician: null, // No asignada
+                        l0_technician: 'otro@empresa.com',
+                        l1_technician: 'otro2@empresa.com',
+                        l2_technicians_notified: `${payload.technician_email}, carlos@empresa.com, pedro@empresa.com`, // Técnico en L2
+                        sla_l0_end: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // Vencido
+                        sla_l1_backup_end: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // Vencido
+                        sla_l2_equipo_end: new Date(Date.now() + 20 * 60 * 1000).toISOString(), // 20 min
+                        description: 'Sobrecalentamiento en motor principal'
                     }
                 ],
                 technician: {
