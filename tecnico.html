@@ -786,9 +786,97 @@
             cursor: not-allowed;
         }
 
-        .btn:disabled:hover {
-            transform: none;
-            box-shadow: none;
+        /* === INCIDENT DASHBOARD GRID === */
+        .incidents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .incident-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .incident-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .incident-item.pending {
+            border-left: 5px solid #e74c3c;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+
+        .incident-item.working {
+            border-left: 5px solid #28a745;
+            background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+        }
+
+        .incident-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .incident-item-header strong {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .incident-item-content {
+            margin-bottom: 12px;
+        }
+
+        .incident-item-content > div:first-child {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .incident-meta {
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        .incident-action {
+            padding-top: 10px;
+            border-top: 1px solid #f8f9fa;
+        }
+
+        .action-required {
+            color: #e74c3c;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .working-status {
+            color: #28a745;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .incident-section {
+            margin-bottom: 25px;
+        }
+
+        .incident-section h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
@@ -1469,7 +1557,9 @@
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    renderTechnicianDashboard(data.incidents || [], email);
+                    // Clasificar incidencias en frontend
+                    const classifiedIncidents = classifyIncidents(data.incidents || [], email);
+                    renderTechnicianDashboard(classifiedIncidents, email);
                     document.getElementById('mainContainer').style.display = 'block';
                 } else {
                     showError(data.message || 'Error cargando dashboard');
@@ -1483,34 +1573,138 @@
             }
         }
 
-        function renderTechnicianDashboard(incidents, email) {
+        // === CLASIFICAR INCIDENCIAS EN FRONTEND ===
+        function classifyIncidents(incidents, technicianEmail) {
+            const pending = [];
+            const working = [];
+
+            incidents.forEach(incident => {
+                if (incident.assigned_technician === technicianEmail) {
+                    // Ya asignada - Está trabajando en ella
+                    working.push({
+                        ...incident,
+                        type: 'working',
+                        can_request_help: true,
+                        requires_response: false
+                    });
+                } else {
+                    // Pendiente de respuesta - Determinar nivel
+                    let assignedLevel = 'desconocido';
+                    let slaEnd = null;
+
+                    if (incident.l0_technician === technicianEmail) {
+                        assignedLevel = 'inicial';
+                        slaEnd = incident.sla_l0_end;
+                    } else if (incident.l1_technician === technicianEmail) {
+                        assignedLevel = 'backup';
+                        slaEnd = incident.sla_l1_backup_end;
+                    } else if (incident.l2_technicians_notified?.includes?.(technicianEmail) || 
+                               (typeof incident.l2_technicians_notified === 'string' && 
+                                incident.l2_technicians_notified.includes(technicianEmail))) {
+                        assignedLevel = 'equipo';
+                        slaEnd = incident.sla_l2_equipo_end;
+                    }
+
+                    pending.push({
+                        ...incident,
+                        type: 'pending',
+                        assigned_level: assignedLevel,
+                        sla_end: slaEnd,
+                        requires_response: true,
+                        can_request_help: false
+                    });
+                }
+            });
+
+            return {
+                pending_incidents: pending,
+                working_incidents: working,
+                technician: {
+                    email: technicianEmail,
+                    name: technicianEmail.split('@')[0]
+                }
+            };
+        }
+
+        function renderTechnicianDashboard(data, email) {
+            const totalPending = data.pending_incidents?.length || 0;
+            const totalWorking = data.working_incidents?.length || 0;
+            
             document.getElementById('dashboardTitle').textContent = `🔧 Dashboard de ${email.split('@')[0]}`;
-            document.getElementById('dashboardSubtitle').textContent = `${incidents.length} incidencia(s) asignada(s)`;
+            document.getElementById('dashboardSubtitle').textContent = `${totalPending} pendiente(s) • ${totalWorking} trabajando`;
 
             const incidentCard = document.getElementById('incidentCard');
             
-            if (incidents.length === 0) {
+            if (totalPending === 0 && totalWorking === 0) {
                 incidentCard.innerHTML = `
                     <div style="padding: 40px; text-align: center;">
-                        <h3>✅ Sin Incidencias Asignadas</h3>
-                        <p>No tienes incidencias pendientes en este momento</p>
+                        <h3>✅ Sin Incidencias</h3>
+                        <p>No tienes incidencias pendientes ni asignadas en este momento</p>
                     </div>
                 `;
             } else {
                 incidentCard.innerHTML = `
                     <div class="incident-header">
-                        <h2>📋 Mis Incidencias Asignadas</h2>
+                        <h2>📋 Mis Incidencias</h2>
                     </div>
                     <div style="padding: 25px;">
-                        ${incidents.map(incident => `
-                            <div class="detail-item" style="margin-bottom: 15px; cursor: pointer;" onclick="loadSpecificIncident('${incident.id}')">
-                                <strong>${incident.id} - ${incident.priority || 'MEDIA'}</strong>
-                                <span>${incident.equipment || 'Equipo no especificado'}</span>
-                                <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
-                                    ${incident.zone || 'Sin zona'} • ${incident.status || 'Activa'}
-                                </div>
+                        ${totalPending > 0 ? `
+                        <div class="incident-section">
+                            <h3 style="color: #e74c3c; margin-bottom: 15px; font-size: 18px;">
+                                ⏰ Pendientes de Respuesta (${totalPending})
+                            </h3>
+                            <div class="incidents-grid">
+                                ${data.pending_incidents.map(incident => `
+                                    <div class="incident-item pending" onclick="loadSpecificIncident('${incident.id}')">
+                                        <div class="incident-item-header">
+                                            <strong>${incident.id}</strong>
+                                            <span class="priority-badge priority-${incident.priority?.toLowerCase() || 'media'}">${incident.priority || 'MEDIA'}</span>
+                                        </div>
+                                        <div class="incident-item-content">
+                                            <div>${incident.equipment || 'Equipo no especificado'}</div>
+                                            <div class="incident-meta">
+                                                📍 ${incident.zone || 'Sin zona'} • 
+                                                🎯 Nivel ${incident.assigned_level || 'inicial'} •
+                                                ⏰ ${incident.sla_end ? `SLA: ${formatSLATime(incident.sla_end)}` : 'Sin límite'}
+                                            </div>
+                                        </div>
+                                        <div class="incident-action">
+                                            <span class="action-required">⚡ REQUIERE RESPUESTA</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
+                        </div>
+                        ` : ''}
+                        
+                        ${totalWorking > 0 ? `
+                        <div class="incident-section" ${totalPending > 0 ? 'style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #f8f9fa;"' : ''}>
+                            <h3 style="color: #28a745; margin-bottom: 15px; font-size: 18px;">
+                                🔧 Trabajando (${totalWorking})
+                            </h3>
+                            <div class="incidents-grid">
+                                ${data.working_incidents.map(incident => `
+                                    <div class="incident-item working" onclick="loadSpecificIncident('${incident.id}')">
+                                        <div class="incident-item-header">
+                                            <strong>${incident.id}</strong>
+                                            <span class="priority-badge priority-${incident.priority?.toLowerCase() || 'media'}">${incident.priority || 'MEDIA'}</span>
+                                        </div>
+                                        <div class="incident-item-content">
+                                            <div>${incident.equipment || 'Equipo no especificado'}</div>
+                                            <div class="incident-meta">
+                                                📍 ${incident.zone || 'Sin zona'} • 
+                                                📅 Asignada: ${incident.assigned_date ? new Date(incident.assigned_date).toLocaleDateString() : 'Hoy'} •
+                                                📊 ${incident.status || 'En proceso'}
+                                            </div>
+                                        </div>
+                                        <div class="incident-action">
+                                            <span class="working-status">✅ ASIGNADA - Puedes solicitar ayuda si necesario</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -1531,6 +1725,26 @@
         }
 
         // === UTILIDADES ===
+        function formatSLATime(slaEndDate) {
+            const now = new Date();
+            const endDate = new Date(slaEndDate);
+            const timeLeft = endDate - now;
+            
+            if (timeLeft <= 0) {
+                return 'VENCIDO';
+            }
+            
+            const totalMinutes = Math.floor(timeLeft / (1000 * 60));
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
         function formatReason(reason) {
             const reasons = {
                 'ocupado_otra': 'Ocupado con otra incidencia',
