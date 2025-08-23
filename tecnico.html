@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📱 Dashboard Técnico</title>
+<title>🔧 Dashboard Técnico</title>
 <style>
 * {
 margin: 0;
@@ -18,402 +18,327 @@ min-height: 100vh;
 color: #333;
 }
 
-.container {
-max-width: 500px;
-margin: 0 auto;
-padding: 20px;
-min-height: 100vh;
-display: flex;
-flex-direction: column;
-}
-
-/* Login Screen */
-.login-container {
-background: white;
-border-radius: 16px;
-padding: 40px 30px;
-text-align: center;
-box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-margin-top: 50px;
-}
-
-.login-title {
-font-size: 24px;
-color: #2c3e50;
-margin-bottom: 10px;
-}
-
-.login-subtitle {
-color: #7f8c8d;
-margin-bottom: 30px;
-}
-
-.input-group {
-margin-bottom: 20px;
-text-align: left;
-}
-
-.input-label {
-display: block;
-margin-bottom: 8px;
-font-weight: 600;
-color: #34495e;
-}
-
-.input-field {
-width: 100%;
-padding: 15px;
-border: 2px solid #e9ecef;
-border-radius: 8px;
-font-size: 16px;
-transition: border-color 0.3s;
-}
-
-.input-field:focus {
-outline: none;
-border-color: #3498db;
-}
-
-.verify-btn {
-width: 100%;
-padding: 15px;
-background: linear-gradient(45deg, #3498db, #2980b9);
-color: white;
-border: none;
-border-radius: 8px;
-font-size: 16px;
-font-weight: 600;
-cursor: pointer;
-transition: transform 0.2s;
-margin-bottom: 10px;
-}
-
-.verify-btn:hover:not(:disabled) {
-transform: translateY(-2px);
-}
-
-.verify-btn:disabled {
-opacity: 0.6;
-cursor: not-allowed;
-}
-
-.quick-access-btn {
-width: 100%;
-padding: 12px;
-background: #f8f9fa;
-color: #6c757d;
-border: 2px solid #dee2e6;
-border-radius: 8px;
-font-size: 14px;
-cursor: pointer;
-transition: all 0.3s;
-}
-
-.quick-access-btn:hover {
-background: #e9ecef;
-border-color: #adb5bd;
-}
-
-.error-message {
-background: #fee;
-color: #c53030;
-padding: 12px;
-border-radius: 8px;
-margin-top: 15px;
-border: 1px solid #fed7d7;
-}
-
-.success-message {
-background: #f0fff4;
-color: #22543d;
-padding: 12px;
-border-radius: 8px;
-margin-top: 15px;
-border: 1px solid #c6f6d5;
-}
-
-/* Dashboard */
+/* Full Screen Layout like Supervisor */
 .main-container {
 display: none;
+min-height: 100vh;
+padding: 20px;
+max-width: 1400px;
+margin: 0 auto;
 }
 
 .dashboard-header {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-color: white;
-border-radius: 16px;
-padding: 25px;
-margin-bottom: 20px;
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(10px);
+border-radius: 20px;
+padding: 25px 40px;
+margin-bottom: 25px;
 text-align: center;
-box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+border: 1px solid rgba(255,255,255,0.2);
 }
 
 .dashboard-title {
-font-size: 22px;
-color: white;
+font-size: 28px;
+color: #1a237e;
 margin-bottom: 8px;
 font-weight: 700;
 }
 
 .dashboard-subtitle {
-color: rgba(255,255,255,0.9);
-font-size: 15px;
+color: #5c6bc0;
+font-size: 16px;
 font-weight: 500;
 }
 
-.refresh-info {
-background: linear-gradient(135deg, #e3f2fd, #f8f9ff);
-border: 1px solid #bbdefb;
-padding: 15px;
-border-radius: 12px;
-margin-bottom: 20px;
-text-align: center;
+/* Filters & Controls */
+.controls-bar {
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(10px);
+border-radius: 16px;
+padding: 20px;
+margin-bottom: 25px;
+box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 15px;
+}
+
+.filters-section {
+display: flex;
+gap: 15px;
+align-items: center;
+flex-wrap: wrap;
+}
+
+.filter-group {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.filter-label {
 font-size: 14px;
-color: #1976d2;
-box-shadow: 0 4px 12px rgba(25,118,210,0.1);
-}
-
-.refresh-btn {
-background: linear-gradient(135deg, #2196f3, #1976d2);
-color: white;
-border: none;
-padding: 8px 16px;
-border-radius: 8px;
-cursor: pointer;
-font-size: 12px;
 font-weight: 600;
-margin-left: 10px;
-transition: all 0.3s;
-box-shadow: 0 2px 8px rgba(33,150,243,0.3);
+color: #424242;
 }
 
-.refresh-btn:hover {
-transform: translateY(-1px);
-box-shadow: 0 4px 12px rgba(33,150,243,0.4);
+.filter-select {
+background: white;
+border: 2px solid #e0e0e0;
+border-radius: 8px;
+padding: 8px 12px;
+font-size: 14px;
+cursor: pointer;
+transition: all 0.3s;
+}
+
+.filter-select:focus {
+outline: none;
+border-color: #667eea;
 }
 
 .auth-status {
-background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-border: 1px solid #ffd54f;
-padding: 16px;
+padding: 12px 20px;
 border-radius: 12px;
-margin-bottom: 20px;
-text-align: center;
-box-shadow: 0 4px 12px rgba(255,193,7,0.2);
+font-size: 14px;
+font-weight: 600;
 }
 
 .auth-status.authenticated {
-background: linear-gradient(135deg, #d4edda, #c3e6cb);
-border-color: #a5d6a7;
-color: #155724;
-box-shadow: 0 4px 12px rgba(76,175,80,0.2);
-}
-
-.auth-status.unauthenticated {
-background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-border-color: #ef5350;
-color: #721c24;
-box-shadow: 0 4px 12px rgba(244,67,54,0.2);
-}
-
-/* Incident Sections */
-.incidents-container {
-background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-border-radius: 16px;
-overflow: hidden;
-margin-bottom: 20px;
-box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-border: 1px solid rgba(102,126,234,0.1);
-}
-
-.section-header {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+background: linear-gradient(135deg, #4caf50, #388e3c);
 color: white;
-padding: 20px 25px;
-display: flex;
-align-items: center;
-justify-content: space-between;
 }
 
-.section-title {
-font-size: 16px;
-font-weight: 700;
-display: flex;
-align-items: center;
-gap: 10px;
+.auth-status.read-only {
+background: linear-gradient(135deg, #ff9800, #f57c00);
+color: white;
+}
+
+/* Stats Bar */
+.stats-bar {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 20px;
+margin-bottom: 25px;
+}
+
+.stat-card {
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(10px);
+border-radius: 16px;
+padding: 20px;
+text-align: center;
+box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+transition: transform 0.3s;
+}
+
+.stat-card:hover {
+transform: translateY(-2px);
+}
+
+.stat-number {
+font-size: 32px;
+font-weight: 800;
+margin-bottom: 5px;
+}
+
+.stat-number.pending { color: #ff9800; }
+.stat-number.working { color: #4caf50; }
+.stat-number.expired { color: #f44336; }
+
+.stat-label {
+font-size: 14px;
+color: #666;
+font-weight: 600;
+text-transform: uppercase;
 letter-spacing: 0.5px;
 }
 
-.section-count {
-background: rgba(255,255,255,0.2);
-color: white;
-padding: 6px 14px;
-border-radius: 20px;
-font-size: 13px;
-font-weight: 700;
-backdrop-filter: blur(10px);
+/* Incidents Grid */
+.incidents-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+gap: 25px;
 }
 
-.section-count.pending { 
-background: linear-gradient(135deg, #ff9800, #f57c00); 
-box-shadow: 0 2px 8px rgba(255,152,0,0.3);
+.incident-card {
+background: rgba(255,255,255,0.98);
+backdrop-filter: blur(10px);
+border-radius: 20px;
+padding: 30px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+border: 1px solid rgba(255,255,255,0.2);
+transition: all 0.3s ease;
+position: relative;
+overflow: hidden;
 }
-.section-count.working { 
-background: linear-gradient(135deg, #4caf50, #388e3c); 
-box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+
+.incident-card::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+height: 4px;
+background: linear-gradient(135deg, #667eea, #764ba2);
 }
-.section-count.expired { 
-background: linear-gradient(135deg, #f44336, #d32f2f); 
-box-shadow: 0 2px 8px rgba(244,67,54,0.3);
+
+.incident-card.pending::before {
+background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.incident-card.working::before {
+background: linear-gradient(135deg, #4caf50, #388e3c);
+}
+
+.incident-card.expired::before {
+background: linear-gradient(135deg, #f44336, #d32f2f);
 animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-0% { transform: scale(1); }
-50% { transform: scale(1.05); }
-100% { transform: scale(1); }
+0%, 100% { opacity: 1; }
+50% { opacity: 0.7; }
 }
 
-.section-content {
-padding: 0;
-background: white;
-}
-
-/* Incident Items */
-.incident-item {
-padding: 24px;
-border-bottom: 1px solid #f5f7fa;
-transition: all 0.3s ease;
-position: relative;
-}
-
-.incident-item:hover {
-background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-transform: translateY(-1px);
-box-shadow: 0 4px 20px rgba(102,126,234,0.08);
-}
-
-.incident-item:last-child {
-border-bottom: none;
-}
-
-.incident-item.expired {
-background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
-border-left: 4px solid #f44336;
-position: relative;
-}
-
-.incident-item.expired::before {
-content: '🚨';
-position: absolute;
-top: 10px;
-right: 10px;
-font-size: 20px;
-animation: blink 2s infinite;
-}
-
-@keyframes blink {
-0%, 50% { opacity: 1; }
-51%, 100% { opacity: 0.3; }
-}
-
-.incident-item.working {
-background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
-border-left: 4px solid #4caf50;
+.incident-card:hover {
+transform: translateY(-4px);
+box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
 .incident-header {
 display: flex;
 justify-content: space-between;
-align-items: center;
-margin-bottom: 12px;
+align-items: flex-start;
+margin-bottom: 20px;
 }
 
 .incident-id {
-font-weight: 700;
-color: #1a237e;
-font-size: 15px;
 background: linear-gradient(135deg, #e8eaf6, #c5cae9);
-padding: 6px 12px;
-border-radius: 8px;
+color: #1a237e;
+padding: 10px 18px;
+border-radius: 12px;
+font-weight: 700;
+font-size: 15px;
 border: 1px solid #9fa8da;
 }
 
 .priority-badge {
-padding: 6px 12px;
-border-radius: 12px;
-font-size: 11px;
+padding: 8px 16px;
+border-radius: 20px;
+font-size: 12px;
 font-weight: 700;
 text-transform: uppercase;
 letter-spacing: 0.5px;
-box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .priority-critica {
 background: linear-gradient(135deg, #f44336, #d32f2f);
 color: white;
-animation: urgentPulse 3s infinite;
-}
-
-@keyframes urgentPulse {
-0%, 100% { box-shadow: 0 2px 8px rgba(244,67,54,0.3); }
-50% { box-shadow: 0 4px 16px rgba(244,67,54,0.6); }
+box-shadow: 0 2px 8px rgba(244,67,54,0.3);
 }
 
 .priority-alta {
 background: linear-gradient(135deg, #ff9800, #f57c00);
 color: white;
+box-shadow: 0 2px 8px rgba(255,152,0,0.3);
 }
 
 .priority-media {
 background: linear-gradient(135deg, #ffc107, #ff8f00);
 color: white;
+box-shadow: 0 2px 8px rgba(255,193,7,0.3);
 }
 
 .priority-baja {
 background: linear-gradient(135deg, #4caf50, #388e3c);
 color: white;
+box-shadow: 0 2px 8px rgba(76,175,80,0.3);
 }
 
-.incident-info {
-margin-bottom: 16px;
+.incident-content {
+margin-bottom: 25px;
 }
 
-.incident-equipment {
+.incident-title {
+font-size: 20px;
 font-weight: 700;
 color: #1565c0;
-margin-bottom: 8px;
-font-size: 16px;
+margin-bottom: 12px;
+line-height: 1.3;
 }
 
 .incident-zone {
-color: #424242;
-font-size: 13px;
-margin-bottom: 8px;
+color: #666;
+font-size: 15px;
+margin-bottom: 12px;
 background: #f5f5f5;
-padding: 4px 8px;
-border-radius: 6px;
+padding: 8px 14px;
+border-radius: 8px;
 display: inline-block;
 }
 
 .incident-description {
-color: #616161;
-font-size: 13px;
-line-height: 1.5;
+color: #555;
+font-size: 15px;
+line-height: 1.6;
+margin-bottom: 18px;
 background: #fafafa;
-padding: 10px;
-border-radius: 8px;
+padding: 15px;
+border-radius: 10px;
 border-left: 3px solid #e0e0e0;
 }
 
+/* Info Sections */
+.info-section {
+margin: 18px 0;
+}
+
+.info-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 15px;
+margin: 8px 0;
+border-radius: 10px;
+font-size: 14px;
+}
+
+.info-row.status {
+background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+color: #0d47a1;
+font-weight: 600;
+}
+
+.info-row.assigned {
+background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+color: #1b5e20;
+font-weight: 600;
+}
+
+.info-row.response {
+background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+color: #e65100;
+font-weight: 600;
+}
+
+.info-row.escalation {
+background: linear-gradient(135deg, #ffebee, #ffcdd2);
+color: #c62828;
+font-weight: 600;
+}
+
 /* SLA Timer */
-.sla-timer {
-background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+.sla-section {
+background: linear-gradient(135deg, #f8f9ff, #e8eaf6);
 border-radius: 16px;
-padding: 20px;
-margin-bottom: 20px;
+padding: 25px;
 text-align: center;
-border: 2px solid #e8eaf6;
-box-shadow: 0 8px 24px rgba(102,126,234,0.12);
+margin: 18px 0;
+border: 2px solid #c5cae9;
 }
 
 .sla-time {
@@ -421,128 +346,96 @@ font-size: 28px;
 font-weight: 800;
 margin-bottom: 8px;
 font-family: 'Courier New', monospace;
-text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.sla-time.good { 
-color: #4caf50; 
-text-shadow: 0 2px 8px rgba(76,175,80,0.3);
-}
-.sla-time.warning { 
-color: #ff9800; 
-text-shadow: 0 2px 8px rgba(255,152,0,0.3);
-animation: warningPulse 2s infinite;
-}
-.sla-time.critical { 
-color: #f44336; 
-text-shadow: 0 2px 8px rgba(244,67,54,0.3);
-animation: criticalPulse 1s infinite;
-}
+.sla-time.good { color: #4caf50; }
+.sla-time.warning { color: #ff9800; }
+.sla-time.critical { color: #f44336; animation: blink 1s infinite; }
 
-@keyframes warningPulse {
-0%, 100% { transform: scale(1); }
-50% { transform: scale(1.02); }
-}
-
-@keyframes criticalPulse {
-0%, 100% { transform: scale(1); }
-25%, 75% { transform: scale(1.05); }
+@keyframes blink {
+0%, 50% { opacity: 1; }
+51%, 100% { opacity: 0.5; }
 }
 
 .sla-label {
-color: #666;
 font-size: 13px;
+color: #666;
 font-weight: 600;
-margin-bottom: 8px;
 }
 
 .sla-level {
 background: linear-gradient(135deg, #667eea, #764ba2);
 color: white;
-padding: 6px 12px;
+padding: 6px 15px;
 border-radius: 12px;
 font-size: 12px;
 font-weight: 700;
+margin-top: 10px;
 display: inline-block;
-letter-spacing: 0.5px;
-box-shadow: 0 2px 8px rgba(102,126,234,0.3);
 }
 
 /* Expired Timer */
-.expired-timer {
-background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-border: 2px solid #ef5350;
+.expired-section {
+background: linear-gradient(135deg, #ffebee, #ffcdd2);
 border-radius: 16px;
-padding: 20px;
-margin-bottom: 20px;
+padding: 25px;
 text-align: center;
-box-shadow: 0 8px 24px rgba(244,67,54,0.2);
-animation: expiredGlow 3s infinite;
-}
-
-@keyframes expiredGlow {
-0%, 100% { box-shadow: 0 8px 24px rgba(244,67,54,0.2); }
-50% { box-shadow: 0 12px 32px rgba(244,67,54,0.4); }
+margin: 18px 0;
+border: 2px solid #ef5350;
 }
 
 .expired-time {
-font-size: 24px;
+font-size: 22px;
 font-weight: 800;
 color: #d32f2f;
 margin-bottom: 8px;
-text-shadow: 0 2px 4px rgba(211,47,47,0.3);
 }
 
 .expired-label {
-color: #d32f2f;
 font-size: 13px;
+color: #d32f2f;
 font-weight: 700;
-letter-spacing: 0.5px;
 }
 
 .escalation-info {
-background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-padding: 16px;
-border-radius: 12px;
-margin-bottom: 20px;
-font-size: 13px;
+background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+padding: 15px;
+border-radius: 10px;
+margin: 12px 0;
+font-size: 14px;
 color: #e65100;
-text-align: center;
-border-left: 4px solid #ff9800;
 font-weight: 600;
-box-shadow: 0 4px 16px rgba(255,152,0,0.15);
+text-align: center;
 }
 
 /* Action Buttons */
+.actions-section {
+margin-top: 25px;
+}
+
 .action-buttons {
 display: grid;
 grid-template-columns: 1fr 1fr;
-gap: 12px;
-margin-top: 20px;
+gap: 15px;
+margin-bottom: 15px;
 }
 
 .action-btn {
-padding: 14px 20px;
+padding: 15px 25px;
 border: none;
 border-radius: 12px;
-font-size: 14px;
+font-size: 15px;
 font-weight: 700;
 cursor: pointer;
-transition: all 0.3s ease;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
+transition: all 0.3s;
 text-transform: uppercase;
 letter-spacing: 0.5px;
-box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .action-btn.locked {
 opacity: 0.6;
 cursor: not-allowed;
-background: linear-gradient(135deg, #9e9e9e, #757575) !important;
-box-shadow: 0 2px 8px rgba(158,158,158,0.3) !important;
+background: #9e9e9e !important;
 }
 
 .btn-accept {
@@ -550,21 +443,9 @@ background: linear-gradient(135deg, #4caf50, #388e3c);
 color: white;
 }
 
-.btn-accept:hover:not(.locked) {
-background: linear-gradient(135deg, #66bb6a, #4caf50);
-transform: translateY(-2px);
-box-shadow: 0 8px 20px rgba(76,175,80,0.4);
-}
-
 .btn-reject {
 background: linear-gradient(135deg, #f44336, #d32f2f);
 color: white;
-}
-
-.btn-reject:hover:not(.locked) {
-background: linear-gradient(135deg, #ef5350, #f44336);
-transform: translateY(-2px);
-box-shadow: 0 8px 20px rgba(244,67,54,0.4);
 }
 
 .btn-help {
@@ -573,77 +454,231 @@ color: white;
 grid-column: 1 / -1;
 }
 
-.btn-help:hover:not(.locked) {
-background: linear-gradient(135deg, #ffb74d, #ff9800);
+.action-btn:hover:not(.locked) {
 transform: translateY(-2px);
-box-shadow: 0 8px 20px rgba(255,152,0,0.4);
+box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
 /* Phone Buttons */
-.phone-buttons {
+.phone-section {
 display: grid;
 grid-template-columns: 1fr;
 gap: 12px;
-margin-top: 20px;
+margin-top: 18px;
 }
 
 .phone-btn {
-padding: 14px 20px;
 background: linear-gradient(135deg, #2196f3, #1976d2);
 color: white;
+padding: 15px 25px;
 border: none;
 border-radius: 12px;
-font-size: 14px;
 font-weight: 700;
-cursor: pointer;
-transition: all 0.3s ease;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
 text-decoration: none;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-box-shadow: 0 4px 12px rgba(33,150,243,0.3);
-}
-
-.phone-btn:hover {
-background: linear-gradient(135deg, #42a5f5, #2196f3);
-transform: translateY(-2px);
-box-shadow: 0 8px 20px rgba(33,150,243,0.4);
+text-align: center;
+transition: all 0.3s;
+font-size: 15px;
 }
 
 .phone-btn.supervisor {
 background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-box-shadow: 0 4px 12px rgba(156,39,176,0.3);
-}
-
-.phone-btn.supervisor:hover {
-background: linear-gradient(135deg, #ab47bc, #9c27b0);
-box-shadow: 0 8px 20px rgba(156,39,176,0.4);
-}-radius: 8px;
-font-size: 14px;
-font-weight: 600;
-cursor: pointer;
-transition: all 0.3s;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 6px;
-text-decoration: none;
 }
 
 .phone-btn:hover {
-transform: translateY(-1px);
-box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+transform: translateY(-2px);
+box-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
 
-.phone-btn.supervisor {
-background: linear-gradient(45deg, #805ad5, #9f7aea);
+.contact-info {
+background: #e8f5e8;
+padding: 12px;
+border-radius: 8px;
+margin: 10px 0;
+text-align: center;
+font-size: 14px;
+color: #2e7d32;
+font-weight: 600;
 }
 
-/* PIN Modal */
-.pin-modal-overlay {
+/* Single Incident View */
+.single-incident {
+max-width: 900px;
+margin: 0 auto;
+}
+
+.single-incident .incident-card {
+background: rgba(255,255,255,0.98);
+padding: 50px;
+}
+
+.single-incident .incident-title {
+font-size: 28px;
+margin-bottom: 20px;
+}
+
+.single-incident .incident-description {
+font-size: 18px;
+padding: 25px;
+}
+
+/* Loading */
+.loading {
+text-align: center;
+padding: 60px;
+color: white;
+}
+
+.spinner {
+width: 50px;
+height: 50px;
+border: 4px solid rgba(255,255,255,0.3);
+border-top-color: white;
+border-radius: 50%;
+animation: spin 1s linear infinite;
+margin: 0 auto 30px;
+}
+
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+
+/* Login Container */
+.login-container {
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(10px);
+border-radius: 20px;
+padding: 40px;
+text-align: center;
+box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+max-width: 500px;
+margin: 50px auto;
+}
+
+.login-title {
+font-size: 28px;
+color: #1a237e;
+margin-bottom: 15px;
+font-weight: 700;
+}
+
+.login-subtitle {
+color: #5c6bc0;
+margin-bottom: 30px;
+font-size: 16px;
+}
+
+.input-group {
+margin-bottom: 25px;
+text-align: left;
+}
+
+.input-label {
+display: block;
+margin-bottom: 8px;
+font-weight: 600;
+color: #424242;
+}
+
+.input-field {
+width: 100%;
+padding: 15px;
+border: 2px solid #e0e0e0;
+border-radius: 12px;
+font-size: 16px;
+transition: border-color 0.3s;
+}
+
+.input-field:focus {
+outline: none;
+border-color: #667eea;
+}
+
+.verify-btn, .quick-access-btn {
+width: 100%;
+padding: 15px;
+border: none;
+border-radius: 12px;
+font-size: 16px;
+font-weight: 700;
+cursor: pointer;
+margin-bottom: 15px;
+transition: all 0.3s;
+}
+
+.verify-btn {
+background: linear-gradient(135deg, #667eea, #764ba2);
+color: white;
+}
+
+.quick-access-btn {
+background: rgba(102,126,234,0.1);
+color: #667eea;
+border: 2px solid #667eea;
+display: none; /* OCULTO - no tiene sentido sin ID específico */
+}
+
+.verify-btn:hover, .quick-access-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* No incidents */
+.no-incidents {
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(10px);
+border-radius: 20px;
+padding: 60px;
+text-align: center;
+box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.no-incidents-icon {
+font-size: 80px;
+margin-bottom: 25px;
+}
+
+.no-incidents-title {
+font-size: 24px;
+color: #1a237e;
+margin-bottom: 15px;
+font-weight: 700;
+}
+
+.no-incidents-description {
+color: #5c6bc0;
+font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+.incidents-grid {
+grid-template-columns: 1fr;
+}
+
+.controls-bar {
+flex-direction: column;
+align-items: stretch;
+}
+
+.stats-bar {
+grid-template-columns: repeat(3, 1fr);
+}
+
+.action-buttons {
+grid-template-columns: 1fr;
+}
+
+.main-container {
+padding: 15px;
+}
+
+.single-incident .incident-card {
+padding: 30px 20px;
+}
+}
+
+/* Modals */
+.modal-overlay {
 position: fixed;
 top: 0;
 left: 0;
@@ -659,111 +694,16 @@ visibility: hidden;
 transition: all 0.3s;
 }
 
-.pin-modal-overlay.active {
-opacity: 1;
-visibility: visible;
-}
-
-.pin-modal {
-background: white;
-border-radius: 16px;
-padding: 30px;
-max-width: 400px;
-width: 90%;
-text-align: center;
-transform: scale(0.8);
-transition: transform 0.3s;
-}
-
-.pin-modal-overlay.active .pin-modal {
-transform: scale(1);
-}
-
-.pin-modal-title {
-font-size: 20px;
-color: #2c3e50;
-margin-bottom: 10px;
-}
-
-.pin-modal-subtitle {
-color: #7f8c8d;
-margin-bottom: 25px;
-}
-
-.pin-input {
-width: 100%;
-padding: 15px;
-border: 2px solid #e9ecef;
-border-radius: 8px;
-font-size: 18px;
-text-align: center;
-letter-spacing: 8px;
-margin-bottom: 20px;
-}
-
-.pin-input:focus {
-outline: none;
-border-color: #3498db;
-}
-
-.pin-actions {
-display: flex;
-gap: 15px;
-}
-
-.pin-btn {
-flex: 1;
-padding: 15px;
-border: none;
-border-radius: 8px;
-font-size: 16px;
-font-weight: 600;
-cursor: pointer;
-transition: all 0.3s;
-}
-
-.pin-btn-cancel {
-background: #f8f9fa;
-color: #6c757d;
-}
-
-.pin-btn-verify {
-background: linear-gradient(45deg, #3498db, #2980b9);
-color: white;
-}
-
-.pin-btn:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
-
-/* Reason Modal */
-.modal-overlay {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-background: rgba(0,0,0,0.5);
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 1000;
-opacity: 0;
-visibility: hidden;
-transition: all 0.3s;
-}
-
 .modal-overlay.active {
 opacity: 1;
 visibility: visible;
 }
 
-.modal-content {
+.modal-content, .pin-modal {
 background: white;
-border-radius: 16px;
+border-radius: 20px;
 padding: 30px;
-max-width: 450px;
+max-width: 500px;
 width: 90%;
 max-height: 80vh;
 overflow-y: auto;
@@ -771,15 +711,17 @@ transform: scale(0.8);
 transition: transform 0.3s;
 }
 
-.modal-overlay.active .modal-content {
+.modal-overlay.active .modal-content,
+.modal-overlay.active .pin-modal {
 transform: scale(1);
 }
 
-.modal-title {
+.modal-title, .pin-modal-title {
 font-size: 20px;
-color: #2c3e50;
+color: #1a237e;
 margin-bottom: 20px;
 text-align: center;
+font-weight: 700;
 }
 
 .reason-options {
@@ -791,7 +733,7 @@ margin-bottom: 25px;
 
 .reason-option {
 padding: 15px;
-border: 2px solid #e9ecef;
+border: 2px solid #e0e0e0;
 border-radius: 12px;
 cursor: pointer;
 transition: all 0.3s;
@@ -801,13 +743,13 @@ gap: 12px;
 }
 
 .reason-option:hover {
-border-color: #3498db;
-background: #f8f9ff;
+border-color: #667eea;
+background: rgba(102,126,234,0.05);
 }
 
 .reason-option.selected {
-border-color: #3498db;
-background: #e3f2fd;
+border-color: #667eea;
+background: rgba(102,126,234,0.1);
 }
 
 .reason-icon {
@@ -821,161 +763,58 @@ flex: 1;
 
 .reason-title {
 font-weight: 600;
-color: #2c3e50;
+color: #1a237e;
 margin-bottom: 3px;
 }
 
 .reason-description {
 font-size: 13px;
-color: #7f8c8d;
+color: #666;
 }
 
-.modal-actions {
+.modal-actions, .pin-actions {
 display: flex;
 gap: 15px;
 }
 
-.modal-btn {
+.modal-btn, .pin-btn {
 flex: 1;
 padding: 15px;
 border: none;
-border-radius: 8px;
+border-radius: 12px;
 font-size: 16px;
-font-weight: 600;
+font-weight: 700;
 cursor: pointer;
 transition: all 0.3s;
 }
 
-.btn-cancel {
-background: #f8f9fa;
-color: #6c757d;
+.btn-cancel, .pin-btn-cancel {
+background: #f5f5f5;
+color: #666;
 }
 
-.btn-confirm {
-background: linear-gradient(45deg, #3498db, #2980b9);
+.btn-confirm, .pin-btn-verify {
+background: linear-gradient(135deg, #667eea, #764ba2);
 color: white;
 }
 
-.btn-confirm:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
-
-/* Loading */
-.loading {
-text-align: center;
-padding: 40px;
-color: #7f8c8d;
-}
-
-.spinner {
-width: 40px;
-height: 40px;
-border: 4px solid #e9ecef;
-border-top-color: #3498db;
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin: 0 auto 20px;
-}
-
-@keyframes spin {
-to { transform: rotate(360deg); }
-}
-
-/* No incidents */
-.no-incidents {
-background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-border-radius: 20px;
-padding: 50px 30px;
-text-align: center;
-box-shadow: 0 12px 40px rgba(102,126,234,0.15);
-border: 1px solid rgba(102,126,234,0.1);
-}
-
-.no-incidents-icon {
-font-size: 80px;
-margin-bottom: 25px;
-filter: drop-shadow(0 4px 12px rgba(102,126,234,0.2));
-}
-
-.no-incidents-title {
-font-size: 22px;
-color: #1a237e;
-margin-bottom: 12px;
-font-weight: 700;
-}
-
-.no-incidents-description {
-color: #5c6bc0;
-font-size: 16px;
-line-height: 1.5;
-}
-
-/* Additional info styles */
-.assigned-info, .closed-info, .status-info {
-background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-padding: 10px 14px;
-border-radius: 8px;
-margin: 8px 0;
-font-size: 13px;
-color: #495057;
-border-left: 4px solid #6c757d;
-font-weight: 500;
-}
-
-.response-info {
-background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 30%);
-padding: 12px 16px;
-border-radius: 10px;
-margin: 10px 0;
-font-size: 13px;
-color: #0d47a1;
-border-left: 4px solid #2196f3;
-font-weight: 600;
-box-shadow: 0 2px 8px rgba(33,150,243,0.15);
-}
-
-.reject-reason, .help-type {
-background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 30%);
-padding: 8px 12px;
-border-radius: 6px;
-margin: 6px 0;
-font-size: 12px;
-color: #e65100;
-border-left: 3px solid #ff9800;
-font-weight: 500;
-}
-
-.contact-info {
-background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 30%);
-padding: 12px 16px;
-border-radius: 10px;
-margin: 10px 0;
-font-size: 13px;
-color: #1b5e20;
-border-left: 4px solid #4caf50;
-text-align: center;
-font-weight: 600;
-box-shadow: 0 2px 8px rgba(76,175,80,0.15);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-.container {
+.pin-input {
+width: 100%;
 padding: 15px;
+border: 2px solid #e0e0e0;
+border-radius: 12px;
+font-size: 18px;
+text-align: center;
+letter-spacing: 8px;
+margin-bottom: 20px;
 }
 
-.action-buttons {
-grid-template-columns: 1fr;
-}
-
-.btn-help {
-grid-column: 1;
-}
-
-.phone-buttons {
-grid-template-columns: 1fr;
-}
+.error-message {
+background: #ffebee;
+color: #c62828;
+padding: 12px;
+border-radius: 8px;
+margin-top: 15px;
 }
 </style>
 </head>
@@ -983,110 +822,121 @@ grid-template-columns: 1fr;
 <!-- Login Container -->
 <div class="container" id="loginContainer">
 <div class="login-container">
-<h1 class="login-title">📱 Dashboard Técnico</h1>
+<h1 class="login-title">🔧 Dashboard Técnico</h1>
 <p class="login-subtitle">Accede con tu email para gestionar incidencias</p>
 
 <div class="input-group">
 <label class="input-label" for="emailInput">Email Técnico</label>
-<input type="email"
-class="input-field"
-id="emailInput"
-placeholder="ejemplo@empresa.com"
-autocomplete="email">
+<input type="email" class="input-field" id="emailInput" placeholder="ejemplo@empresa.com" autocomplete="email">
 </div>
 
 <button onclick="loginWithPIN()" class="verify-btn" id="loginBtn">
-🔐 Acceder con PIN (Dashboard Completo)
-</button>
-
-<button onclick="loginQuickAccess()" class="quick-access-btn" id="quickBtn">
-🔍 Ver incidencia específica (desde email)
+🔒 Acceder con PIN (Dashboard Completo)
 </button>
 
 <div id="loginError" class="error-message" style="display: none;"></div>
-<div id="loginSuccess" class="success-message" style="display: none;"></div>
 </div>
 </div>
 
 <!-- Main Dashboard Container -->
-<div class="container main-container" id="mainContainer">
+<div class="main-container" id="mainContainer">
 <!-- Dashboard Header -->
 <div class="dashboard-header">
-<h1 class="dashboard-title" id="dashboardTitle">📱 Dashboard Técnico</h1>
+<h1 class="dashboard-title" id="dashboardTitle">🔧 Dashboard Técnico</h1>
 <div class="dashboard-subtitle" id="dashboardSubtitle">Sistema de Respuesta a Incidencias</div>
 </div>
 
-<!-- Refresh Info -->
-<div class="refresh-info" id="refreshInfo">
-🔄 Actualización manual
-<button class="refresh-btn" onclick="refreshIncidents()">Actualizar</button>
+<!-- Controls Bar -->
+<div class="controls-bar">
+<div class="filters-section">
+<div class="filter-group">
+<span class="filter-label">Estado:</span>
+<select class="filter-select" id="statusFilter" onchange="applyFilters()">
+<option value="">Todos</option>
+<option value="pending">Pendientes</option>
+<option value="working">Trabajando</option>
+<option value="expired">Vencidas</option>
+</select>
 </div>
-
-<!-- Auth Status -->
+<div class="filter-group">
+<span class="filter-label">Prioridad:</span>
+<select class="filter-select" id="priorityFilter" onchange="applyFilters()">
+<option value="">Todas</option>
+<option value="CRÍTICA">Crítica</option>
+<option value="ALTA">Alta</option>
+<option value="MEDIA">Media</option>
+<option value="BAJA">Baja</option>
+</select>
+</div>
+<button onclick="refreshIncidents()" class="verify-btn" style="width: auto; padding: 10px 20px; margin: 0;">
+🔄 Actualizar
+</button>
+</div>
 <div class="auth-status" id="authStatus">
-<div id="authMessage">⚠️ Solo lectura - Introduce PIN para responder</div>
+<span id="authMessage">⚠️ Solo lectura</span>
+</div>
 </div>
 
-<!-- Incidents Container -->
-<div id="incidentsContainer">
+<!-- Stats Bar -->
+<div class="stats-bar">
+<div class="stat-card">
+<div class="stat-number pending" id="pendingCount">0</div>
+<div class="stat-label">Pendientes</div>
+</div>
+<div class="stat-card">
+<div class="stat-number working" id="workingCount">0</div>
+<div class="stat-label">Trabajando</div>
+</div>
+<div class="stat-card">
+<div class="stat-number expired" id="expiredCount">0</div>
+<div class="stat-label">Vencidas</div>
+</div>
+</div>
+
+<!-- Incidents Grid -->
+<div class="incidents-grid" id="incidentsContainer">
 <!-- Se llena dinámicamente -->
 </div>
 </div>
 
 <!-- PIN Modal -->
-<div class="pin-modal-overlay" id="pinModal">
+<div class="modal-overlay" id="pinModal">
 <div class="pin-modal">
 <h3 class="pin-modal-title">🔐 Verificación de Seguridad</h3>
-<p class="pin-modal-subtitle">Introduce tu PIN de 4 dígitos para responder</p>
-<input type="password"
-class="pin-input"
-id="pinInput"
-maxlength="4"
-placeholder="••••"
-autocomplete="off">
+<p style="text-align: center; color: #666; margin-bottom: 25px;">Introduce tu PIN de 4 dígitos</p>
+<input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••" autocomplete="off">
 <div class="pin-actions">
-<button class="pin-btn pin-btn-cancel" onclick="closePINModal()">
-Cancelar
-</button>
-<button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>
-Verificar
-</button>
+<button class="pin-btn pin-btn-cancel" onclick="closePINModal()">Cancelar</button>
+<button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>Verificar</button>
 </div>
-<div id="pinError" class="error-message" style="display: none; margin-top: 15px;"></div>
+<div id="pinError" class="error-message" style="display: none;"></div>
 </div>
 </div>
 
-<!-- Reason Selection Modal -->
+<!-- Reason Modal -->
 <div class="modal-overlay" id="reasonModal">
 <div class="modal-content">
 <h3 class="modal-title" id="modalTitle">Selecciona el motivo</h3>
-<div class="reason-options" id="reasonOptions">
-<!-- Se llena dinámicamente -->
-</div>
+<div class="reason-options" id="reasonOptions"></div>
 <div class="modal-actions">
-<button class="modal-btn btn-cancel" onclick="closeReasonModal()">
-Cancelar
-</button>
-<button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>
-Confirmar
-</button>
+<button class="modal-btn btn-cancel" onclick="closeReasonModal()">Cancelar</button>
+<button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>Confirmar</button>
 </div>
 </div>
 </div>
 
 <script>
-// === VARIABLES GLOBALES ===
+// Variables globales
 let currentIncident = null;
 let currentTechnician = null;
 let isAuthenticated = false;
-let slaInterval = null;
 let pendingAction = null;
 let selectedReason = null;
-let accessMode = 'none'; // 'none', 'read_only', 'full_access'
-let refreshInterval = null;
+let accessMode = 'none';
 let allIncidents = [];
+let filteredIncidents = [];
 
-// === MOTIVOS DE RESPUESTA ===
+// Motivos de respuesta
 const rejectReasons = [
 { id: 'ocupado_otra', icon: '⚡', title: 'Ocupado con otra incidencia', description: 'Ya estoy resolviendo otra incidencia crítica' },
 { id: 'fuera_especialidad', icon: '❓', title: 'Fuera de mi especialidad', description: 'No tengo experiencia con este tipo de equipo' },
@@ -1107,7 +957,7 @@ const helpReasons = [
 
 // === INICIALIZACIÓN ===
 window.addEventListener('DOMContentLoaded', function() {
-console.log('📱 Dashboard Técnico iniciado');
+console.log('🔧 Dashboard Técnico iniciado');
 
 // Verificar si hay parámetros en la URL (acceso desde email)
 const urlParams = new URLSearchParams(window.location.search);
@@ -1126,10 +976,11 @@ name: decodeURIComponent(nombre)
 };
 }
 
+// Si hay ID específico, acceso directo automático
 if (incidentId) {
-// Acceso desde email - modo solo lectura inicialmente
-console.log('📧 Acceso desde email detectado');
-loginQuickAccess();
+console.log('🔧 Acceso directo a incidencia:', incidentId);
+accessMode = 'read_only';
+loadTechnicianDashboard(email, false);
 }
 }
 });
@@ -1143,24 +994,10 @@ showError('Por favor ingresa un email válido', document.getElementById('loginEr
 return;
 }
 
-// Mostrar modal de PIN
+// Mostrar modal de PIN para acceso completo
 showPINModal('dashboard');
 }
 
-async function loginQuickAccess() {
-const email = document.getElementById('emailInput').value.trim();
-
-if (!email || !email.includes('@')) {
-showError('Por favor ingresa un email válido', document.getElementById('loginError'));
-return;
-}
-
-// Acceso rápido sin PIN (solo lectura)
-accessMode = 'read_only';
-await loadTechnicianDashboard(email, false);
-}
-
-// === MODAL DE PIN ===
 function showPINModal(purpose = 'action') {
 const modal = document.getElementById('pinModal');
 const pinInput = document.getElementById('pinInput');
@@ -1168,21 +1005,9 @@ const verifyBtn = document.getElementById('verifyPinBtn');
 
 pinInput.value = '';
 verifyBtn.disabled = true;
-hideMessage(document.getElementById('pinError'));
-
-// Configurar según el propósito
-if (purpose === 'dashboard') {
-document.querySelector('.pin-modal-title').textContent = '🔐 Acceso al Dashboard';
-document.querySelector('.pin-modal-subtitle').textContent = 'Introduce tu PIN para acceso completo';
-} else {
-document.querySelector('.pin-modal-title').textContent = '🔐 Confirmar Acción';
-document.querySelector('.pin-modal-subtitle').textContent = 'Introduce tu PIN para responder';
-}
-
 modal.classList.add('active');
 pinInput.focus();
 
-// Eventos de teclado
 pinInput.oninput = function() {
 verifyBtn.disabled = this.value.length !== 4;
 };
@@ -1231,7 +1056,6 @@ isAuthenticated = true;
 accessMode = 'full_access';
 closePINModal();
 
-// Actualizar datos del técnico
 currentTechnician = {
 email: email,
 name: data.technician.name,
@@ -1240,14 +1064,12 @@ level: data.technician.level
 };
 
 if (pendingAction) {
-// Continuar con la acción pendiente
 if (pendingAction === 'acepto') {
 confirmAction();
 } else {
 showReasonModal(pendingAction);
 }
 } else {
-// Cargar dashboard completo - CORRECCIÓN DEL ERROR
 await loadTechnicianDashboard(email, true);
 updateAuthStatus();
 }
@@ -1264,7 +1086,7 @@ verifyBtn.textContent = 'Verificar';
 }
 }
 
-// === CARGAR DASHBOARD ===
+// === CARGA DEL DASHBOARD ===
 async function loadTechnicianDashboard(email, useFullAccess = false) {
 try {
 showLoading('Cargando tus incidencias...');
@@ -1291,25 +1113,13 @@ name: data.technician?.name || email.split('@')[0]
 };
 }
 
-// Guardar incidencias
 allIncidents = data.incidents || [];
-
-// Mostrar dashboard
 document.getElementById('loginContainer').style.display = 'none';
 document.getElementById('mainContainer').style.display = 'block';
 
-// Actualizar header
-document.getElementById('dashboardTitle').textContent = '📱 Dashboard de ' + currentTechnician.name;
-
-// Actualizar estado de autenticación
+document.getElementById('dashboardTitle').textContent = '🔧 Dashboard de ' + currentTechnician.name;
 updateAuthStatus();
-
-// Renderizar incidencias
-renderIncidents(allIncidents);
-
-// Configurar auto-refresh para críticas
-setupAutoRefresh();
-
+applyFilters();
 } else {
 throw new Error(data.message || 'Error cargando dashboard');
 }
@@ -1322,134 +1132,62 @@ hideLoading();
 }
 }
 
-// === ACTUALIZAR ESTADO DE AUTENTICACIÓN ===
 function updateAuthStatus() {
 const statusDiv = document.getElementById('authStatus');
 const messageDiv = document.getElementById('authMessage');
 
 if (accessMode === 'full_access') {
 statusDiv.className = 'auth-status authenticated';
-messageDiv.innerHTML = '✅ <strong>Autenticado</strong> - Puedes responder a incidencias';
+messageDiv.textContent = '✅ Autenticado - Puedes responder a incidencias';
 } else if (accessMode === 'read_only') {
-statusDiv.className = 'auth-status unauthenticated';
-messageDiv.innerHTML = '🔍 <strong>Solo lectura</strong> - Introduce PIN para responder';
+statusDiv.className = 'auth-status read-only';
+messageDiv.textContent = '👁️ Solo lectura - Introduce PIN para responder';
 } else {
 statusDiv.className = 'auth-status';
-messageDiv.innerHTML = '⚠️ Sin autenticar';
+messageDiv.textContent = '⚠️ Sin autenticar';
 }
 }
 
-// === AUTO-REFRESH ===
-function setupAutoRefresh() {
-// Limpiar interval anterior
-if (refreshInterval) {
-clearInterval(refreshInterval);
-}
-
-// Verificar si hay incidencias críticas asignadas
-const hasCritical = allIncidents.some(inc =>
-inc.priority && inc.priority.includes('CRÍTICA') &&
-isAssignedToMe(inc) &&
-!inc.assigned_technician
-);
-
-if (hasCritical) {
-// Auto-refresh cada 5 minutos para críticas
-refreshInterval = setInterval(() => {
-console.log('🔄 Auto-refresh por incidencias críticas');
-refreshIncidents();
-}, 5 * 60 * 1000);
-
-const refreshInfo = document.getElementById('refreshInfo');
-refreshInfo.innerHTML = '';
-const autoText = document.createTextNode('🔄 Auto-actualización cada 5 min (incidencias críticas) ');
-const refreshBtn = document.createElement('button');
-refreshBtn.className = 'refresh-btn';
-refreshBtn.textContent = 'Actualizar ahora';
-refreshBtn.onclick = refreshIncidents;
-refreshInfo.appendChild(autoText);
-refreshInfo.appendChild(refreshBtn);
-} else {
-const refreshInfo = document.getElementById('refreshInfo');
-refreshInfo.innerHTML = '';
-const manualText = document.createTextNode('🔄 Actualización manual ');
-const refreshBtn = document.createElement('button');
-refreshBtn.className = 'refresh-btn';
-refreshBtn.textContent = 'Actualizar';
-refreshBtn.onclick = refreshIncidents;
-refreshInfo.appendChild(manualText);
-refreshInfo.appendChild(refreshBtn);
-}
-}
-
-async function refreshIncidents() {
-if (currentTechnician) {
-await loadTechnicianDashboard(currentTechnician.email, accessMode === 'full_access');
-}
-}
-
-// === RENDERIZADO DE INCIDENCIAS ===
-function renderIncidents(incidents) {
-const container = document.getElementById('incidentsContainer');
+// === FILTROS Y CLASIFICACIÓN ===
+function applyFilters() {
+const statusFilter = document.getElementById('statusFilter').value;
+const priorityFilter = document.getElementById('priorityFilter').value;
 const urlParams = new URLSearchParams(window.location.search);
 const specificIncidentId = urlParams.get('id') || urlParams.get('incident_id');
 
 // Si hay ID específico en URL, mostrar solo esa incidencia
 if (specificIncidentId) {
-const specificIncident = incidents.find(inc => inc.id === specificIncidentId);
+const specificIncident = allIncidents.find(inc => inc.id === specificIncidentId);
 if (specificIncident) {
 renderSingleIncident(specificIncident);
 return;
 } else {
-container.innerHTML = createNoIncidentsHTML('Incidencia No Encontrada', '❓', 'La incidencia ' + specificIncidentId + ' no existe o no está asignada a ti');
+document.getElementById('incidentsContainer').innerHTML = 
+createNoIncidentsHTML('Incidencia No Encontrada', '❓', 'La incidencia ' + specificIncidentId + ' no existe o no está asignada a ti');
 return;
 }
 }
 
-// Clasificar incidencias
-const classified = classifyIncidents(incidents);
-const pending = classified.pending;
-const working = classified.working;
-const expired = classified.expired;
+// Clasificar y filtrar incidencias
+const classified = classifyIncidents(allIncidents);
+let incidentsToShow = [];
 
-// Actualizar subtitle
-document.getElementById('dashboardSubtitle').textContent = pending.length + ' pendiente(s) • ' + working.length + ' trabajando • ' + expired.length + ' vencida(s)';
+if (statusFilter === 'pending') incidentsToShow = classified.pending;
+else if (statusFilter === 'working') incidentsToShow = classified.working;
+else if (statusFilter === 'expired') incidentsToShow = classified.expired;
+else incidentsToShow = [...classified.pending, ...classified.working, ...classified.expired];
 
-// Renderizar todas las secciones
-if (pending.length === 0 && working.length === 0 && expired.length === 0) {
-container.innerHTML = createNoIncidentsHTML('Sin Incidencias', '✅', 'No tienes incidencias asignadas en este momento');
-return;
+if (priorityFilter) {
+incidentsToShow = incidentsToShow.filter(inc => 
+inc.priority && inc.priority.includes(priorityFilter)
+);
 }
 
-let html = '';
+// Actualizar stats
+updateStats(classified);
 
-// Sección Pendientes
-if (pending.length > 0) {
-html += renderIncidentSection('pending', '⏳ PENDIENTES DE RESPUESTA', pending, pending.length);
-}
-
-// Sección Trabajando
-if (working.length > 0) {
-html += renderIncidentSection('working', '🔧 TRABAJANDO', working, working.length);
-}
-
-// Sección Vencidas
-if (expired.length > 0) {
-html += renderIncidentSection('expired', '🚨 VENCIDAS (Solo contacto telefónico)', expired, expired.length);
-}
-
-container.innerHTML = html;
-
-// Iniciar timers SLA
-startAllSLATimers();
-}
-
-function createNoIncidentsHTML(title, icon, description) {
-return '<div class="no-incidents">' +
-'<div class="no-incidents-icon">' + icon + '</div>' +
-'<h3 class="no-incidents-title">' + title + '</h3>' +
-'<p class="no-incidents-description">' + description + '</p>' +
-'</div>';
+// Renderizar incidencias
+renderIncidentsGrid(incidentsToShow, classified);
 }
 
 function classifyIncidents(incidents) {
@@ -1458,32 +1196,23 @@ const working = [];
 const expired = [];
 
 incidents.forEach(incident => {
-// Verificar si está asignado a mí
 if (!isAssignedToMe(incident)) return;
 
 // Verificar si ya está trabajando (asignado definitivamente)
-if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' && incident.assigned_technician !== '' && incident.assigned_technician === currentTechnician.name) {
-// Ya trabajando
+if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' &&
+incident.assigned_technician !== '' && incident.assigned_technician === currentTechnician.name) {
 working.push(incident);
 } else {
-// Verificar si SLA vencido basándose en time_elapsed y nivel de escalado
+// Verificar si SLA vencido o escalado
 const timeElapsed = incident.time_elapsed || 0;
 const escalationLevel = incident.escalation_level || 0;
 const escalationPaused = incident.escalation_paused === 'true';
-const status = incident.status || '';
 
-// Determinar si está vencida
 let isExpired = false;
-
-// Si el escalado está pausado, no está vencida
-if (escalationPaused) {
-isExpired = false;
-} else {
-// Determinar SLA según el nivel del técnico
+if (!escalationPaused) {
 let slaMinutes = 30; // Default L0
 if (getIncidentLevel(incident) === 'L1') slaMinutes = 45;
 if (getIncidentLevel(incident) === 'L2') slaMinutes = 60;
-
 isExpired = timeElapsed > slaMinutes;
 }
 
@@ -1498,7 +1227,7 @@ hasResponded = true;
 hasResponded = true;
 }
 
-if (hasResponded || isExpired || escalationLevel > getCurrentEscalationLevel()) {
+if (hasResponded || isExpired || escalationLevel > getCurrentEscalationLevel(incident)) {
 expired.push(incident);
 } else {
 pending.push(incident);
@@ -1517,203 +1246,253 @@ return (
 incident.l0_technician === email ||
 incident.l1_technician === email ||
 (incident.l2_technicians_notified && incident.l2_technicians_notified.includes(email)) ||
+(incident.l2_technicians && incident.l2_technicians.includes(email)) ||
 incident.assigned_technician === email
 );
 }
 
-function renderIncidentSection(type, title, incidents, count) {
-return '<div class="incidents-container">' +
-'<div class="section-header">' +
-'<div class="section-title">' +
-title +
-'<span class="section-count ' + type + '">' + count + '</span>' +
-'</div>' +
-'</div>' +
-'<div class="section-content">' +
-incidents.map(incident => renderIncidentItem(incident, type)).join('') +
-'</div>' +
-'</div>';
+function getIncidentLevel(incident) {
+const email = currentTechnician?.email;
+if (!email) return 'L0';
+
+if (incident.l0_technician === email) return 'L0';
+if (incident.l1_technician === email) return 'L1';
+if (incident.l2_technicians_notified && incident.l2_technicians_notified.includes(email)) return 'L2';
+if (incident.l2_technicians && incident.l2_technicians.includes(email)) return 'L2';
+return 'L0';
 }
 
-function renderIncidentItem(incident, type) {
+function getCurrentEscalationLevel(incident) {
+const email = currentTechnician?.email;
+if (incident.l0_technician === email) return 0;
+if (incident.l1_technician === email) return 1;
+if (incident.l2_technicians_notified && incident.l2_technicians_notified.includes(email)) return 2;
+if (incident.l2_technicians && incident.l2_technicians.includes(email)) return 2;
+return 0;
+}
+
+function updateStats(classified) {
+document.getElementById('pendingCount').textContent = classified.pending.length;
+document.getElementById('workingCount').textContent = classified.working.length;
+document.getElementById('expiredCount').textContent = classified.expired.length;
+
+// Actualizar subtitle
+const total = classified.pending.length + classified.working.length + classified.expired.length;
+document.getElementById('dashboardSubtitle').textContent = 
+`${classified.pending.length} pendiente(s) • ${classified.working.length} trabajando • ${classified.expired.length} vencida(s) • Total: ${total}`;
+}
+
+// === RENDERIZADO ===
+function renderIncidentsGrid(incidents, classified) {
+const container = document.getElementById('incidentsContainer');
+
+if (incidents.length === 0) {
+container.innerHTML = createNoIncidentsHTML('Sin Incidencias', '✅', 'No hay incidencias que coincidan con los filtros aplicados');
+return;
+}
+
+let html = '';
+incidents.forEach(incident => {
+const type = classified.pending.includes(incident) ? 'pending' :
+classified.working.includes(incident) ? 'working' : 'expired';
+html += renderIncidentCard(incident, type);
+});
+
+container.innerHTML = html;
+startAllSLATimers();
+}
+
+function renderSingleIncident(incident) {
+const container = document.getElementById('incidentsContainer');
+currentIncident = incident;
+
+const classified = classifyIncidents([incident]);
+const type = classified.pending.includes(incident) ? 'pending' :
+classified.working.includes(incident) ? 'working' : 'expired';
+
+container.innerHTML = `<div class="single-incident">${renderIncidentCard(incident, type)}</div>`;
+startAllSLATimers();
+}
+
+function renderIncidentCard(incident, type) {
 const priorityClass = getPriorityClass(incident.priority);
 const level = getIncidentLevel(incident);
 
-let actionContent = '';
-let timerContent = '';
-
-// Determinar información de respuesta según el nivel
+// Información de respuesta según el nivel
 let responseInfo = '';
-if (level === 'L0') {
-    if (incident.l0_response && incident.l0_response !== '⭕ Sin Respuesta') {
-        responseInfo = `<div class="response-info">Respuesta L0: ${incident.l0_response}</div>`;
-        if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason !== 'Sin motivo') {
-            responseInfo += `<div class="reject-reason">Motivo: ${incident.l0_reject_reason}</div>`;
-        }
-        if (incident.l0_response.includes('Ayuda') && incident.l0_help_type !== 'Sin ayuda') {
-            responseInfo += `<div class="help-type">Tipo ayuda: ${incident.l0_help_type}</div>`;
-        }
-    }
-} else if (level === 'L1') {
-    if (incident.l1_response && incident.l1_response !== '⭕ Sin Respuesta') {
-        responseInfo = `<div class="response-info">Respuesta L1: ${incident.l1_response}</div>`;
-        if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason !== 'Sin motivo') {
-            responseInfo += `<div class="reject-reason">Motivo: ${incident.l1_reject_reason}</div>`;
-        }
-        if (incident.l1_response.includes('Ayuda') && incident.l1_help_type !== 'Sin ayuda') {
-            responseInfo += `<div class="help-type">Tipo ayuda: ${incident.l1_help_type}</div>`;
-        }
-    }
-} else if (level === 'L2') {
-    if (incident.l2_responses && incident.l2_responses !== '') {
-        responseInfo = `<div class="response-info">Respuestas L2: ${incident.l2_responses}</div>`;
-        if (incident.l2_reject_reasons !== 'Sin motivos') {
-            responseInfo += `<div class="reject-reason">Motivos: ${incident.l2_reject_reasons}</div>`;
-        }
-    }
+if (level === 'L0' && incident.l0_response && incident.l0_response !== '⭕ Sin Respuesta') {
+responseInfo += `<div class="info-row response"><span>Respuesta L0:</span><span>${incident.l0_response}</span></div>`;
+if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason !== 'Sin motivo') {
+responseInfo += `<div class="info-row"><span>Motivo:</span><span>${incident.l0_reject_reason}</span></div>`;
+}
+} else if (level === 'L1' && incident.l1_response && incident.l1_response !== '⭕ Sin Respuesta') {
+responseInfo += `<div class="info-row response"><span>Respuesta L1:</span><span>${incident.l1_response}</span></div>`;
+if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason !== 'Sin motivo') {
+responseInfo += `<div class="info-row"><span>Motivo:</span><span>${incident.l1_reject_reason}</span></div>`;
+}
+} else if (level === 'L2' && incident.l2_responses && incident.l2_responses !== '') {
+responseInfo += `<div class="info-row response"><span>Respuestas L2:</span><span>${incident.l2_responses}</span></div>`;
 }
 
+// SLA o información de vencimiento
+let timerContent = '';
 if (type === 'pending') {
-    // Botones de acción + timer SLA
-    const canRespond = (accessMode === 'full_access');
-    const acceptIcon = canRespond ? '✅' : '🔒';
-    const rejectIcon = canRespond ? '❌' : '🔒';
-    const helpIcon = canRespond ? '🆘' : '🔒';
-    const lockClass = canRespond ? '' : ' locked';
-
-    actionContent = '<div class="action-buttons">' +
-    '<button class="action-btn btn-accept' + lockClass + '" onclick="handleAction(\'acepto\', \'' + incident.id + '\')">' +
-    acceptIcon + ' Acepto</button>' +
-    '<button class="action-btn btn-reject' + lockClass + '" onclick="handleAction(\'rechazo\', \'' + incident.id + '\')">' +
-    rejectIcon + ' Rechazo</button>' +
-    '<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.id + '\')">' +
-    helpIcon + ' Solicitar Ayuda</button>' +
-    '</div>';
-    timerContent = renderSLATimer(incident, level);
-} else if (type === 'working') {
-    // Solo botón de ayuda
-    const canRespond = (accessMode === 'full_access');
-    const helpIcon = canRespond ? '🆘' : '🔒';
-    const lockClass = canRespond ? '' : ' locked';
-    actionContent = '<div class="action-buttons">' +
-    '<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.id + '\')">' +
-    helpIcon + ' Solicitar Ayuda</button>' +
-    '</div>';
-} else if (type === 'expired') {
-    // Información de escalado y contacto telefónico
-    const timeElapsed = incident.time_elapsed || 0;
-    const hoursElapsed = Math.floor(timeElapsed / 60);
-    const minutesElapsed = timeElapsed % 60;
-    
-    timerContent = '<div class="expired-timer">' +
-    '<div class="expired-time">⏰ Hace ' + hoursElapsed + 'h ' + minutesElapsed + 'm</div>' +
-    '<div class="expired-label">VENCIDA - SLA SUPERADO</div>' +
-    '</div>';
-
-    // Información de escalado
-    const escalationLevel = incident.escalation_level || 0;
-    const escalationPaused = incident.escalation_paused === 'true';
-    
-    let escalationInfo = '';
-    if (escalationPaused) {
-        escalationInfo = '🚦 Escalado pausado por supervisor';
-    } else if (escalationLevel > 0) {
-        escalationInfo = `⚠️ Escalado a nivel L${escalationLevel} - Contacta por teléfono para coordinar`;
-    } else {
-        escalationInfo = '⚠️ Incidencia vencida - Contacta por teléfono para coordinar';
-    }
-    
-    if (escalationInfo) {
-        timerContent += '<div class="escalation-info">' + escalationInfo + '</div>';
-    }
-
-    // Botones telefónicos
-    actionContent = '<div class="phone-buttons">';
-    
-    // Prioridad: Supervisor -> Encargado -> Reportador
-    let hasPhoneContact = false;
-    
-    if (incident.supervisor_phone && incident.supervisor_phone !== 'Sin teléfono') {
-        actionContent += '<a href="tel:' + incident.supervisor_phone + '" class="phone-btn supervisor">📞 Supervisor</a>';
-        hasPhoneContact = true;
-    }
-    
-    if (incident.manager_phone && incident.manager_phone !== 'Sin teléfono') {
-        actionContent += '<a href="tel:' + incident.manager_phone + '" class="phone-btn">📞 Encargado</a>';
-        hasPhoneContact = true;
-    }
-    
-    if (!hasPhoneContact && incident.reporter_phone && incident.reporter_phone !== 'Sin teléfono') {
-        actionContent += '<a href="tel:' + incident.reporter_phone + '" class="phone-btn">📞 Reportador</a>';
-        hasPhoneContact = true;
-    }
-    
-    if (!hasPhoneContact) {
-        actionContent += '<div class="contact-info">⚠️ No hay teléfonos disponibles</div>';
-    }
-    
-    // Información de contacto adicional
-    if (incident.supervisor && incident.supervisor !== 'Sin supervisor') {
-        actionContent += '<div class="contact-info">👤 Supervisor: ' + incident.supervisor + '</div>';
-    }
-    
-    if (incident.reporter && incident.reporter !== 'Sin reportador') {
-        actionContent += '<div class="contact-info">📋 Reportador: ' + incident.reporter + '</div>';
-    }
-    
-    actionContent += '</div>';
-}
-
-// Información adicional para contexto
-let additionalInfo = '';
-if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' && incident.assigned_technician !== '') {
-    additionalInfo += '<div class="assigned-info">👤 Asignado a: ' + incident.assigned_technician + '</div>';
-}
-
-if (incident.closed_by && incident.closed_by !== 'No cerrada') {
-    additionalInfo += '<div class="closed-info">✅ Cerrado por: ' + incident.closed_by + '</div>';
-}
-
-// Estado de la incidencia
-let statusInfo = '';
-if (incident.status && incident.status !== '🆕 Nueva') {
-    statusInfo = '<div class="status-info">Estado: ' + incident.status + '</div>';
-}
-
-return '<div class="incident-item ' + type + '" data-incident-id="' + incident.id + '">' +
-'<div class="incident-header">' +
-'<div class="incident-id">' + incident.id + '</div>' +
-'<div class="priority-badge priority-' + priorityClass + '">' + (incident.priority || 'MEDIA') + '</div>' +
-'</div>' +
-'<div class="incident-info">' +
-'<div class="incident-equipment">' + (incident.equipment || 'Equipo no especificado') + '</div>' +
-'<div class="incident-zone">📍 ' + (incident.zone || 'Sin zona') + '</div>' +
-'<div class="incident-description">' + ((incident.description || '').substring(0, 150)) + (incident.description && incident.description.length > 150 ? '...' : '') + '</div>' +
-statusInfo +
-additionalInfo +
-responseInfo +
-'</div>' +
-timerContent +
-actionContent +
-'</div>';
-}
-
-function renderSLATimer(incident, level) {
 const slaEnd = getSlaEndTime(incident);
-if (!slaEnd) return '';
+if (slaEnd) {
+timerContent = `
+<div class="sla-section">
+<div class="sla-time" id="timer-${incident.id}">--:--</div>
+<div class="sla-label">Tiempo restante para responder</div>
+<div class="sla-level">NIVEL ${level}</div>
+</div>`;
+}
+} else if (type === 'expired') {
+const timeElapsed = incident.time_elapsed || 0;
+const hoursElapsed = Math.floor(timeElapsed / 60);
+const minutesElapsed = timeElapsed % 60;
 
-return '<div class="sla-timer" data-sla-end="' + slaEnd + '">' +
-'<div class="sla-time" id="timer-' + incident.incident_id + '">--:--</div>' +
-'<div class="sla-label">Tiempo restante para responder</div>' +
-'<div class="sla-level">NIVEL ' + level + '</div>' +
-'</div>';
+timerContent = `
+<div class="expired-section">
+<div class="expired-time">⏰ Hace ${hoursElapsed}h ${minutesElapsed}m</div>
+<div class="expired-label">VENCIDA - SLA SUPERADO</div>
+</div>`;
+
+// Información de escalado
+const escalationLevel = incident.escalation_level || 0;
+const escalationPaused = incident.escalation_paused === 'true';
+
+let escalationInfo = '';
+if (escalationPaused) {
+escalationInfo = '🚦 Escalado pausado por supervisor';
+} else if (escalationLevel > 0) {
+escalationInfo = `⚠️ Escalado a nivel L${escalationLevel} - Contacta por teléfono para coordinar`;
+} else {
+escalationInfo = '⚠️ Incidencia vencida - Contacta por teléfono para coordinar';
 }
 
+if (escalationInfo) {
+timerContent += `<div class="escalation-info">${escalationInfo}</div>`;
+}
+}
+
+// Botones de acción
+let actionContent = '';
+if (type === 'pending') {
+const canRespond = (accessMode === 'full_access');
+const lockClass = canRespond ? '' : ' locked';
+const acceptText = canRespond ? '✅ ACEPTO' : '🔒 ACEPTO';
+const rejectText = canRespond ? '❌ RECHAZO' : '🔒 RECHAZO';
+const helpText = canRespond ? '🆘 SOLICITAR AYUDA' : '🔒 SOLICITAR AYUDA';
+
+actionContent = `
+<div class="actions-section">
+<div class="action-buttons">
+<button class="action-btn btn-accept${lockClass}" onclick="handleAction('acepto', '${incident.id}')">
+${acceptText}
+</button>
+<button class="action-btn btn-reject${lockClass}" onclick="handleAction('rechazo', '${incident.id}')">
+${rejectText}
+</button>
+</div>
+<button class="action-btn btn-help${lockClass}" onclick="handleAction('ayuda', '${incident.id}')">
+${helpText}
+</button>
+</div>`;
+} else if (type === 'working') {
+const canRespond = (accessMode === 'full_access');
+const lockClass = canRespond ? '' : ' locked';
+const helpText = canRespond ? '🆘 SOLICITAR AYUDA' : '🔒 SOLICITAR AYUDA';
+
+actionContent = `
+<div class="actions-section">
+<button class="action-btn btn-help${lockClass}" onclick="handleAction('ayuda', '${incident.id}')">
+${helpText}
+</button>
+</div>`;
+} else if (type === 'expired') {
+actionContent = '<div class="phone-section">';
+
+if (incident.supervisor_phone && incident.supervisor_phone !== 'Sin teléfono') {
+actionContent += `<a href="tel:${incident.supervisor_phone}" class="phone-btn supervisor">📞 SUPERVISOR</a>`;
+}
+if (incident.manager_phone && incident.manager_phone !== 'Sin teléfono') {
+actionContent += `<a href="tel:${incident.manager_phone}" class="phone-btn">📞 ENCARGADO</a>`;
+}
+
+if (incident.supervisor && incident.supervisor !== 'Sin supervisor') {
+actionContent += `<div class="contact-info">👤 Supervisor: ${incident.supervisor}</div>`;
+}
+if (incident.reporter && incident.reporter !== 'Sin reportador') {
+actionContent += `<div class="contact-info">📋 Reportador: ${incident.reporter}</div>`;
+}
+
+actionContent += '</div>';
+}
+
+// Información adicional
+let additionalInfo = '';
+if (incident.status && incident.status !== '🆕 Nueva') {
+additionalInfo += `<div class="info-row status"><span>Estado:</span><span>${incident.status}</span></div>`;
+}
+if (incident.assigned_technician && incident.assigned_technician !== 'Sin asignar' && incident.assigned_technician !== '') {
+additionalInfo += `<div class="info-row assigned"><span>👤 Asignado a:</span><span>${incident.assigned_technician}</span></div>`;
+}
+if (incident.escalation_level && incident.escalation_level > 0) {
+additionalInfo += `<div class="info-row escalation"><span>⚡ Escalado:</span><span>Nivel L${incident.escalation_level}</span></div>`;
+}
+
+return `
+<div class="incident-card ${type}" data-incident-id="${incident.id}">
+<div class="incident-header">
+<div class="incident-id">${incident.id}</div>
+<div class="priority-badge priority-${priorityClass}">${incident.priority || 'MEDIA'}</div>
+</div>
+
+<div class="incident-content">
+<div class="incident-title">${incident.equipment || 'Equipo no especificado'}</div>
+<div class="incident-zone">📍 ${incident.zone || 'Sin zona'}</div>
+<div class="incident-description">${incident.description || 'Sin descripción disponible'}</div>
+
+<div class="info-section">
+${additionalInfo}
+${responseInfo}
+</div>
+</div>
+
+${timerContent}
+${actionContent}
+</div>`;
+}
+
+function getPriorityClass(priority) {
+if (!priority) return 'media';
+const p = priority.toLowerCase();
+if (p.includes('crítica') || p.includes('critical')) return 'critica';
+if (p.includes('alta') || p.includes('high')) return 'alta';
+if (p.includes('media') || p.includes('medium')) return 'media';
+if (p.includes('baja') || p.includes('low')) return 'baja';
+return 'media';
+}
+
+function getSlaEndTime(incident) {
+const level = getIncidentLevel(incident);
+if (level === 'L0') return incident.sla_l0_end;
+if (level === 'L1') return incident.sla_l1_backup_end;
+if (level === 'L2') return incident.sla_l2_equipo_end;
+return incident.sla_l0_end;
+}
+
+// === TIMERS SLA ===
 function startAllSLATimers() {
-document.querySelectorAll('.sla-timer[data-sla-end]').forEach(timer => {
-const slaEnd = timer.getAttribute('data-sla-end');
-const incidentId = timer.getAttribute('data-sla-end').split('-').pop();
-startSLATimer(slaEnd, 'timer-' + incidentId);
+document.querySelectorAll('[id^="timer-"]').forEach(timer => {
+const incidentId = timer.id.replace('timer-', '');
+const incident = allIncidents.find(inc => inc.id === incidentId);
+if (incident) {
+const slaEnd = getSlaEndTime(incident);
+if (slaEnd) {
+startSLATimer(slaEnd, timer.id);
+}
+}
 });
 }
 
@@ -1739,14 +1518,14 @@ const seconds = Math.floor((diff % 60000) / 1000);
 
 let timeText;
 if (hours > 0) {
-timeText = hours + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+timeText = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 } else {
-timeText = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+timeText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 timerElement.textContent = timeText;
 
-// Calcular porcentaje de tiempo restante (asumiendo SLA inicial de 30 min para cálculo)
+// Calcular porcentaje de tiempo restante
 const totalSLATime = 30 * 60 * 1000; // 30 minutos en ms
 const percentage = (diff / totalSLATime) * 100;
 
@@ -1763,9 +1542,8 @@ updateTimer();
 setInterval(updateTimer, 1000);
 }
 
-// === MANEJO DE ACCIONES ===
+// === ACCIONES ===
 function handleAction(action, incidentId) {
-// Encontrar la incidencia
 currentIncident = allIncidents.find(inc => inc.id === incidentId);
 if (!currentIncident) {
 console.error('Incidencia no encontrada:', incidentId);
@@ -1773,13 +1551,11 @@ return;
 }
 
 if (accessMode !== 'full_access') {
-// Requiere PIN
 pendingAction = action;
 showPINModal('action');
 return;
 }
 
-// Ya autenticado, proceder
 if (action === 'acepto') {
 confirmAction();
 } else {
@@ -1787,71 +1563,6 @@ showReasonModal(action);
 }
 }
 
-function renderSingleIncident(incident) {
-// Para vista de incidencia específica desde email
-currentIncident = incident;
-
-const container = document.getElementById('incidentsContainer');
-const level = getIncidentLevel(incident);
-const slaEnd = getSlaEndTime(incident);
-const canRespond = (accessMode === 'full_access');
-
-let actionContent = '';
-if (!incident.assigned_technician || incident.assigned_technician !== currentTechnician?.email) {
-// Pendiente de respuesta
-const acceptIcon = canRespond ? '✅' : '🔒';
-const rejectIcon = canRespond ? '❌' : '🔒';
-const helpIcon = canRespond ? '🆘' : '🔒';
-const lockClass = canRespond ? '' : ' locked';
-
-actionContent = '<div class="action-buttons">' +
-'<button class="action-btn btn-accept' + lockClass + '" onclick="handleAction(\'acepto\', \'' + incident.incident_id + '\')">' +
-acceptIcon + ' Acepto</button>' +
-'<button class="action-btn btn-reject' + lockClass + '" onclick="handleAction(\'rechazo\', \'' + incident.incident_id + '\')">' +
-rejectIcon + ' Rechazo</button>' +
-'<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.incident_id + '\')">' +
-helpIcon + ' Solicitar Ayuda</button>' +
-'</div>';
-} else {
-// Ya trabajando
-const helpIcon = canRespond ? '🆘' : '🔒';
-const lockClass = canRespond ? '' : ' locked';
-actionContent = '<div class="action-buttons">' +
-'<button class="action-btn btn-help' + lockClass + '" onclick="handleAction(\'ayuda\', \'' + incident.incident_id + '\')">' +
-helpIcon + ' Solicitar Ayuda</button>' +
-'</div>';
-}
-
-const priorityClass = getPriorityClass(incident.priority);
-
-container.innerHTML = '<div class="incidents-container">' +
-'<div class="section-header">' +
-'<div class="section-title">📋 ' + incident.incident_id + '</div>' +
-'</div>' +
-'<div class="section-content">' +
-'<div class="incident-item">' +
-'<div class="incident-header">' +
-'<div class="incident-id">' + incident.incident_id + '</div>' +
-'<div class="priority-badge priority-' + priorityClass + '">' + (incident.priority || 'MEDIA') + '</div>' +
-'</div>' +
-'<div class="incident-info">' +
-'<div class="incident-equipment">' + (incident.equipment || 'Equipo no especificado') + '</div>' +
-'<div class="incident-zone">📍 ' + (incident.zone || 'Sin zona') + '</div>' +
-'<div class="incident-description">' + (incident.description || 'Sin descripción disponible') + '</div>' +
-'</div>' +
-(slaEnd ? renderSLATimer(incident, level) : '') +
-actionContent +
-'</div>' +
-'</div>' +
-'</div>';
-
-// Iniciar timer si hay SLA
-if (slaEnd) {
-startSLATimer(slaEnd, 'timer-' + incident.incident_id);
-}
-}
-
-// === MODAL DE MOTIVOS ===
 function showReasonModal(action) {
 pendingAction = action;
 selectedReason = null;
@@ -1861,7 +1572,6 @@ const title = document.getElementById('modalTitle');
 const options = document.getElementById('reasonOptions');
 const confirmBtn = document.getElementById('confirmBtn');
 
-// Configurar título y motivos según la acción
 let reasons = [];
 switch(action) {
 case 'rechazo':
@@ -1869,7 +1579,6 @@ title.textContent = '❌ Motivo del Rechazo';
 reasons = rejectReasons;
 confirmBtn.textContent = 'Rechazar';
 break;
-
 case 'ayuda':
 title.textContent = '🆘 Tipo de Ayuda Requerida';
 reasons = helpReasons;
@@ -1877,16 +1586,15 @@ confirmBtn.textContent = 'Solicitar Ayuda';
 break;
 }
 
-// Renderizar opciones de motivos
-options.innerHTML = reasons.map(reason => 
-'<div class="reason-option" onclick="selectReason(\'' + reason.id + '\')">' +
-'<div class="reason-icon">' + reason.icon + '</div>' +
-'<div class="reason-text">' +
-'<div class="reason-title">' + reason.title + '</div>' +
-'<div class="reason-description">' + reason.description + '</div>' +
-'</div>' +
-'</div>'
-).join('');
+options.innerHTML = reasons.map(reason => `
+<div class="reason-option" onclick="selectReason('${reason.id}')">
+<div class="reason-icon">${reason.icon}</div>
+<div class="reason-text">
+<div class="reason-title">${reason.title}</div>
+<div class="reason-description">${reason.description}</div>
+</div>
+</div>
+`).join('');
 
 confirmBtn.disabled = true;
 modal.classList.add('active');
@@ -1895,7 +1603,6 @@ modal.classList.add('active');
 function selectReason(reasonId) {
 selectedReason = reasonId;
 
-// Actualizar UI
 document.querySelectorAll('.reason-option').forEach(option => {
 option.classList.remove('selected');
 });
@@ -1910,7 +1617,6 @@ pendingAction = null;
 selectedReason = null;
 }
 
-// === CONFIRMAR ACCIÓN ===
 async function confirmAction() {
 if (!pendingAction || !currentIncident) return;
 
@@ -1932,7 +1638,7 @@ incident_id: currentIncident.id,
 technician_email: currentTechnician.email,
 technician_name: currentTechnician.name,
 reason: selectedReason,
-escalation_level: getCurrentEscalationLevel()
+escalation_level: getCurrentEscalationLevel(currentIncident)
 })
 });
 
@@ -1966,112 +1672,47 @@ const messages = {
 
 const actionIcon = pendingAction === 'acepto' ? '✅' : pendingAction === 'rechazo' ? '❌' : '🆘';
 
-// Mostrar mensaje de éxito y recargar después de 2 segundos
-document.getElementById('incidentsContainer').innerHTML = 
-'<div class="incidents-container">' +
-'<div class="section-header" style="background: linear-gradient(45deg, #38a169, #48bb78); color: white;">' +
-'<div class="section-title">✅ Acción Completada</div>' +
-'</div>' +
-'<div class="section-content">' +
-'<div style="text-align: center; padding: 40px;">' +
-'<div style="font-size: 48px; margin-bottom: 20px;">' + actionIcon + '</div>' +
-'<h3 style="color: #2c3e50; margin-bottom: 15px;">' + messages[pendingAction] + '</h3>' +
-'<p style="color: #7f8c8d; margin-bottom: 25px;">' + (data.next_step || 'La acción se ha procesado correctamente.') + '</p>' +
-'<button class="action-btn btn-accept" onclick="refreshIncidents()" style="max-width: 200px; margin: 0 auto;">🔄 Actualizar Dashboard</button>' +
-'</div>' +
-'</div>' +
-'</div>';
+document.getElementById('incidentsContainer').innerHTML = `
+<div class="no-incidents">
+<div class="no-incidents-icon">${actionIcon}</div>
+<h3 class="no-incidents-title">Acción Completada</h3>
+<p class="no-incidents-description">${messages[pendingAction]}</p>
+<button onclick="refreshIncidents()" class="verify-btn" style="margin-top: 20px;">
+🔄 Actualizar Dashboard
+</button>
+</div>`;
 
-// Auto-refresh después de 3 segundos
 setTimeout(() => {
 refreshIncidents();
 }, 3000);
 }
 
-// === FUNCIONES AUXILIARES ===
-function getCurrentEscalationLevel() {
-if (!currentIncident) return 0;
-
-if (currentIncident.l0_technician === currentTechnician?.email) return 0;
-if (currentIncident.l1_technician === currentTechnician?.email) return 1;
-if (currentIncident.l2_technicians_notified?.includes?.(currentTechnician?.email)) return 2;
-
-return 0;
+// === UTILIDADES ===
+async function refreshIncidents() {
+if (currentTechnician) {
+await loadTechnicianDashboard(currentTechnician.email, accessMode === 'full_access');
 }
-
-function getIncidentLevel(incident) {
-if (incident.l0_technician === currentTechnician?.email) return 'L0';
-if (incident.l1_technician === currentTechnician?.email) return 'L1';
-if (incident.l2_technicians_notified?.includes?.(currentTechnician?.email)) return 'L2';
-return 'L0';
-}
-
-function getSlaEndTime(incident) {
-if (incident.l0_technician === currentTechnician?.email) {
-return incident.sla_l0_end;
-}
-if (incident.l1_technician === currentTechnician?.email) {
-return incident.sla_l1_backup_end;
-}
-if (incident.l2_technicians_notified?.includes?.(currentTechnician?.email)) {
-return incident.sla_l2_equipo_end;
-}
-return incident.sla_l0_end; // Fallback
-}
-
-function getPriorityClass(priority) {
-if (!priority) return 'media';
-const p = priority.toLowerCase();
-if (p.includes('crítica') || p.includes('critical')) return 'critica';
-if (p.includes('alta') || p.includes('high')) return 'alta';
-if (p.includes('media') || p.includes('medium')) return 'media';
-if (p.includes('baja') || p.includes('low')) return 'baja';
-return 'media';
-}
-
-function getExpiredTime(slaEnd) {
-if (!slaEnd) return 'Tiempo indefinido';
-
-const now = new Date();
-const end = new Date(slaEnd);
-const diff = now - end; // Diferencia positiva = vencido
-
-if (diff <= 0) return 'No vencida';
-
-const minutes = Math.floor(diff / 60000);
-const hours = Math.floor(minutes / 60);
-
-if (hours > 0) {
-return 'Hace ' + hours + 'h ' + (minutes % 60) + 'm';
-} else {
-return 'Hace ' + minutes + 'm';
-}
-}
-
-function getEscalationInfo(incident, currentLevel) {
-const escalationLevel = parseInt(incident.escalation_level) || 0;
-
-if (escalationLevel > getCurrentEscalationLevel()) {
-return '⚠️ Esta incidencia ha escalado a L' + escalationLevel + ' - Ya no requiere tu respuesta';
-}
-
-return '⚠️ Incidencia vencida en ' + currentLevel + ' - Contacta por teléfono para coordinar';
 }
 
 function showLoading(message = 'Cargando...') {
-document.getElementById('incidentsContainer').innerHTML = 
-'<div class="incidents-container">' +
-'<div class="section-content">' +
-'<div class="loading">' +
-'<div class="spinner"></div>' +
-'<div>' + message + '</div>' +
-'</div>' +
-'</div>' +
-'</div>';
+document.getElementById('incidentsContainer').innerHTML = `
+<div class="loading">
+<div class="spinner"></div>
+<div>${message}</div>
+</div>`;
 }
 
 function hideLoading() {
 // Se oculta cuando se renderiza contenido
+}
+
+function createNoIncidentsHTML(title, icon, description) {
+return `
+<div class="no-incidents">
+<div class="no-incidents-icon">${icon}</div>
+<h3 class="no-incidents-title">${title}</h3>
+<p class="no-incidents-description">${description}</p>
+</div>`;
 }
 
 function showError(message, element) {
@@ -2083,18 +1724,12 @@ console.error('Error:', message);
 }
 }
 
-function hideMessage(element) {
-if (element) {
-element.style.display = 'none';
-}
-}
-
-// === EVENTOS DE TECLADO ===
+// === EVENTOS ===
 document.addEventListener('keydown', function(e) {
 if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
 const emailInput = document.getElementById('emailInput');
 if (emailInput.value.trim()) {
-loginQuickAccess();
+loginWithPIN();
 }
 }
 
@@ -2114,16 +1749,6 @@ closeReasonModal();
 document.getElementById('pinModal').addEventListener('click', function(e) {
 if (e.target === this) {
 closePINModal();
-}
-});
-
-// === CLEANUP AL CERRAR ===
-window.addEventListener('beforeunload', function() {
-if (refreshInterval) {
-clearInterval(refreshInterval);
-}
-if (slaInterval) {
-clearInterval(slaInterval);
 }
 });
 </script>
