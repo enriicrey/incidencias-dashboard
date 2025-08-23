@@ -96,58 +96,153 @@ export default async function handler(req, res) {
             parsedData = JSON.parse(responseText);
             console.log('✅ JSON parsed directamente');
         } catch (directParseError) {
-            console.log('⚠️ Parser directo falló, intentando limpiar...');
+            console.log('⚠️ Parser directo falló, intentando limpiar...', directParseError.message);
             
-            // Estrategia 2: Limpiar y reparar JSON
+            // Estrategia 2: Limpiar y reparar JSON agresivamente
             try {
                 let cleanedJson = responseText
                     .trim()
-                    .replace(/}\s*{/g, '},{')     // Añadir comas entre objetos
-                    .replace(/,\s*}/g, '}')      // Limpiar comas extra antes de }
-                    .replace(/,\s*]/g, ']')      // Limpiar comas extra antes de ]
-                    .replace(/[\r\n]/g, '')      // Eliminar saltos de línea
-                    .replace(/\s+/g, ' ');       // Normalizar espacios
+                    // Arreglar objetos sin comas
+                    .replace(/}\s*{/g, '},{')
+                    // Limpiar comas extra
+                    .replace(/,\s*}/g, '}')
+                    .replace(/,\s*]/g, ']')
+                    // Arreglar saltos de línea en strings
+                    .replace(/"\s*\n\s*"/g, ' ')
+                    .replace(/"\s*\n\s*/g, '"')
+                    // Arreglar barras invertidas mal escapadas
+                    .replace(/\\"/g, '"')
+                    .replace(/"false\\"/g, '"false"')
+                    .replace(/"true\\"/g, '"true"')
+                    .replace(/"Sin motivo\\"/g, '"Sin motivo"')
+                    .replace(/"Sin asignar\\"/g, '"Sin asignar"')
+                    .replace(/"Sin descripción\\"/g, '"Sin descripción"')
+                    .replace(/"Sin acciones\\"/g, '"Sin acciones"')
+                    .replace(/"Sin ayuda\\"/g, '"Sin ayuda"')
+                    // Normalizar espacios
+                    .replace(/\s+/g, ' ')
+                    // Arreglar IDs problemáticos
+                    .replace(/"id":\s*"INC--\s*/g, '"id": "INC-')
+                    .replace(/"id":\s*"([^"]*)\n([^"]*)"/g, '"id": "$1$2"');
                 
+                console.log('🔧 JSON limpiado, intentando parsear...');
                 parsedData = JSON.parse(cleanedJson);
                 console.log('✅ JSON reparado y parseado');
             } catch (cleanParseError) {
-                console.log('⚠️ Parser limpio falló, intentando extraer...');
+                console.log('⚠️ Parser limpio falló, intentando extracción manual...', cleanParseError.message);
                 
-                // Estrategia 3: Extraer datos específicos
+                // Estrategia 3: Extracción manual más robusta
                 try {
-                    // Buscar patrones conocidos en la respuesta
-                    const statusMatch = responseText.match(/"status":\s*"([^"]+)"/);
-                    const incidentsMatch = responseText.match(/"incidents":\s*\[(.*?)\]/s);
-                    const technicianMatch = responseText.match(/"technician":\s*{([^}]+)}/);
+                    // Buscar patrón de incidents array
+                    const incidentsRegex = /"incidents":\s*\[(.*?)\]\s*,\s*"technician"/s;
+                    const incidentsMatch = responseText.match(incidentsRegex);
                     
-                    if (statusMatch && incidentsMatch) {
-                        // Construir objeto válido
+                    if (incidentsMatch) {
+                        const incidentsText = incidentsMatch[1];
+                        console.log('📋 Texto de incidencias extraído, longitud:', incidentsText.length);
+                        
+                        // Buscar technician info
+                        const technicianRegex = /"technician":\s*{([^}]+)}/;
+                        const technicianMatch = responseText.match(technicianRegex);
+                        
+                        let technicianInfo = {};
+                        if (technicianMatch) {
+                            const technicianText = '{' + technicianMatch[1] + '}';
+                            try {
+                                const cleanTechText = technicianText.replace(/\\"/g, '"');
+                                technicianInfo = JSON.parse(cleanTechText);
+                            } catch (e) {
+                                console.log('⚠️ Error parseando technician, usando fallback');
+                                const nameMatch = technicianMatch[1].match(/"name":\s*"([^"]+)"/);
+                                const emailMatch = technicianMatch[1].match(/"email":\s*"([^"]+)"/);
+                                technicianInfo = {
+                                    name: nameMatch ? nameMatch[1] : 'Técnico',
+                                    email: emailMatch ? emailMatch[1] : 'email@empresa.com'
+                                };
+                            }
+                        }
+                        
                         parsedData = {
-                            status: statusMatch[1],
+                            status: 'success',
                             incidents: [],
-                            technician: {},
-                            message: 'Datos extraídos de respuesta de Make'
+                            technician: technicianInfo,
+                            message: 'Datos extraídos con parser manual'
                         };
                         
-                        // Intentar parsear incidencias individuales
-                        const incidentsText = incidentsMatch[1];
-                        const incidentObjects = incidentsText.split('}{');
+                        // Dividir incidencias manualmente buscando patrones
+                        const incidentPattern = /"id":\s*"([^"]*(?:\n[^"]*)?)"/g;
+                        let match;
+                        let incidentBlocks = [];
+                        let lastIndex = 0;
                         
-                        incidentObjects.forEach((incidentText, index) => {
+                        // Encontrar todos los starts de incidencias
+                        while ((match = incidentPattern.exec(incidentsText)) !== null) {
+                            if (incidentBlocks.length > 0) {
+                                // Guardar el bloque anterior
+                                const blockText = incidentsText.substring(lastIndex, match.index);
+                                incidentBlocks.push(blockText);
+                            }
+                            lastIndex = match.index;
+                        }
+                        
+                        // Añadir el último bloque
+                        if (lastIndex < incidentsText.length) {
+                            incidentBlocks.push(incidentsText.substring(lastIndex));
+                        }
+                        
+                        console.log(`📦 Encontrados ${incidentBlocks.length} bloques de incidencias`);
+                        
+                        // Procesar cada bloque de incidencia
+                        incidentBlocks.forEach((block, index) => {
                             try {
-                                // Reparar objeto individual
-                                let fixedIncident = incidentText;
-                                if (index > 0) fixedIncident = '{' + fixedIncident;
-                                if (index < incidentObjects.length - 1) fixedIncident = fixedIncident + '}';
+                                // Limpiar el bloque individual
+                                let cleanBlock = block.trim();
                                 
-                                const incident = JSON.parse(fixedIncident);
+                                // Asegurar que empiece con {
+                                if (!cleanBlock.startsWith('{')) {
+                                    cleanBlock = '{' + cleanBlock;
+                                }
+                                
+                                // Asegurar que termine con }
+                                if (!cleanBlock.endsWith('}')) {
+                                    // Buscar el último } válido
+                                    const lastBraceIndex = cleanBlock.lastIndexOf('}');
+                                    if (lastBraceIndex > 0) {
+                                        cleanBlock = cleanBlock.substring(0, lastBraceIndex + 1);
+                                    } else {
+                                        cleanBlock = cleanBlock + '}';
+                                    }
+                                }
+                                
+                                // Aplicar las mismas limpiezas que antes
+                                cleanBlock = cleanBlock
+                                    .replace(/\\"/g, '"')
+                                    .replace(/"false\\"/g, '"false"')
+                                    .replace(/"true\\"/g, '"true"')
+                                    .replace(/"Sin motivo\\"/g, '"Sin motivo"')
+                                    .replace(/"Sin asignar\\"/g, '"Sin asignar"')
+                                    .replace(/"Sin descripción\\"/g, '"Sin descripción"')
+                                    .replace(/"Sin acciones\\"/g, '"Sin acciones"')
+                                    .replace(/"Sin ayuda\\"/g, '"Sin ayuda"')
+                                    .replace(/"id":\s*"([^"]*)\n([^"]*)"/g, '"id": "$1$2"')
+                                    .replace(/\n/g, ' ')
+                                    .replace(/\s+/g, ' ');
+                                
+                                console.log(`🔧 Procesando incidencia ${index + 1}:`, cleanBlock.substring(0, 100) + '...');
+                                
+                                const incident = JSON.parse(cleanBlock);
                                 parsedData.incidents.push(incident);
+                                console.log(`✅ Incidencia ${index + 1} parseada correctamente:`, incident.id);
+                                
                             } catch (incidentError) {
-                                console.log(`⚠️ Error parseando incidencia ${index}:`, incidentError.message);
+                                console.log(`❌ Error parseando incidencia ${index + 1}:`, incidentError.message);
+                                console.log('📄 Bloque problemático:', block.substring(0, 200) + '...');
                             }
                         });
                         
-                        console.log(`✅ Extraídas ${parsedData.incidents.length} incidencias`);
+                        console.log(`✅ Extraídas ${parsedData.incidents.length} incidencias correctamente`);
+                    } else {
+                        console.log('❌ No se pudo encontrar el patrón de incidents');
                     }
                 } catch (extractError) {
                     console.log('❌ Extracción falló:', extractError.message);
