@@ -1135,13 +1135,27 @@
                 });
 
                 const data = await response.json();
+                console.log('🔐 Respuesta verificación PIN:', data);
 
                 if (data.status === 'success') {
                     accessMode = 'full_access';
                     isAuthenticated = true;
+                    
+                    // Extraer nombre del técnico correctamente
+                    let technicianName = 'Técnico Autorizado';
+                    if (data.technician && data.technician.name) {
+                        // Si viene procesado desde Make
+                        technicianName = data.technician.name;
+                    } else if (data.technician_name) {
+                        // Si viene como campo directo
+                        technicianName = data.technician_name;
+                    }
+                    
                     currentTechnician = { 
                         email: email, 
-                        name: data.technician_name || 'Técnico Autorizado' 
+                        name: technicianName,
+                        department: data.technician?.department || 'No especificado',
+                        level: data.technician?.level || 'No especificado'
                     };
                     
                     closePINModal();
@@ -1182,15 +1196,24 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('📊 Datos incidencias recibidos:', data);
+                    
                     allIncidents = data.incidents || [];
+                    
+                    // Si no se estableció currentTechnician en verifyPIN, usar datos de respuesta
+                    if (!currentTechnician || !currentTechnician.name || currentTechnician.name === 'Técnico Autorizado') {
+                        currentTechnician = {
+                            email: email,
+                            name: data.technician?.name || email.split('@')[0] || 'Técnico',
+                            department: data.technician?.department,
+                            level: data.technician?.level
+                        };
+                    }
                 } else {
-                    // Si hay error, mostrar sin incidencias
                     console.log('⚠️ Error cargando incidencias, mostrando vacío');
                     allIncidents = [];
                 }
 
-                currentTechnician = { email: email, name: fullAccess ? 'Técnico Autorizado' : 'Técnico' };
-                
                 updateUI();
                 renderIncidents();
                 updateStats();
@@ -1200,7 +1223,8 @@
                 document.getElementById('mainHeader').style.display = 'block';
                 document.getElementById('mainContainer').style.display = 'block';
                 
-                // Actualizar header
+                // Actualizar header con nombre real del técnico
+                document.getElementById('dashboardTitle').textContent = `Dashboard - ${currentTechnician.name}`;
                 document.getElementById('authMessage').textContent = fullAccess ? 
                     '✅ Acceso completo' : '👁️ Solo lectura';
                 document.getElementById('authMessage').style.color = fullAccess ? '#059669' : '#d97706';
@@ -1242,9 +1266,9 @@
         function renderIncidentCard(incident) {
             const priorityClass = getPriorityClass(incident.priority);
             const incidentState = getIncidentState(incident);
-            const isWorking = incident.status === 'Trabajando';
+            const isWorking = incident.status && incident.status.includes('Aceptado');
             
-            // Información básica
+            // Información básica con detalles de escalado
             const infoRows = `
                 <div class="incident-info">
                     <div class="info-row">
@@ -1259,26 +1283,58 @@
                         <span>Descripción:</span>
                         <span>${incident.description}</span>
                     </div>
-                    ${incident.l0_response ? `
-                    <div class="info-row response">
+                    <div class="info-row">
                         <span>Estado actual:</span>
+                        <span>${incident.status}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Nivel escalado:</span>
+                        <span>L${incident.escalation_level} ${incident.escalation_paused === 'true' ? '(Pausado)' : ''}</span>
+                    </div>
+                    ${incident.l0_response !== '⭕ Sin Respuesta' ? `
+                    <div class="info-row response">
+                        <span>Respuesta L0:</span>
                         <span>${incident.l0_response}</span>
+                    </div>` : ''}
+                    ${incident.l0_reject_reason !== 'Sin motivo' ? `
+                    <div class="info-row">
+                        <span>Motivo rechazo L0:</span>
+                        <span>${incident.l0_reject_reason}</span>
+                    </div>` : ''}
+                    ${incident.l1_response !== '⭕ Sin Respuesta' ? `
+                    <div class="info-row response">
+                        <span>Respuesta L1:</span>
+                        <span>${incident.l1_response}</span>
+                    </div>` : ''}
+                    ${incident.actions_taken !== 'Sin acciones' ? `
+                    <div class="info-row">
+                        <span>Acciones tomadas:</span>
+                        <span>${incident.actions_taken}</span>
                     </div>` : ''}
                 </div>
             `;
 
-            // Contactos con dropdown para supervisor
+            // Contactos - evitar duplicados
+            const encargado = incident.reporter;
+            const supervisor = incident.supervisor;
+            const encargadoPhone = incident.reporter_phone;
+            const supervisorPhone = incident.supervisor_phone;
+            
+            // Solo mostrar encargado y supervisor si son diferentes
+            let contactsHTML = '';
+            if (encargado) {
+                contactsHTML += `
+                    <div class="contact-item">
+                        <span class="contact-name">👔 Encargado: ${encargado}</span>
+                        <a href="tel:${encargadoPhone}" class="contact-phone">Llamar</a>
+                    </div>
+                `;
+            }
+            
             const contactsSection = `
                 <div class="contacts-section">
                     <div class="contacts-title">📞 Contactos</div>
-                    <div class="contact-item">
-                        <span class="contact-name">👔 Encargado: ${incident.reporter}</span>
-                        <a href="tel:${incident.reporter_phone}" class="contact-phone">Llamar</a>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-name">📋 Reportador: ${incident.reporter}</span>
-                        <a href="tel:${incident.reporter_phone}" class="contact-phone">Llamar</a>
-                    </div>
+                    ${contactsHTML}
                     <div class="contact-item" style="cursor: pointer;" onclick="toggleSupervisorContact('${incident.id}')">
                         <span class="contact-name" style="color: #3b82f6;">
                             👨‍💼 Ver supervisor ▼
@@ -1286,8 +1342,8 @@
                         <span style="font-size: 12px; color: #6b7280;">Mostrar/ocultar</span>
                     </div>
                     <div class="contact-item supervisor-contact" id="supervisor-${incident.id}" style="display: none; background: #f8fafc; margin-left: 10px; border-radius: 4px; padding: 8px;">
-                        <span class="contact-name">👨‍💼 Supervisor: ${incident.supervisor}</span>
-                        <a href="tel:${incident.supervisor_phone}" class="contact-phone">Llamar</a>
+                        <span class="contact-name">👨‍💼 Supervisor: ${supervisor}</span>
+                        <a href="tel:${supervisorPhone}" class="contact-phone">Llamar</a>
                     </div>
                 </div>
             `;
@@ -1295,20 +1351,26 @@
             // Timer/Estado
             let timerContent = '';
             if (incidentState === 'pending') {
-                timerContent = `
-                    <div class="sla-section">
-                        <div class="sla-time" id="timer-${incident.id}">--:--</div>
-                        <div class="sla-label">Tiempo restante para responder</div>
-                        <div class="sla-level">NIVEL L0</div>
-                    </div>
-                `;
+                const slaField = `sla_l${incident.escalation_level}_end`;
+                const slaEnd = incident[slaField] || incident.sla_l0_end;
+                if (slaEnd) {
+                    timerContent = `
+                        <div class="sla-section">
+                            <div class="sla-time" id="timer-${incident.id}">--:--</div>
+                            <div class="sla-label">Tiempo restante para responder</div>
+                            <div class="sla-level">NIVEL L${incident.escalation_level}</div>
+                        </div>
+                    `;
+                }
             } else if (incidentState === 'expired') {
-                const timeElapsed = Math.floor((Date.now() - new Date(incident.sla_end).getTime()) / (1000 * 60));
+                const timeElapsed = parseInt(incident.time_elapsed) || 0;
+                const hoursElapsed = Math.floor(timeElapsed / 60);
+                const minutesElapsed = timeElapsed % 60;
                 timerContent = `
                     <div class="expired-section">
-                        <div class="expired-time">⏰ Vencida hace ${timeElapsed}m</div>
+                        <div class="expired-time">⏰ Vencida hace ${hoursElapsed}h ${minutesElapsed}m</div>
                         <div class="expired-label">SLA SUPERADO</div>
-                        <div class="escalation-info">⚠️ Contacta por teléfono</div>
+                        <div class="escalation-info">⚠️ Escalado nivel L${incident.escalation_level} - Contacta por teléfono</div>
                     </div>
                 `;
             }
@@ -1320,7 +1382,7 @@
                 <div class="incident-card">
                     <div class="incident-header">
                         <div class="incident-id">${incident.id}</div>
-                        <div class="priority-badge ${priorityClass}">${incident.priority}</div>
+                        <div class="priority-badge ${priorityClass}">${incident.priority.replace('🔴 ', '').replace('🟠 ', '').replace('🟡 ', '').replace('🟢 ', '')}</div>
                     </div>
                     ${infoRows}
                     ${contactsSection}
@@ -1591,13 +1653,34 @@
         }
 
         function getPriorityClass(priority) {
+            // Limpiar emojis y obtener solo el texto
+            const cleanPriority = priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+            
             const priorityMap = {
                 'CRÍTICA': 'priority-critica',
-                'ALTA': 'priority-alta',
+                'ALTA': 'priority-alta', 
                 'MEDIA': 'priority-media',
                 'BAJA': 'priority-baja'
             };
-            return priorityMap[priority] || 'priority-media';
+            return priorityMap[cleanPriority] || 'priority-media';
+        }
+
+        function getIncidentState(incident) {
+            // Determinar estado basado en datos reales de Notion
+            if (incident.l0_response === '✅ Aceptado' || incident.status?.includes('Aceptado')) {
+                return 'working';
+            }
+            
+            // Si tiene tiempo transcurrido alto, considerarla vencida
+            const timeElapsed = parseInt(incident.time_elapsed) || 0;
+            const hoursElapsed = timeElapsed / 60;
+            
+            if (hoursElapsed > 2) { // Más de 2 horas = vencida
+                return 'expired';
+            }
+            
+            // Por defecto, pendiente
+            return 'pending';
         }
 
         function updateStats() {
