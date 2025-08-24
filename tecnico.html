@@ -757,8 +757,55 @@
             border: 1px solid #fecaca;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* Escalation History Styles */
+        .escalation-history {
+            background: #f8fafc;
+            margin: 15px -10px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .escalation-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .escalation-level {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .escalation-level:last-child {
+            margin-bottom: 0;
+        }
+
+        .escalation-level-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .escalation-detail {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .escalation-detail:last-child {
+            margin-bottom: 0;
+        }
             .container {
                 padding: 15px;
             }
@@ -1269,108 +1316,65 @@
             const isWorking = incident.l0_response === '✅ Aceptado';
             const escalationLevel = parseInt(incident.escalation_level) || 0;
             
-            // Información básica con TODOS los detalles de escalado
-            let escalationDetails = '';
+            // INFORMACIÓN ACTUAL DEL NIVEL (solo lo relevante)
+            let currentLevelInfo = '';
             
-            // L0 Details
-            if (incident.l0_response !== '⭕ Sin Respuesta') {
-                escalationDetails += `
-                    <div class="info-row response">
-                        <span>📋 Respuesta L0:</span>
-                        <span>${incident.l0_response}</span>
-                    </div>`;
-                
-                if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason !== 'Sin motivo') {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>❌ Motivo rechazo L0:</span>
-                            <span>${incident.l0_reject_reason}</span>
-                        </div>`;
-                }
-                
-                if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type !== 'Sin ayuda') {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>🆘 Tipo ayuda L0:</span>
-                            <span>${incident.l0_help_type}</span>
-                        </div>`;
-                }
-                
-                if (incident.l0_acceptance_date) {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>✅ Fecha aceptación L0:</span>
-                            <span>${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}</span>
-                        </div>`;
-                }
-                
-                if (incident.l0_rejection_date) {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>❌ Fecha rechazo L0:</span>
-                            <span>${new Date(incident.l0_rejection_date).toLocaleString('es-ES')}</span>
-                        </div>`;
-                }
-            }
-
-            // L1 Details
-            if (escalationLevel >= 1 && incident.l1_response !== '⭕ Sin Respuesta') {
-                escalationDetails += `
-                    <div class="info-row response">
-                        <span>📋 Respuesta L1:</span>
-                        <span>${incident.l1_response}</span>
-                    </div>`;
-                
-                if (incident.l1_response === '❌ Rechazado' && incident.l1_reject_reason !== 'Sin motivo') {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>❌ Motivo rechazo L1:</span>
-                            <span>${incident.l1_reject_reason}</span>
-                        </div>`;
-                }
-                
-                if (incident.l1_response === '🟡 Ayuda' && incident.l1_help_type !== 'Sin ayuda') {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>🆘 Tipo ayuda L1:</span>
-                            <span>${incident.l1_help_type}</span>
-                        </div>`;
-                }
-            }
-
-            // L2 Details
-            if (escalationLevel >= 2) {
-                if (incident.l2_responses && incident.l2_responses !== '') {
-                    escalationDetails += `
+            // Mostrar solo la información del nivel actual
+            if (escalationLevel === 0) {
+                if (incident.l0_response !== '⭕ Sin Respuesta') {
+                    currentLevelInfo = `
                         <div class="info-row response">
-                            <span>📋 Respuestas L2:</span>
+                            <span>📋 Estado actual L0:</span>
+                            <span>${incident.l0_response}</span>
+                        </div>`;
+                    
+                    if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason !== 'Sin motivo') {
+                        currentLevelInfo += `
+                            <div class="info-row">
+                                <span>❌ Motivo rechazo:</span>
+                                <span>${incident.l0_reject_reason}</span>
+                            </div>`;
+                    } else if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type !== 'Sin ayuda') {
+                        currentLevelInfo += `
+                            <div class="info-row">
+                                <span>🆘 Tipo de ayuda:</span>
+                                <span>${incident.l0_help_type}</span>
+                            </div>`;
+                    }
+                }
+            } else if (escalationLevel === 1) {
+                if (incident.l1_response !== '⭕ Sin Respuesta') {
+                    currentLevelInfo = `
+                        <div class="info-row response">
+                            <span>📋 Estado actual L1:</span>
+                            <span>${incident.l1_response}</span>
+                        </div>`;
+                } else {
+                    currentLevelInfo = `
+                        <div class="info-row">
+                            <span>📋 Estado actual L1:</span>
+                            <span>⏳ Esperando respuesta técnico backup</span>
+                        </div>`;
+                }
+            } else if (escalationLevel === 2) {
+                if (incident.l2_responses && incident.l2_responses !== '') {
+                    currentLevelInfo = `
+                        <div class="info-row response">
+                            <span>📋 Estado actual L2:</span>
                             <span>${incident.l2_responses}</span>
                         </div>`;
-                }
-                
-                if (incident.l2_reject_reasons !== 'Sin motivos') {
-                    escalationDetails += `
+                } else {
+                    currentLevelInfo = `
                         <div class="info-row">
-                            <span>❌ Motivos rechazo L2:</span>
-                            <span>${incident.l2_reject_reasons}</span>
+                            <span>📋 Estado actual L2:</span>
+                            <span>⏳ Esperando respuesta equipo (${incident.l2_technicians_notified ? incident.l2_technicians_notified.split(',').length : 0} técnicos notificados)</span>
                         </div>`;
                 }
-                
-                if (incident.l2_technicians_notified !== '' && incident.l2_technicians_notified !== 'Ninguno') {
-                    escalationDetails += `
-                        <div class="info-row">
-                            <span>📢 Técnicos L2 notificados:</span>
-                            <span>${incident.l2_technicians_notified}</span>
-                        </div>`;
-                }
-            }
-
-            // L3 Details
-            if (escalationLevel >= 3 && incident.l3_response !== '⭕ Sin Respuesta') {
-                escalationDetails += `
+            } else if (escalationLevel >= 3) {
+                currentLevelInfo = `
                     <div class="info-row response">
-                        <span>👨‍💼 Respuesta Supervisor L3:</span>
-                        <span>${incident.l3_response}</span>
+                        <span>👨‍💼 Estado actual L3:</span>
+                        <span>${incident.l3_response || '⏳ Esperando decisión supervisor'}</span>
                     </div>`;
             }
 
@@ -1396,27 +1400,141 @@
                         <span>⏱️ Tiempo transcurrido:</span>
                         <span>${Math.floor(parseInt(incident.time_elapsed || 0) / 60)}h ${parseInt(incident.time_elapsed || 0) % 60}m</span>
                     </div>
+                    ${currentLevelInfo}
                     <div class="info-row">
                         <span>📋 Descripción:</span>
                         <span style="font-size: 13px;">${incident.description}</span>
                     </div>
-                    ${escalationDetails}
-                    ${incident.actions_taken !== 'Sin acciones' ? `
-                    <div class="info-row">
-                        <span>⚡ Acciones tomadas:</span>
-                        <span style="font-size: 13px;">${incident.actions_taken}</span>
-                    </div>` : ''}
+                    <div class="info-row" style="cursor: pointer;" onclick="toggleEscalationHistory('${incident.id}')">
+                        <span style="color: #3b82f6;">📊 Ver historial completo escalado ▼</span>
+                        <span style="font-size: 12px; color: #6b7280;">Mostrar/ocultar</span>
+                    </div>
                 </div>
             `;
 
-            // Contactos limpios sin duplicados
+            // HISTORIAL COMPLETO DE ESCALADO (oculto por defecto)
+            let fullEscalationHistory = '';
+            
+            // L0 Details
+            if (incident.l0_response !== '⭕ Sin Respuesta') {
+                fullEscalationHistory += `
+                    <div class="escalation-level">
+                        <div class="escalation-level-title">📋 NIVEL L0</div>`;
+                
+                fullEscalationHistory += `<div class="escalation-detail">Respuesta: ${incident.l0_response}</div>`;
+                
+                if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason !== 'Sin motivo') {
+                    fullEscalationHistory += `<div class="escalation-detail">Motivo: ${incident.l0_reject_reason}</div>`;
+                }
+                
+                if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type !== 'Sin ayuda') {
+                    fullEscalationHistory += `<div class="escalation-detail">Tipo ayuda: ${incident.l0_help_type}</div>`;
+                }
+                
+                if (incident.l0_acceptance_date) {
+                    fullEscalationHistory += `<div class="escalation-detail">Fecha aceptación: ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}</div>`;
+                }
+                
+                if (incident.l0_rejection_date) {
+                    fullEscalationHistory += `<div class="escalation-detail">Fecha rechazo: ${new Date(incident.l0_rejection_date).toLocaleString('es-ES')}</div>`;
+                }
+                
+                fullEscalationHistory += `</div>`;
+            }
+
+            // L1 Details
+            if (escalationLevel >= 1) {
+                fullEscalationHistory += `
+                    <div class="escalation-level">
+                        <div class="escalation-level-title">📋 NIVEL L1 - BACKUP</div>`;
+                
+                if (incident.l1_response !== '⭕ Sin Respuesta') {
+                    fullEscalationHistory += `<div class="escalation-detail">Respuesta: ${incident.l1_response}</div>`;
+                    
+                    if (incident.l1_response === '❌ Rechazado' && incident.l1_reject_reason !== 'Sin motivo') {
+                        fullEscalationHistory += `<div class="escalation-detail">Motivo: ${incident.l1_reject_reason}</div>`;
+                    }
+                    
+                    if (incident.l1_response === '🟡 Ayuda' && incident.l1_help_type !== 'Sin ayuda') {
+                        fullEscalationHistory += `<div class="escalation-detail">Tipo ayuda: ${incident.l1_help_type}</div>`;
+                    }
+                } else {
+                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Sin respuesta</div>`;
+                }
+                
+                fullEscalationHistory += `</div>`;
+            }
+
+            // L2 Details
+            if (escalationLevel >= 2) {
+                fullEscalationHistory += `
+                    <div class="escalation-level">
+                        <div class="escalation-level-title">📋 NIVEL L2 - EQUIPO</div>`;
+                
+                if (incident.l2_responses && incident.l2_responses !== '') {
+                    fullEscalationHistory += `<div class="escalation-detail">Respuestas: ${incident.l2_responses}</div>`;
+                } else {
+                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Sin respuestas</div>`;
+                }
+                
+                if (incident.l2_reject_reasons !== 'Sin motivos') {
+                    fullEscalationHistory += `<div class="escalation-detail">Motivos rechazo: ${incident.l2_reject_reasons}</div>`;
+                }
+                
+                if (incident.l2_technicians_notified && incident.l2_technicians_notified !== 'Ninguno') {
+                    const techCount = incident.l2_technicians_notified.split(',').length;
+                    fullEscalationHistory += `<div class="escalation-detail">Técnicos notificados (${techCount}): ${incident.l2_technicians_notified}</div>`;
+                }
+                
+                fullEscalationHistory += `</div>`;
+            }
+
+            // L3 Details
+            if (escalationLevel >= 3) {
+                fullEscalationHistory += `
+                    <div class="escalation-level">
+                        <div class="escalation-level-title">👨‍💼 NIVEL L3 - SUPERVISOR</div>`;
+                
+                if (incident.l3_response !== '⭕ Sin Respuesta') {
+                    fullEscalationHistory += `<div class="escalation-detail">Decisión: ${incident.l3_response}</div>`;
+                } else {
+                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Esperando decisión</div>`;
+                }
+                
+                fullEscalationHistory += `</div>`;
+            }
+
+            // Acciones tomadas
+            if (incident.actions_taken !== 'Sin acciones') {
+                fullEscalationHistory += `
+                    <div class="escalation-level">
+                        <div class="escalation-level-title">⚡ ACCIONES REALIZADAS</div>
+                        <div class="escalation-detail">${incident.actions_taken}</div>
+                    </div>`;
+            }
+
+            // Sección de escalado oculta
+            const escalationHistorySection = `
+                <div class="escalation-history" id="escalation-${incident.id}" style="display: none; background: #f8fafc; margin: 15px -10px; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <div class="escalation-title">📊 HISTORIAL COMPLETO DE ESCALADO</div>
+                    ${fullEscalationHistory}
+                </div>
+            `;
+
+            // CONTACTOS CORREGIDOS: Manager (Encargado zona) y Reporter (Reportador) son diferentes
             const contactsSection = `
                 <div class="contacts-section">
                     <div class="contacts-title">📞 Contactos</div>
+                    ${incident.manager ? `
                     <div class="contact-item">
-                        <span class="contact-name">👔 Encargado: ${incident.reporter}</span>
+                        <span class="contact-name">👔 Encargado zona: ${incident.manager}</span>
+                        <a href="tel:${incident.manager_phone}" class="contact-phone">Llamar</a>
+                    </div>` : ''}
+                    ${incident.reporter ? `
+                    <div class="contact-item">
+                        <span class="contact-name">📋 Reportador: ${incident.reporter}</span>
                         <a href="tel:${incident.reporter_phone}" class="contact-phone">Llamar</a>
-                    </div>
+                    </div>` : ''}
                     <div class="contact-item" style="cursor: pointer;" onclick="toggleSupervisorContact('${incident.id}')">
                         <span class="contact-name" style="color: #3b82f6;">
                             👨‍💼 Ver supervisor ▼
@@ -1433,13 +1551,12 @@
             // Timer SLA según nivel de escalado
             let timerContent = '';
             if (incidentState === 'pending') {
-                // Determinar qué SLA usar según el nivel
-                let slaField = `sla_l${escalationLevel}_end`;
+                let slaField = 'sla_l0_end';
                 if (escalationLevel === 1) slaField = 'sla_l1_backup_end';
-                if (escalationLevel === 2) slaField = 'sla_l2_equipo_end';
-                if (escalationLevel === 3) slaField = 'sla_l3_responsable_end';
+                else if (escalationLevel === 2) slaField = 'sla_l2_equipo_end';
+                else if (escalationLevel === 3) slaField = 'sla_l3_responsable_end';
                 
-                const slaEnd = incident[slaField] || incident.sla_l0_end;
+                const slaEnd = incident[slaField];
                 
                 if (slaEnd && slaEnd !== '') {
                     timerContent = `
@@ -1473,6 +1590,7 @@
                         <div class="priority-badge ${priorityClass}">${incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim()}</div>
                     </div>
                     ${infoRows}
+                    ${escalationHistorySection}
                     ${contactsSection}
                     ${timerContent}
                     ${actionButtons}
@@ -1784,7 +1902,7 @@
         }
 
         // ==========================================
-        // 📞 FUNCIÓN CONTACTOS DROPDOWN
+        // 📞 FUNCIONES CONTACTOS Y ESCALADO DROPDOWN
         // ==========================================
         function toggleSupervisorContact(incidentId) {
             const supervisorDiv = document.getElementById(`supervisor-${incidentId}`);
@@ -1798,6 +1916,24 @@
                 toggleButton.textContent = isVisible ? 
                     '👨‍💼 Ver supervisor ▼' : 
                     '👨‍💼 Ocultar supervisor ▲';
+            }
+        }
+
+        function toggleEscalationHistory(incidentId) {
+            const historyDiv = document.getElementById(`escalation-${incidentId}`);
+            const isVisible = historyDiv.style.display !== 'none';
+            
+            historyDiv.style.display = isVisible ? 'none' : 'block';
+            
+            // Actualizar texto del botón
+            const toggleButton = historyDiv.previousElementSibling.querySelector('[onclick*="toggleEscalationHistory"]');
+            if (toggleButton) {
+                const span = toggleButton.querySelector('span');
+                if (span) {
+                    span.textContent = isVisible ? 
+                        '📊 Ver historial completo escalado ▼' : 
+                        '📊 Ocultar historial escalado ▲';
+                }
             }
         }
 
