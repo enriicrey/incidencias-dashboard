@@ -1,4 +1,4 @@
-// API para manejar respuestas de técnicos - SOLUCIÓN DEFINITIVA
+// API que SOLO procesa datos reales de Make - SIN DATOS INVENTADOS
 export default async function handler(req, res) {
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -57,10 +57,13 @@ export default async function handler(req, res) {
         
         console.log('📨 Enviando a Make:', makePayload);
         
-        // En desarrollo, usar datos de prueba
+        // En desarrollo local, mostrar error
         if (!process.env.MAKE_WEBHOOK_RESPUESTA) {
-            console.log('🔧 DESARROLLO - Usando datos de prueba');
-            return res.status(200).json(getDevResponse(action, makePayload));
+            console.log('❌ DESARROLLO - Make webhook no configurado');
+            return res.status(500).json({
+                status: 'error',
+                message: 'Webhook de Make no configurado en desarrollo'
+            });
         }
         
         // En producción, enviar a Make
@@ -82,83 +85,58 @@ export default async function handler(req, res) {
         
         // Leer respuesta de Make
         const responseText = await makeResponse.text();
-        console.log('📄 Make Response (primeros 300 chars):', responseText.substring(0, 300));
+        console.log('📄 Make Response COMPLETA:', responseText);
         
-        // PARSER ROBUSTO - Manejar JSON problemático de Make
-        try {
-            // Método 1: Parser directo
-            const parsedData = JSON.parse(responseText);
-            console.log('✅ JSON parseado correctamente (método directo)');
-            console.log('📊 Status:', parsedData.status);
-            console.log('📊 Incidents encontrados:', parsedData.incidents?.length || 0);
+        // VERIFICAR QUÉ ESTÁ DEVOLVIENDO MAKE
+        if (responseText.trim() === 'Accepted') {
+            console.log('❌ PROBLEMA: Make está devolviendo solo "Accepted"');
+            console.log('❌ SOLUCIÓN: Verificar que el escenario use WebhookRespond, no HTTP Response');
             
-            return res.status(200).json(parsedData);
-            
-        } catch (parseError) {
-            console.log('❌ Parser directo falló, usando método avanzado:', parseError.message);
-            
-            // Método 2: Limpieza avanzada de JSON
-            try {
-                let cleanedResponse = responseText;
-                
-                // Limpiar caracteres de control problemáticos
-                cleanedResponse = cleanedResponse
-                    .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Eliminar caracteres de control
-                    .replace(/\\n/g, ' ') // Reemplazar saltos de línea escapados
-                    .replace(/\\r/g, '') // Eliminar returns
-                    .replace(/\\t/g, ' ') // Reemplazar tabs
-                    .replace(/\\/g, '\\\\') // Escapar backslashes
-                    .replace(/"/g, '\\"') // Escapar comillas dentro de strings
-                    .replace(/\\"/g, '"') // Restaurar comillas de JSON
-                    .replace(/\\\\/g, '\\'); // Restaurar backslashes normales
-                
-                // Limpiar comentarios
-                cleanedResponse = cleanedResponse.replace(/\/\/.*$/gm, '');
-                
-                // Limpiar trailing commas
-                cleanedResponse = cleanedResponse.replace(/,(\s*[}\]])/g, '$1');
-                
-                console.log('🧹 JSON limpiado con método avanzado');
-                
-                const parsedClean = JSON.parse(cleanedResponse);
-                console.log('✅ JSON parseado correctamente (método limpieza)');
-                console.log('📊 Incidents encontrados:', parsedClean.incidents?.length || 0);
-                
-                return res.status(200).json(parsedClean);
-                
-            } catch (cleanParseError) {
-                console.log('❌ Limpieza avanzada falló:', cleanParseError.message);
-                
-                // Método 3: Extracción manual (último recurso)
-                try {
-                    console.log('🔧 Usando extracción manual...');
-                    
-                    const extractedData = extractDataManually(responseText);
-                    if (extractedData && extractedData.incidents) {
-                        console.log('✅ Extracción manual exitosa');
-                        console.log('📊 Incidents extraídos:', extractedData.incidents.length);
-                        return res.status(200).json(extractedData);
-                    }
-                    
-                } catch (extractError) {
-                    console.log('❌ Extracción manual falló:', extractError.message);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Make está devolviendo "Accepted" en lugar del JSON configurado',
+                make_response: responseText,
+                solution: 'Verificar que el último módulo en Make sea WebhookRespond con el JSON completo',
+                debug_info: {
+                    action: action,
+                    webhook_url: process.env.MAKE_WEBHOOK_RESPUESTA,
+                    timestamp: new Date().toISOString()
                 }
-            }
-        }
-        
-        // Si todo falla y es una acción exitosa
-        if (responseText.includes('success') || responseText.trim() === 'Accepted') {
-            console.log('✅ Make confirmó éxito, generando respuesta');
-            return res.status(200).json({
-                status: 'success',
-                message: `Acción ${action} procesada correctamente`,
-                action: action,
-                timestamp: new Date().toISOString()
             });
         }
         
-        // Último recurso: error
-        throw new Error('No se pudo procesar la respuesta de Make');
+        // Intentar parsear JSON de Make
+        try {
+            const parsedData = JSON.parse(responseText);
+            console.log('✅ JSON parseado correctamente desde Make');
+            console.log('📊 Status:', parsedData.status);
+            console.log('📊 Incidents encontrados:', parsedData.incidents?.length || 0);
+            
+            // VALIDAR que tiene la estructura esperada
+            if (!parsedData.status) {
+                console.log('⚠️ Advertencia: respuesta sin campo status');
+            }
+            
+            if (action === 'get_assigned_incidents' && !parsedData.incidents) {
+                console.log('⚠️ Advertencia: get_assigned_incidents sin campo incidents');
+            }
+            
+            // DEVOLVER LOS DATOS REALES DE MAKE
+            return res.status(200).json(parsedData);
+            
+        } catch (parseError) {
+            console.log('❌ Error parseando JSON de Make:', parseError.message);
+            console.log('📄 Contenido que causó el error:', responseText.substring(0, 500));
+            
+            // Si no es JSON válido, es un problema de Make
+            return res.status(500).json({
+                status: 'error',
+                message: 'Make devolvió JSON inválido',
+                parse_error: parseError.message,
+                make_response_preview: responseText.substring(0, 200),
+                solution: 'Verificar la sintaxis JSON en el WebhookRespond de Make'
+            });
+        }
         
     } catch (error) {
         console.error('❌ Error en webhook respuesta:', error);
@@ -166,74 +144,8 @@ export default async function handler(req, res) {
         return res.status(500).json({
             status: 'error',
             message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Error procesando respuesta',
+            error: error.message,
             action: data?.action || 'unknown'
         });
     }
-}
-
-// Función de extracción manual para casos extremos
-function extractDataManually(responseText) {
-    try {
-        // Buscar el patrón de incidencias
-        const incidentsMatch = responseText.match(/"incidents":\s*\[(.*?)\]/s);
-        if (!incidentsMatch) {
-            throw new Error('No se encontraron incidencias');
-        }
-        
-        // Buscar información del técnico
-        const technicianMatch = responseText.match(/"technician":\s*{([^}]*)}/);
-        let technician = { name: 'Técnico', email: 'no-email' };
-        
-        if (technicianMatch) {
-            const techData = technicianMatch[1];
-            const nameMatch = techData.match(/"name":\s*"([^"]*)"/);
-            const emailMatch = techData.match(/"email":\s*"([^"]*)"/);
-            
-            if (nameMatch) technician.name = nameMatch[1];
-            if (emailMatch) technician.email = emailMatch[1];
-        }
-        
-        // Buscar status
-        const statusMatch = responseText.match(/"status":\s*"([^"]*)"/);
-        const status = statusMatch ? statusMatch[1] : 'success';
-        
-        // Para simplificar, retornamos estructura vacía pero válida
-        // Los datos reales se procesarán cuando Make arregle el JSON
-        return {
-            status: status,
-            message: 'Datos extraídos manualmente - JSON parcialmente corrupto',
-            incidents: [], // Vacío por seguridad
-            technician: technician,
-            total_incidents: 0,
-            timestamp: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        throw new Error(`Extracción manual falló: ${error.message}`);
-    }
-}
-
-// Respuestas de desarrollo solo para testing local
-function getDevResponse(action, payload) {
-    if (action === 'get_assigned_incidents') {
-        return {
-            status: 'success',
-            message: 'Modo desarrollo - sin incidencias reales',
-            technician: {
-                name: payload.technician_name,
-                email: payload.technician_email,
-                department: 'Desarrollo'
-            },
-            incidents: [], // Vacío para evitar confusión
-            total_incidents: 0
-        };
-    }
-    
-    // Para otras acciones
-    return {
-        status: 'success',
-        message: `Acción ${action} procesada en desarrollo`,
-        action: action
-    };
 }
