@@ -1728,6 +1728,120 @@
             console.log(`🎯 Adaptadas ${adaptedIncidents.length} incidencias correctamente`);
             return adaptedIncidents;
         }
+
+        // FUNCIÓN: Determinar si el técnico puede responder (cambiar nombre de canTechnicianAct)
+function canTechnicianRespond(incident, technicianEmail) {
+    // Si ya respondió en cualquier nivel, NO puede volver a responder
+    if (incident.l0_technician === technicianEmail && 
+        incident.l0_response !== '⭕ Sin Respuesta') {
+        return false; // Ya respondió en L0
+    }
+    
+    if (incident.l1_technician === technicianEmail && 
+        incident.l1_response !== '⭕ Sin Respuesta') {
+        return false; // Ya respondió en L1
+    }
+    
+    // Solo puede responder si es su turno en el nivel actual Y no ha respondido
+    const escalationLevel = parseInt(incident.escalation_level) || 0;
+    const isEscalationActive = incident.escalation_paused !== 'true';
+    
+    switch (escalationLevel) {
+        case 0: // Nivel L0
+            return incident.l0_technician === technicianEmail && 
+                   incident.l0_response === '⭕ Sin Respuesta' &&
+                   isEscalationActive;
+                   
+        case 1: // Nivel L1
+            return incident.l1_technician === technicianEmail && 
+                   incident.l1_response === '⭕ Sin Respuesta' &&
+                   isEscalationActive;
+                   
+        case 2: // Nivel L2
+            const isInL2List = incident.l2_technicians_notified && 
+                               incident.l2_technicians_notified.includes(technicianEmail);
+            const hasNotRespondedL2 = !incident.l2_technicians || 
+                                      !incident.l2_technicians.includes(technicianEmail);
+            return isInL2List && hasNotRespondedL2 && isEscalationActive;
+            
+        case 3: // Nivel L3 - Solo supervisor
+            return false;
+            
+        default:
+            return false;
+    }
+}
+
+// FUNCIÓN: Determinar el estado real de la incidencia para filtros
+function getIncidentRealState(incident, technicianEmail) {
+    // Si el técnico ya está trabajando en ella
+    if (incident.assigned_technician && 
+        incident.assigned_technician.toLowerCase().includes(technicianEmail.split('@')[0])) {
+        return 'working';
+    }
+    
+    // Si puede responder = pendiente
+    if (canTechnicianRespond(incident, technicianEmail)) {
+        return 'pending';
+    }
+    
+    // Si SLA vencido
+    const escalationLevel = parseInt(incident.escalation_level) || 0;
+    let currentSLA = '';
+    switch(escalationLevel) {
+        case 0: currentSLA = incident.sla_l0_end; break;
+        case 1: currentSLA = incident.sla_l1_backup_end; break;
+        case 2: currentSLA = incident.sla_l2_equipo_end; break;
+        case 3: currentSLA = incident.sla_l3_responsable_end; break;
+    }
+    
+    if (currentSLA && new Date(currentSLA) < new Date()) {
+        return 'expired';
+    }
+    
+    // Si ya respondió o no es su responsabilidad
+    return 'not_mine';
+}
+
+// FUNCIÓN: Timers SLA en tiempo real
+function startSLATimers() {
+    const timers = document.querySelectorAll('.sla-timer[data-end]');
+    
+    timers.forEach(timer => {
+        const endTime = new Date(timer.dataset.end);
+        
+        const updateTimer = () => {
+            const now = new Date();
+            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+            
+            if (diffMinutes <= 0) {
+                timer.innerHTML = '⏰ VENCIDO';
+                timer.className = 'sla-expired';
+                return;
+            }
+            
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            
+            let className = 'sla-timer';
+            if (diffMinutes <= 30) className += ' sla-critical';
+            else if (diffMinutes <= 60) className += ' sla-warning';
+            else className += ' sla-good';
+            
+            timer.className = className;
+            timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}min`;
+        };
+        
+        updateTimer(); // Inicial
+        const intervalId = setInterval(updateTimer, 60000); // Cada minuto
+        
+        // Guardar el interval ID para poder limpiarlo después
+        timer.setAttribute('data-interval', intervalId);
+    });
+}
+
+
+        
         async function loadTechnicianDashboard(email, fullAccess) {
             try {
                 showLoading('Cargando incidencias...');
@@ -2658,12 +2772,6 @@ function getCurrentUserEmail() {
     });
 }
 
-
-        function getIncidentState(incident) {
-            if (incident.status === 'Trabajando') return 'working';
-            if (incident.sla_end && new Date(incident.sla_end) < new Date()) return 'expired';
-            return 'pending';
-        }
 
         function getCurrentEscalationLevel(incident) {
             return incident.escalation_level === 0 ? 'L0' : 
