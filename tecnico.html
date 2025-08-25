@@ -254,9 +254,10 @@
             color: white;
         }
 
-        /* Incidents Grid */
+        /* Incidents Grid - 2 columnas en desktop, 1 en móvil */
         .incidents-grid {
             display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
 
@@ -827,6 +828,10 @@
                 gap: 15px;
             }
             
+            .incidents-grid {
+                grid-template-columns: 1fr;
+            }
+            
             .action-buttons.working-state {
                 grid-template-columns: 1fr;
             }
@@ -1293,6 +1298,14 @@
         function renderIncidents() {
             const container = document.getElementById('incidentsContainer');
             let filteredIncidents = filterIncidents();
+            
+            console.log('📊 Total incidencias:', allIncidents.length);
+            console.log('🔍 Filtradas:', filteredIncidents.length);
+            console.log('📋 Estados:', {
+                pending: allIncidents.filter(i => getIncidentState(i) === 'pending').length,
+                working: allIncidents.filter(i => getIncidentState(i) === 'working').length,
+                expired: allIncidents.filter(i => getIncidentState(i) === 'expired').length
+            });
             
             if (filteredIncidents.length === 0) {
                 container.innerHTML = createNoIncidentsHTML(
@@ -1873,16 +1886,39 @@
 
         function getIncidentState(incident) {
             // Determinar estado basado en datos reales de Notion
-            if (incident.l0_response === '✅ Aceptado' || incident.status?.includes('Aceptado')) {
+            if (incident.l0_response === '✅ Aceptado') {
                 return 'working';
             }
             
-            // Si tiene tiempo transcurrido alto, considerarla vencida
+            // Si el escalado está pausado y hay respuesta, considerarla working
+            if (incident.escalation_paused === 'true' && incident.l0_response !== '⭕ Sin Respuesta') {
+                return 'working';
+            }
+            
+            // Si tiene tiempo transcurrido muy alto, considerarla vencida
             const timeElapsed = parseInt(incident.time_elapsed) || 0;
             const hoursElapsed = timeElapsed / 60;
             
-            if (hoursElapsed > 2) { // Más de 2 horas = vencida
+            // Si tiene más de 2 horas o SLA vencido
+            if (hoursElapsed > 2) {
                 return 'expired';
+            }
+            
+            // Verificar si hay SLA específico vencido
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            let slaField = 'sla_l0_end';
+            if (escalationLevel === 1) slaField = 'sla_l1_backup_end';
+            else if (escalationLevel === 2) slaField = 'sla_l2_equipo_end';
+            else if (escalationLevel === 3) slaField = 'sla_l3_responsable_end';
+            
+            const slaEnd = incident[slaField];
+            if (slaEnd && new Date(slaEnd) < new Date()) {
+                return 'expired';
+            }
+            
+            // Si no tiene respuesta y no está vencida, es pendiente
+            if (incident.l0_response === '⭕ Sin Respuesta') {
+                return 'pending';
             }
             
             // Por defecto, pendiente
