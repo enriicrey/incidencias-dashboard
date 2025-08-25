@@ -1101,6 +1101,139 @@
     .incident-actions .btn {
         min-width: auto;
     }
+    const improvedCSS = `
+.incidents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.incident-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.incident-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.incident-title h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.priority-badge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.incident-id {
+    font-size: 0.85rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.incident-body {
+    margin-bottom: 15px;
+}
+
+.zone {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.sla-info {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.sla-timer.sla-good {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.sla-timer.sla-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.sla-timer.sla-critical {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sla-expired {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.incident-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.incident-actions .btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+.no-action-info {
+    text-align: center;
+    padding: 10px;
+}
+
+@media (max-width: 768px) {
+    .incidents-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .incident-actions {
+        flex-direction: column;
+    }
+    
+    .incident-actions .btn {
+        min-width: auto;
+    }
 }
         }
     </style>
@@ -2491,7 +2624,7 @@ function getCurrentUserEmail() {
         // ==========================================
         // 📊 FUNCIONES AUXILIARES
         // ==========================================
-       function filterIncidents() {
+    function filterIncidents() {
     const technicianEmail = currentTechnician?.email || '';
     
     return allIncidents.filter(incident => {
@@ -2524,6 +2657,7 @@ function getCurrentUserEmail() {
         return statusMatch && priorityMatch;
     });
 }
+
 
         function getIncidentState(incident) {
             if (incident.status === 'Trabajando') return 'working';
