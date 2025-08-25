@@ -843,6 +843,131 @@
             .incident-card {
                 padding: 20px;
             }
+        .level-info {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+}
+
+.level-info.completed {
+    background: #f0f9ff;
+    border-left-color: #10b981;
+}
+
+.level-info.current {
+    background: #fff7ed;
+    border-left-color: #f59e0b;
+}
+
+.escalation-status.active {
+    color: #059669;
+    background: #ecfdf5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.escalation-status.paused {
+    color: #d97706;
+    background: #fffbeb;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.critical-escalation {
+    background: linear-gradient(135deg, #fee2e2, #fef2f2);
+    border: 2px solid #ef4444;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.critical-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #dc2626;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.responses-list {
+    margin-left: 10px;
+}
+
+.response-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    margin: 2px 0;
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.working-section {
+    background: #f0fdf4;
+    border: 1px solid #22c55e;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.working-status {
+    font-size: 16px;
+    font-weight: bold;
+    color: #16a34a;
+    margin-bottom: 5px;
+}
+
+.system-notes, .contacts-section {
+    margin: 15px 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.notes-header, .contacts-header {
+    background: #f9fafb;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+}
+
+.notes-content, .contacts-list {
+    padding: 15px;
+}
+
+.initial-actions {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.actions-header {
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 5px;
+}
+
+.no-action-info {
+    text-align: center;
+    padding: 15px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    color: #64748b;
+    margin: 15px 0;
+    font-style: italic;
+}
         }
     </style>
 </head>
@@ -1323,342 +1448,463 @@
             startAllSLATimers();
         }
 
-        function renderIncidentCard(incident) {
-            const priorityClass = getPriorityClass(incident.priority);
-            const incidentState = getIncidentState(incident);
-            const isWorking = incident.l0_response === '✅ Aceptado';
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
+function renderIncidentCard(incident) {
+    const priorityClass = getPriorityClass(incident.priority);
+    const incidentState = getIncidentState(incident);
+    const escalationLevel = parseInt(incident.escalation_level) || 0;
+    const escalationActive = incident.escalation === 'true' || incident.escalation === true;
+    
+    // 🎯 INFORMACIÓN ACTUAL DEL NIVEL
+    let currentLevelInfo = '';
+    let escalationInfo = '';
+    
+    // Mostrar información según el nivel de escalado
+    if (escalationLevel === 0) {
+        currentLevelInfo = `
+            <div class="level-info">
+                <div class="level-title">📋 NIVEL L0 - INICIAL</div>
+                <div class="info-row">
+                    <span>👨‍🔧 Técnico:</span>
+                    <span>${incident.l0_technician || 'Sin asignar'}</span>
+                </div>`;
+        
+        if (incident.l0_response && incident.l0_response !== '⏸• Sin Respuesta') {
+            currentLevelInfo += `
+                <div class="info-row response">
+                    <span>📋 Estado:</span>
+                    <span>${incident.l0_response}</span>
+                </div>`;
             
-            // INFORMACIÓN ACTUAL DEL NIVEL (solo lo relevante)
-            let currentLevelInfo = '';
+            if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason) {
+                currentLevelInfo += `
+                    <div class="info-row">
+                        <span>❌ Motivo:</span>
+                        <span>${incident.l0_reject_reason}</span>
+                    </div>`;
+            } else if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type) {
+                currentLevelInfo += `
+                    <div class="info-row">
+                        <span>🆘 Tipo ayuda:</span>
+                        <span>${incident.l0_help_type}</span>
+                    </div>`;
+            }
+        } else {
+            currentLevelInfo += `
+                <div class="info-row pending">
+                    <span>⏸️ Estado:</span>
+                    <span>Esperando respuesta del técnico</span>
+                </div>`;
+        }
+        
+        currentLevelInfo += `</div>`;
+        
+        // Información de escalado para L0
+        escalationInfo = `
+            <div class="escalation-status ${escalationActive ? 'active' : 'paused'}">
+                ${escalationActive ? 
+                    '🔄 Escalado activo - Timer corriendo' : 
+                    '⏸️ Escalado pausado - Timer detenido'
+                }
+            </div>`;
+    }
+    
+    else if (escalationLevel === 1) {
+        // Mostrar L0 completado + L1 actual
+        currentLevelInfo = `
+            <div class="level-info completed">
+                <div class="level-title">✅ NIVEL L0 - COMPLETADO</div>
+                <div class="info-row">
+                    <span>👨‍🔧 ${incident.l0_technician}</span>
+                    <span>${incident.l0_response}</span>
+                </div>
+            </div>
             
-            // Mostrar solo la información del nivel actual
-            if (escalationLevel === 0) {
-                if (incident.l0_response !== '⭕ Sin Respuesta') {
-                    currentLevelInfo = `
-                        <div class="info-row response">
-                            <span>📋 Estado actual L0:</span>
-                            <span>${incident.l0_response}</span>
-                        </div>`;
-                    
-                    if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason !== 'Sin motivo') {
-                        currentLevelInfo += `
-                            <div class="info-row">
-                                <span>❌ Motivo rechazo:</span>
-                                <span>${incident.l0_reject_reason}</span>
-                            </div>`;
-                    } else if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type !== 'Sin ayuda') {
-                        currentLevelInfo += `
-                            <div class="info-row">
-                                <span>🆘 Tipo de ayuda:</span>
-                                <span>${incident.l0_help_type}</span>
-                            </div>`;
-                    }
-                }
-            } else if (escalationLevel === 1) {
-                if (incident.l1_response !== '⭕ Sin Respuesta') {
-                    currentLevelInfo = `
-                        <div class="info-row response">
-                            <span>📋 Estado actual L1:</span>
-                            <span>${incident.l1_response}</span>
-                        </div>`;
-                } else {
-                    currentLevelInfo = `
-                        <div class="info-row">
-                            <span>📋 Estado actual L1:</span>
-                            <span>⏳ Esperando respuesta técnico backup</span>
-                        </div>`;
-                }
-            } else if (escalationLevel === 2) {
-                if (incident.l2_responses && incident.l2_responses !== '') {
-                    currentLevelInfo = `
-                        <div class="info-row response">
-                            <span>📋 Estado actual L2:</span>
-                            <span>${incident.l2_responses}</span>
-                        </div>`;
-                } else {
-                    currentLevelInfo = `
-                        <div class="info-row">
-                            <span>📋 Estado actual L2:</span>
-                            <span>⏳ Esperando respuesta equipo (${incident.l2_technicians_notified ? incident.l2_technicians_notified.split(',').length : 0} técnicos notificados)</span>
-                        </div>`;
-                }
-            } else if (escalationLevel >= 3) {
-                currentLevelInfo = `
+            <div class="level-info current">
+                <div class="level-title">📋 NIVEL L1 - BACKUP ACTUAL</div>`;
+        
+        if (incident.l1_technician) {
+            currentLevelInfo += `
+                <div class="info-row">
+                    <span>👨‍🔧 Técnico backup:</span>
+                    <span>${incident.l1_technician}</span>
+                </div>`;
+            
+            if (incident.l1_response && incident.l1_response !== '⏸• Sin Respuesta') {
+                currentLevelInfo += `
                     <div class="info-row response">
-                        <span>👨‍💼 Estado actual L3:</span>
-                        <span>${incident.l3_response || '⏳ Esperando decisión supervisor'}</span>
+                        <span>📋 Estado:</span>
+                        <span>${incident.l1_response}</span>
                     </div>`;
-            }
-
-            const infoRows = `
-                <div class="incident-info">
-                    <div class="info-row">
-                        <span>🔧 Equipo:</span>
-                        <span>${incident.equipment}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>🏭 Zona:</span>
-                        <span>${incident.zone}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>📝 Estado:</span>
-                        <span>${incident.status}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>📈 Nivel escalado:</span>
-                        <span>L${escalationLevel} ${incident.escalation_paused === 'true' ? '(⏸️ Pausado)' : '(🔄 Activo)'}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>⏱️ Tiempo transcurrido:</span>
-                        <span>${Math.floor(parseInt(incident.time_elapsed || 0) / 60)}h ${parseInt(incident.time_elapsed || 0) % 60}m</span>
-                    </div>
-                    ${currentLevelInfo}
-                    <div class="info-row">
-                        <span>📋 Descripción:</span>
-                        <span style="font-size: 13px;">${incident.description}</span>
-                    </div>
-                    <div class="info-row" style="cursor: pointer;" onclick="toggleEscalationHistory('${incident.id}')">
-                        <span style="color: #3b82f6;">📊 Ver historial completo escalado ▼</span>
-                        <span style="font-size: 12px; color: #6b7280;">Mostrar/ocultar</span>
-                    </div>
-                </div>
-            `;
-
-            // HISTORIAL COMPLETO DE ESCALADO (oculto por defecto)
-            let fullEscalationHistory = '';
-            
-            // L0 Details
-            if (incident.l0_response !== '⭕ Sin Respuesta') {
-                fullEscalationHistory += `
-                    <div class="escalation-level">
-                        <div class="escalation-level-title">📋 NIVEL L0</div>`;
                 
-                fullEscalationHistory += `<div class="escalation-detail">Respuesta: ${incident.l0_response}</div>`;
-                
-                if (incident.l0_response === '❌ Rechazado' && incident.l0_reject_reason !== 'Sin motivo') {
-                    fullEscalationHistory += `<div class="escalation-detail">Motivo: ${incident.l0_reject_reason}</div>`;
+                if (incident.l1_response === '❌ Rechazado' && incident.l1_reject_reason) {
+                    currentLevelInfo += `
+                        <div class="info-row">
+                            <span>❌ Motivo:</span>
+                            <span>${incident.l1_reject_reason}</span>
+                        </div>`;
                 }
-                
-                if (incident.l0_response === '🟡 Ayuda' && incident.l0_help_type !== 'Sin ayuda') {
-                    fullEscalationHistory += `<div class="escalation-detail">Tipo ayuda: ${incident.l0_help_type}</div>`;
-                }
-                
-                if (incident.l0_acceptance_date) {
-                    fullEscalationHistory += `<div class="escalation-detail">Fecha aceptación: ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}</div>`;
-                }
-                
-                if (incident.l0_rejection_date) {
-                    fullEscalationHistory += `<div class="escalation-detail">Fecha rechazo: ${new Date(incident.l0_rejection_date).toLocaleString('es-ES')}</div>`;
-                }
-                
-                fullEscalationHistory += `</div>`;
-            }
-
-            // L1 Details
-            if (escalationLevel >= 1) {
-                fullEscalationHistory += `
-                    <div class="escalation-level">
-                        <div class="escalation-level-title">📋 NIVEL L1 - BACKUP</div>`;
-                
-                if (incident.l1_response !== '⭕ Sin Respuesta') {
-                    fullEscalationHistory += `<div class="escalation-detail">Respuesta: ${incident.l1_response}</div>`;
-                    
-                    if (incident.l1_response === '❌ Rechazado' && incident.l1_reject_reason !== 'Sin motivo') {
-                        fullEscalationHistory += `<div class="escalation-detail">Motivo: ${incident.l1_reject_reason}</div>`;
-                    }
-                    
-                    if (incident.l1_response === '🟡 Ayuda' && incident.l1_help_type !== 'Sin ayuda') {
-                        fullEscalationHistory += `<div class="escalation-detail">Tipo ayuda: ${incident.l1_help_type}</div>`;
-                    }
-                } else {
-                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Sin respuesta</div>`;
-                }
-                
-                fullEscalationHistory += `</div>`;
-            }
-
-            // L2 Details
-            if (escalationLevel >= 2) {
-                fullEscalationHistory += `
-                    <div class="escalation-level">
-                        <div class="escalation-level-title">📋 NIVEL L2 - EQUIPO</div>`;
-                
-                if (incident.l2_responses && incident.l2_responses !== '') {
-                    fullEscalationHistory += `<div class="escalation-detail">Respuestas: ${incident.l2_responses}</div>`;
-                } else {
-                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Sin respuestas</div>`;
-                }
-                
-                if (incident.l2_reject_reasons !== 'Sin motivos') {
-                    fullEscalationHistory += `<div class="escalation-detail">Motivos rechazo: ${incident.l2_reject_reasons}</div>`;
-                }
-                
-                if (incident.l2_technicians_notified && incident.l2_technicians_notified !== 'Ninguno') {
-                    const techCount = incident.l2_technicians_notified.split(',').length;
-                    fullEscalationHistory += `<div class="escalation-detail">Técnicos notificados (${techCount}): ${incident.l2_technicians_notified}</div>`;
-                }
-                
-                fullEscalationHistory += `</div>`;
-            }
-
-            // L3 Details
-            if (escalationLevel >= 3) {
-                fullEscalationHistory += `
-                    <div class="escalation-level">
-                        <div class="escalation-level-title">👨‍💼 NIVEL L3 - SUPERVISOR</div>`;
-                
-                if (incident.l3_response !== '⭕ Sin Respuesta') {
-                    fullEscalationHistory += `<div class="escalation-detail">Decisión: ${incident.l3_response}</div>`;
-                } else {
-                    fullEscalationHistory += `<div class="escalation-detail">Estado: ⏳ Esperando decisión</div>`;
-                }
-                
-                fullEscalationHistory += `</div>`;
-            }
-
-            // Acciones tomadas
-            if (incident.actions_taken !== 'Sin acciones') {
-                fullEscalationHistory += `
-                    <div class="escalation-level">
-                        <div class="escalation-level-title">⚡ ACCIONES REALIZADAS</div>
-                        <div class="escalation-detail">${incident.actions_taken}</div>
-                    </div>`;
-            }
-
-            // Sección de escalado oculta
-            const escalationHistorySection = `
-                <div class="escalation-history" id="escalation-${incident.id}" style="display: none; background: #f8fafc; margin: 15px -10px; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                    <div class="escalation-title">📊 HISTORIAL COMPLETO DE ESCALADO</div>
-                    ${fullEscalationHistory}
-                </div>
-            `;
-
-            // CONTACTOS CORREGIDOS: Manager (Encargado zona) y Reporter (Reportador) son diferentes
-            const contactsSection = `
-                <div class="contacts-section">
-                    <div class="contacts-title">📞 Contactos</div>
-                    ${incident.manager ? `
-                    <div class="contact-item">
-                        <span class="contact-name">👔 Encargado zona: ${incident.manager}</span>
-                        <a href="tel:${incident.manager_phone}" class="contact-phone">Llamar</a>
-                    </div>` : ''}
-                    ${incident.reporter ? `
-                    <div class="contact-item">
-                        <span class="contact-name">📋 Reportador: ${incident.reporter}</span>
-                        <a href="tel:${incident.reporter_phone}" class="contact-phone">Llamar</a>
-                    </div>` : ''}
-                    <div class="contact-item" style="cursor: pointer;" onclick="toggleSupervisorContact('${incident.id}')">
-                        <span class="contact-name" style="color: #3b82f6;">
-                            👨‍💼 Ver supervisor ▼
-                        </span>
-                        <span style="font-size: 12px; color: #6b7280;">Mostrar/ocultar</span>
-                    </div>
-                    <div class="contact-item supervisor-contact" id="supervisor-${incident.id}" style="display: none; background: #f8fafc; margin-left: 10px; border-radius: 4px; padding: 8px;">
-                        <span class="contact-name">👨‍💼 Supervisor: ${incident.supervisor}</span>
-                        <a href="tel:${incident.supervisor_phone}" class="contact-phone">Llamar</a>
-                    </div>
-                </div>
-            `;
-
-            // Timer SLA según nivel de escalado
-            let timerContent = '';
-            if (incidentState === 'pending') {
-                let slaField = 'sla_l0_end';
-                if (escalationLevel === 1) slaField = 'sla_l1_backup_end';
-                else if (escalationLevel === 2) slaField = 'sla_l2_equipo_end';
-                else if (escalationLevel === 3) slaField = 'sla_l3_responsable_end';
-                
-                const slaEnd = incident[slaField];
-                
-                if (slaEnd && slaEnd !== '') {
-                    timerContent = `
-                        <div class="sla-section">
-                            <div class="sla-time" id="timer-${incident.id}" data-sla-end="${slaEnd}">--:--</div>
-                            <div class="sla-label">Tiempo restante para responder</div>
-                            <div class="sla-level">NIVEL L${escalationLevel}</div>
-                        </div>
-                    `;
-                }
-            } else if (incidentState === 'expired') {
-                const timeElapsed = parseInt(incident.time_elapsed) || 0;
-                const hoursElapsed = Math.floor(timeElapsed / 60);
-                const minutesElapsed = timeElapsed % 60;
-                timerContent = `
-                    <div class="expired-section">
-                        <div class="expired-time">⏰ Vencida hace ${hoursElapsed}h ${minutesElapsed}m</div>
-                        <div class="expired-label">SLA SUPERADO - NIVEL L${escalationLevel}</div>
-                        <div class="escalation-info">⚠️ ${incident.escalation_paused === 'true' ? 'Escalado pausado por supervisor' : 'Contacta por teléfono'}</div>
-                    </div>
-                `;
-            }
-
-            // Botones de acción
-            const actionButtons = renderActionButtons(incident, isWorking);
-
-            return `
-                <div class="incident-card">
-                    <div class="incident-header">
-                        <div class="incident-id">${incident.id}</div>
-                        <div class="priority-badge ${priorityClass}">${incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim()}</div>
-                    </div>
-                    ${infoRows}
-                    ${escalationHistorySection}
-                    ${contactsSection}
-                    ${timerContent}
-                    ${actionButtons}
-                </div>
-            `;
-        }
-
-        function renderActionButtons(incident, isWorking) {
-            const canRespond = (accessMode === 'full_access');
-            const lockClass = canRespond ? '' : 'btn-disabled';
-            
-            if (isWorking) {
-                // Estado TRABAJANDO - 3 botones
-                return `
-                    <div class="action-buttons working-state">
-                        <button class="action-btn btn-complete ${lockClass}" 
-                                onclick="handleAction('completar', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            ✅ COMPLETAR
-                        </button>
-                        <button class="action-btn btn-transfer ${lockClass}" 
-                                onclick="handleAction('transferir', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            🔄 TRANSFERIR
-                        </button>
-                        <button class="action-btn btn-support ${lockClass}" 
-                                onclick="handleAction('solicitar_apoyo', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            🆘 SOLICITAR APOYO
-                        </button>
-                    </div>
-                `;
             } else {
-                // Estado PENDIENTE - 3 botones
-                return `
-                    <div class="action-buttons">
-                        <button class="action-btn btn-accept ${lockClass}" 
-                                onclick="handleAction('acepto', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            ✅ ACEPTO
-                        </button>
-                        <button class="action-btn btn-reject ${lockClass}" 
-                                onclick="handleAction('rechazo', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            ❌ RECHAZO
-                        </button>
-                        <button class="action-btn btn-help ${lockClass}" 
-                                onclick="handleAction('solicitar_ayuda', '${incident.id}')" 
-                                ${!canRespond ? 'disabled' : ''}>
-                            🆘 SOLICITAR AYUDA
-                        </button>
-                    </div>
-                `;
+                currentLevelInfo += `
+                    <div class="info-row pending">
+                        <span>⏸️ Estado:</span>
+                        <span>Esperando respuesta del backup</span>
+                    </div>`;
             }
+        } else {
+            currentLevelInfo += `
+                <div class="info-row searching">
+                    <span>🔍 Estado:</span>
+                    <span>Sistema buscando técnico backup...</span>
+                </div>`;
         }
+        
+        currentLevelInfo += `</div>`;
+    }
+    
+    else if (escalationLevel === 2) {
+        // Mostrar historial L0+L1 + L2 actual
+        currentLevelInfo = `
+            <div class="escalation-history">
+                <div class="level-summary">
+                    <span class="level-badge completed">L0</span>
+                    <span>${incident.l0_technician} → ${incident.l0_response}</span>
+                </div>
+                <div class="level-summary">
+                    <span class="level-badge completed">L1</span>
+                    <span>${incident.l1_technician} → ${incident.l1_response || 'Sin respuesta'}</span>
+                </div>
+            </div>
+            
+            <div class="level-info current">
+                <div class="level-title">📋 NIVEL L2 - EQUIPO ESPECIALISTA</div>`;
+        
+        if (incident.l2_technicians_notified) {
+            const notifiedCount = incident.l2_technicians_notified.split(',').length;
+            currentLevelInfo += `
+                <div class="info-row">
+                    <span>📢 Notificados:</span>
+                    <span>${notifiedCount} técnicos especialistas</span>
+                </div>`;
+        }
+        
+        if (incident.l2_technicians && incident.l2_technicians !== '') {
+            const respondedTechs = incident.l2_technicians.split(',');
+            const responses = incident.l2_responses ? incident.l2_responses.split(',') : [];
+            
+            currentLevelInfo += `<div class="info-row"><span>👥 Respuestas:</span><div class="responses-list">`;
+            
+            respondedTechs.forEach((tech, index) => {
+                const response = responses[index] || 'Sin respuesta';
+                currentLevelInfo += `
+                    <div class="response-item">
+                        <span class="tech-name">${tech.split('@')[0]}</span>
+                        <span class="response-status">${response}</span>
+                    </div>`;
+            });
+            
+            currentLevelInfo += `</div></div>`;
+        } else {
+            currentLevelInfo += `
+                <div class="info-row pending">
+                    <span>⏸️ Estado:</span>
+                    <span>Esperando respuestas del equipo</span>
+                </div>`;
+        }
+        
+        currentLevelInfo += `</div>`;
+    }
+    
+    else if (escalationLevel === 3) {
+        // Escalado crítico - Mostrar todo el historial
+        currentLevelInfo = `
+            <div class="critical-escalation">
+                <div class="critical-header">🚨 ESCALADO CRÍTICO L3</div>
+                <div class="full-history">
+                    <div class="history-item">L0: ${incident.l0_technician} → ${incident.l0_response}</div>
+                    <div class="history-item">L1: ${incident.l1_technician || 'Sin asignar'} → ${incident.l1_response || 'Sin respuesta'}</div>
+                    <div class="history-item">L2: ${incident.l2_technicians ? incident.l2_technicians.split(',').length + ' técnicos' : '0 técnicos'} → ${incident.l2_responses || 'Sin respuestas'}</div>
+                </div>
+                
+                <div class="supervisor-section">
+                    <div class="info-row">
+                        <span>👨‍💼 Supervisor:</span>
+                        <span>${incident.supervisor || 'Sin asignar'}</span>
+                    </div>
+                    ${incident.l3_response && incident.l3_response !== '⏸• Sin Respuesta' ? `
+                        <div class="info-row response">
+                            <span>📋 Respuesta supervisor:</span>
+                            <span>${incident.l3_response}</span>
+                        </div>` : `
+                        <div class="info-row critical-pending">
+                            <span>🚨 Estado:</span>
+                            <span>ESPERANDO INTERVENCIÓN SUPERVISORIAL</span>
+                        </div>`
+                    }
+                </div>
+            </div>`;
+    }
+    
+    // 🎯 TIMER SLA DEL NIVEL ACTUAL
+    let timerContent = '';
+    if (incidentState === 'pending' && escalationActive) {
+        let currentSLA = '';
+        let levelLabel = '';
+        
+        switch(escalationLevel) {
+            case 0: 
+                currentSLA = incident.sla_l0_end;
+                levelLabel = 'L0 - INICIAL';
+                break;
+            case 1: 
+                currentSLA = incident.sla_l1_backup_end;
+                levelLabel = 'L1 - BACKUP';
+                break;
+            case 2: 
+                currentSLA = incident.sla_l2_equipo_end;
+                levelLabel = 'L2 - EQUIPO';
+                break;
+            case 3: 
+                currentSLA = incident.sla_l3_responsable_end;
+                levelLabel = 'L3 - SUPERVISOR';
+                break;
+        }
+        
+        if (currentSLA) {
+            timerContent = `
+                <div class="sla-section active">
+                    <div class="sla-time" id="timer-${incident.id}" data-sla-end="${currentSLA}">--:--</div>
+                    <div class="sla-label">⏱️ Tiempo restante - ${levelLabel}</div>
+                    <div class="sla-status">Escalado automático activo</div>
+                </div>
+            `;
+        }
+    } else if (incidentState === 'expired') {
+        const timeElapsed = parseInt(incident.time_elapsed) || 0;
+        const hoursElapsed = Math.floor(timeElapsed / 60);
+        const minutesElapsed = timeElapsed % 60;
+        timerContent = `
+            <div class="expired-section">
+                <div class="expired-time">⏰ SLA VENCIDO - ${hoursElapsed}h ${minutesElapsed}m</div>
+                <div class="expired-label">NIVEL L${escalationLevel}</div>
+                <div class="escalation-info">
+                    ${escalationActive ? 
+                        '🔄 Escalando automáticamente al siguiente nivel' : 
+                        '⏸️ Escalado pausado - Acción manual requerida'
+                    }
+                </div>
+            </div>
+        `;
+    } else if (!escalationActive && incidentState === 'working') {
+        timerContent = `
+            <div class="working-section">
+                <div class="working-status">✅ ESCALADO PAUSADO</div>
+                <div class="working-label">Técnico trabajando en la incidencia</div>
+                <div class="working-info">Timer detenido por ${
+                    incident.l0_response === '✅ Aceptado' ? 'aceptación' :
+                    incident.l0_response === '🟡 Ayuda' ? 'solicitud de ayuda' :
+                    'intervención manual'
+                }</div>
+            </div>
+        `;
+    }
+    
+    // 🎯 INFORMACIÓN DE CONTACTOS (Mejorada)
+    const contactsContent = `
+        <div class="contacts-section">
+            <div class="contacts-header" onclick="toggleContacts('${incident.id}')">
+                <span>📞 Contactos</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="contacts-list" id="contacts-${incident.id}" style="display: none;">
+                ${incident.reporter ? `
+                <div class="contact-item">
+                    <span class="contact-name">📋 Reportador: ${incident.reporter}</span>
+                    <a href="tel:${incident.reporter_phone}" class="contact-phone">Llamar</a>
+                </div>` : ''}
+                ${incident.manager ? `
+                <div class="contact-item">
+                    <span class="contact-name">👔 Encargado: ${incident.manager}</span>
+                    <a href="tel:${incident.manager_phone}" class="contact-phone">Llamar</a>
+                </div>` : ''}
+                <div class="contact-item supervisor-contact">
+                    <span class="contact-name">👨‍💼 Supervisor: ${incident.supervisor}</span>
+                    <a href="tel:${incident.supervisor_phone}" class="contact-phone">Llamar</a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 🎯 NOTAS DEL SISTEMA (Nueva sección)
+    let systemNotesContent = '';
+    if (incident.nota_asignacion && incident.nota_asignacion !== 'Sin notas') {
+        systemNotesContent = `
+            <div class="system-notes">
+                <div class="notes-header" onclick="toggleSystemNotes('${incident.id}')">
+                    <span>📝 Notas del sistema</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="notes-content" id="notes-${incident.id}" style="display: none;">
+                    <p>${incident.nota_asignacion}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 🎯 BOTONES DE ACCIÓN
+    const actionButtons = renderActionButtons(incident, escalationLevel);
+    
+    return `
+        <div class="incident-card ${priorityClass} ${incidentState}" data-incident-id="${incident.id}">
+            <!-- Header -->
+            <div class="incident-header">
+                <div class="equipment-info">
+                    <h3>${incident.equipment}</h3>
+                    <span class="zone-badge">${incident.zone}</span>
+                </div>
+                <span class="priority-badge">${incident.priority}</span>
+            </div>
+            
+            <!-- Descripción -->
+            <div class="incident-description">
+                <p>${incident.description}</p>
+            </div>
+            
+            <!-- Acciones iniciales del reportador -->
+            ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' ? `
+                <div class="initial-actions">
+                    <div class="actions-header">🔧 Acciones iniciales del reportador:</div>
+                    <p>${incident.actions_taken}</p>
+                </div>
+            ` : ''}
+            
+            <!-- Información del nivel actual -->
+            ${currentLevelInfo}
+            
+            <!-- Timer SLA -->
+            ${timerContent}
+            
+            <!-- Información del escalado -->
+            ${escalationInfo}
+            
+            <!-- Notas del sistema -->
+            ${systemNotesContent}
+            
+            <!-- Contactos -->
+            ${contactsContent}
+            
+            <!-- Botones de acción -->
+            ${actionButtons}
+        </div>
+    `;
+}
+        
+// 🎯 FUNCIÓN PARA DETERMINAR SI EL TÉCNICO PUEDE ACTUAR
+function canTechnicianAct(incident, escalationLevel, technicianEmail) {
+    const escalationActive = incident.escalation === 'true' || incident.escalation === true;
+    
+    // Solo puede actuar si el escalado está activo (no pausado)
+    if (!escalationActive) return false;
+    
+    switch(escalationLevel) {
+        case 0:
+            return incident.l0_technician === technicianEmail && 
+                   (!incident.l0_response || incident.l0_response === '⏸• Sin Respuesta');
+                   
+        case 1:
+            return incident.l1_technician === technicianEmail && 
+                   (!incident.l1_response || incident.l1_response === '⏸• Sin Respuesta');
+                   
+        case 2:
+            // En L2, verificar si el técnico está en la lista de notificados
+            // y no ha respondido aún
+            if (!incident.l2_technicians_notified || !incident.l2_technicians_notified.includes(technicianEmail)) {
+                return false;
+            }
+            
+            // Verificar si ya respondió
+            if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+                return false;
+            }
+            
+            return true;
+            
+        case 3:
+            // En L3 solo puede actuar el supervisor
+            return false;
+            
+        default:
+            return false;
+    }
+}
+// 🎯 RENDERIZAR BOTONES DE ACCIÓN
+       function renderActionButtons(incident, escalationLevel) {
+    const userEmail = getCurrentUserEmail(); // Función que obtiene el email del usuario actual
+    const canAct = canTechnicianAct(incident, escalationLevel, userEmail);
+    
+    if (!canAct) {
+        return `
+            <div class="no-action-info">
+                ${escalationLevel === 3 ? 
+                    '🚨 Incidencia en nivel crítico - Solo supervisor puede actuar' :
+                    '⏸️ No puedes actuar en esta incidencia en este momento'
+                }
+            </div>
+        `;
+    }
+    
+    // Determinar qué técnico eres según el nivel
+    let currentTechRole = '';
+    switch(escalationLevel) {
+        case 0: currentTechRole = 'L0 - Técnico inicial'; break;
+        case 1: currentTechRole = 'L1 - Técnico backup'; break;
+        case 2: currentTechRole = 'L2 - Especialista'; break;
+    }
+    
+    return `
+        <div class="action-section">
+            <div class="action-header">
+                <span>🎯 Tu rol: ${currentTechRole}</span>
+                <span class="action-level">Nivel ${escalationLevel}</span>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn-accept" onclick="handleResponse('${incident.id}', 'acepto', ${escalationLevel})">
+                    ✅ Acepto
+                </button>
+                <button class="btn-reject" onclick="showRejectModal('${incident.id}', ${escalationLevel})">
+                    ❌ Rechazo
+                </button>
+                <button class="btn-help" onclick="showHelpModal('${incident.id}', ${escalationLevel})">
+                    🆘 Necesito ayuda
+                </button>
+            </div>
+        </div>
+    `;
+}
+// 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
+function toggleContacts(incidentId) {
+    const contactsList = document.getElementById(`contacts-${incidentId}`);
+    const isVisible = contactsList.style.display !== 'none';
+    contactsList.style.display = isVisible ? 'none' : 'block';
+    
+    // Cambiar icono
+    const icon = contactsList.parentElement.querySelector('.toggle-icon');
+    icon.textContent = isVisible ? '▼' : '▲';
+}
+
+function toggleSystemNotes(incidentId) {
+    const notesContent = document.getElementById(`notes-${incidentId}`);
+    const isVisible = notesContent.style.display !== 'none';
+    notesContent.style.display = isVisible ? 'none' : 'block';
+    
+    // Cambiar icono
+    const icon = notesContent.parentElement.querySelector('.toggle-icon');
+    icon.textContent = isVisible ? '▼' : '▲';
+}
+function getCurrentUserEmail() {
+    return currentTechnician ? currentTechnician.email : '';
+}
+        
 
         // ==========================================
         // 🔄 FUNCIONES DE ACCIÓN
@@ -1884,46 +2130,38 @@
             return priorityMap[cleanPriority] || 'priority-media';
         }
 
-        function getIncidentState(incident) {
-            // Determinar estado basado en datos reales de Notion
-            if (incident.l0_response === '✅ Aceptado') {
-                return 'working';
-            }
-            
-            // Si el escalado está pausado y hay respuesta, considerarla working
-            if (incident.escalation_paused === 'true' && incident.l0_response !== '⭕ Sin Respuesta') {
-                return 'working';
-            }
-            
-            // Si tiene tiempo transcurrido muy alto, considerarla vencida
-            const timeElapsed = parseInt(incident.time_elapsed) || 0;
-            const hoursElapsed = timeElapsed / 60;
-            
-            // Si tiene más de 2 horas o SLA vencido
-            if (hoursElapsed > 2) {
-                return 'expired';
-            }
-            
-            // Verificar si hay SLA específico vencido
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            let slaField = 'sla_l0_end';
-            if (escalationLevel === 1) slaField = 'sla_l1_backup_end';
-            else if (escalationLevel === 2) slaField = 'sla_l2_equipo_end';
-            else if (escalationLevel === 3) slaField = 'sla_l3_responsable_end';
-            
-            const slaEnd = incident[slaField];
-            if (slaEnd && new Date(slaEnd) < new Date()) {
-                return 'expired';
-            }
-            
-            // Si no tiene respuesta y no está vencida, es pendiente
-            if (incident.l0_response === '⭕ Sin Respuesta') {
-                return 'pending';
-            }
-            
-            // Por defecto, pendiente
-            return 'pending';
-        }
+       function getIncidentState(incident) {
+    // ✅ LÓGICA CORREGIDA: escalado=true significa ACTIVO
+    const escalationActive = incident.escalation === 'true' || incident.escalation === true;
+    const escalationLevel = parseInt(incident.escalation_level) || 0;
+    
+    // Si está aceptada en cualquier nivel
+    if (incident.l0_response === '✅ Aceptado' || 
+        incident.l1_response === '✅ Aceptado' || 
+        (incident.l2_responses && incident.l2_responses.includes('Aceptado'))) {
+        return 'working';
+    }
+    
+    // Si hay solicitud de ayuda activa
+    if (incident.l0_response === '🟡 Ayuda' && !escalationActive) {
+        return 'working';
+    }
+    
+    // Verificar SLA vencido del nivel actual
+    let currentSLA = '';
+    switch(escalationLevel) {
+        case 0: currentSLA = incident.sla_l0_end; break;
+        case 1: currentSLA = incident.sla_l1_backup_end; break;
+        case 2: currentSLA = incident.sla_l2_equipo_end; break;
+        case 3: currentSLA = incident.sla_l3_responsable_end; break;
+    }
+    
+    if (currentSLA && new Date(currentSLA) < new Date()) {
+        return 'expired';
+    }
+    
+    return 'pending';
+}
 
         function updateStats() {
             const totalCount = allIncidents.length;
