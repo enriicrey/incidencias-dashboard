@@ -1235,6 +1235,216 @@
         min-width: auto;
     }
 }
+    const newCSS = `
+/* ========================================== */
+/* 📱 LAYOUT 2 COLUMNAS Y SLA TIMERS */
+/* ========================================== */
+
+.incidents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.incident-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    break-inside: avoid;
+}
+
+.incident-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.incident-title h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.priority-badge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.incident-id {
+    font-size: 0.85rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.incident-body {
+    margin-bottom: 15px;
+}
+
+.zone {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+/* 📊 SLA TIMERS */
+.sla-info {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.sla-timer {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.sla-timer.sla-good {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.sla-timer.sla-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.sla-timer.sla-critical {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sla-expired {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* 🎯 BOTONES DE ACCIÓN */
+.incident-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.incident-actions .btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.no-action-info {
+    text-align: center;
+    padding: 10px;
+}
+
+.no-action-info .badge {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+    .incidents-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .incident-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .incident-actions {
+        flex-direction: column;
+    }
+    
+    .incident-actions .btn {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .incident-card {
+        padding: 15px;
+    }
+    
+    .badges {
+        flex-direction: column;
+        align-items: flex-start;
+    }
         }
     </style>
 </head>
@@ -2058,38 +2268,6 @@ function startSLATimers() {
     // Iniciar timers SLA
     startSLATimers();
 }
-        function startSLATimers() {
-    const timers = document.querySelectorAll('.sla-timer[data-end]');
-    
-    timers.forEach(timer => {
-        const endTime = new Date(timer.dataset.end);
-        
-        const updateTimer = () => {
-            const now = new Date();
-            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
-            
-            if (diffMinutes <= 0) {
-                timer.innerHTML = '⏰ VENCIDO';
-                timer.className = 'sla-expired';
-                return;
-            }
-            
-            const hours = Math.floor(diffMinutes / 60);
-            const minutes = diffMinutes % 60;
-            
-            let className = 'sla-timer';
-            if (diffMinutes <= 30) className += ' sla-critical';
-            else if (diffMinutes <= 60) className += ' sla-warning';
-            else className += ' sla-good';
-            
-            timer.className = className;
-            timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}min`;
-        };
-        
-        updateTimer(); // Inicial
-        setInterval(updateTimer, 60000); // Cada minuto
-    });
-}
 
 function renderIncidentCard(incident) {
     const priorityClass = getPriorityClass(incident.priority);
@@ -2441,44 +2619,6 @@ function renderIncidentCard(incident) {
     `;
 }
         
-// 🎯 FUNCIÓN PARA DETERMINAR SI EL TÉCNICO PUEDE ACTUAR
-function canTechnicianAct(incident, escalationLevel, technicianEmail) {
-    const escalationActive = incident.escalation === 'true' || incident.escalation === true;
-    
-    // Solo puede actuar si el escalado está activo (no pausado)
-    if (!escalationActive) return false;
-    
-    switch(escalationLevel) {
-        case 0:
-            return incident.l0_technician === technicianEmail && 
-                   (!incident.l0_response || incident.l0_response === '⏸• Sin Respuesta');
-                   
-        case 1:
-            return incident.l1_technician === technicianEmail && 
-                   (!incident.l1_response || incident.l1_response === '⏸• Sin Respuesta');
-                   
-        case 2:
-            // En L2, verificar si el técnico está en la lista de notificados
-            // y no ha respondido aún
-            if (!incident.l2_technicians_notified || !incident.l2_technicians_notified.includes(technicianEmail)) {
-                return false;
-            }
-            
-            // Verificar si ya respondió
-            if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
-                return false;
-            }
-            
-            return true;
-            
-        case 3:
-            // En L3 solo puede actuar el supervisor
-            return false;
-            
-        default:
-            return false;
-    }
-}
 // 🎯 RENDERIZAR BOTONES DE ACCIÓN
        function renderActionButtons(incident, escalationLevel) {
     const userEmail = getCurrentUserEmail(); // Función que obtiene el email del usuario actual
@@ -2738,7 +2878,7 @@ function getCurrentUserEmail() {
         // ==========================================
         // 📊 FUNCIONES AUXILIARES
         // ==========================================
-    function filterIncidents() {
+   function filterIncidents() {
     const technicianEmail = currentTechnician?.email || '';
     
     return allIncidents.filter(incident => {
@@ -2792,39 +2932,7 @@ function getCurrentUserEmail() {
             return priorityMap[cleanPriority] || 'priority-media';
         }
 
-       function getIncidentState(incident) {
-    // ✅ LÓGICA CORREGIDA: escalado=true significa ACTIVO
-    const escalationActive = incident.escalation === 'true' || incident.escalation === true;
-    const escalationLevel = parseInt(incident.escalation_level) || 0;
     
-    // Si está aceptada en cualquier nivel
-    if (incident.l0_response === '✅ Aceptado' || 
-        incident.l1_response === '✅ Aceptado' || 
-        (incident.l2_responses && incident.l2_responses.includes('Aceptado'))) {
-        return 'working';
-    }
-    
-    // Si hay solicitud de ayuda activa
-    if (incident.l0_response === '🟡 Ayuda' && !escalationActive) {
-        return 'working';
-    }
-    
-    // Verificar SLA vencido del nivel actual
-    let currentSLA = '';
-    switch(escalationLevel) {
-        case 0: currentSLA = incident.sla_l0_end; break;
-        case 1: currentSLA = incident.sla_l1_backup_end; break;
-        case 2: currentSLA = incident.sla_l2_equipo_end; break;
-        case 3: currentSLA = incident.sla_l3_responsable_end; break;
-    }
-    
-    if (currentSLA && new Date(currentSLA) < new Date()) {
-        return 'expired';
-    }
-    
-    return 'pending';
-}
-
      function updateStats() {
     const technicianEmail = currentTechnician?.email || '';
     
