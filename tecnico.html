@@ -1356,6 +1356,111 @@
         // ==========================================
         // 📊 FUNCIONES DE DASHBOARD
         // ==========================================
+        // 🔄 ADAPTADOR DE DATOS - Convertir datos de Make al formato frontend
+        function adaptIncidentData(makeData) {
+            console.log('🔄 Adaptando datos de Make:', makeData);
+            
+            if (!makeData.incidents || !Array.isArray(makeData.incidents)) {
+                console.log('❌ No se encontraron incidencias en la respuesta');
+                return [];
+            }
+            
+            const adaptedIncidents = makeData.incidents.map(incident => {
+                // Determinar el SLA apropiado basado en el escalation_level y el técnico actual
+                let slaEnd = null;
+                const currentTechnicianEmail = currentTechnician?.email || '';
+                
+                // Lógica para determinar qué SLA usar
+                if (incident.l0_technician === currentTechnicianEmail && incident.sla_l0_end) {
+                    slaEnd = incident.sla_l0_end;
+                } else if (incident.l1_technician === currentTechnicianEmail && incident.sla_l1_backup_end) {
+                    slaEnd = incident.sla_l1_backup_end;
+                } else if (incident.sla_l2_equipo_end && incident.escalation_level === '2') {
+                    slaEnd = incident.sla_l2_equipo_end;
+                } else if (incident.sla_l3_responsable_end && incident.escalation_level === '3') {
+                    slaEnd = incident.sla_l3_responsable_end;
+                } else {
+                    // Usar el primer SLA disponible
+                    slaEnd = incident.sla_l0_end || incident.sla_l1_backup_end || incident.sla_l2_equipo_end || incident.sla_l3_responsable_end;
+                }
+                
+                // Limpiar priority (quitar emojis)
+                let priority = incident.priority || 'MEDIA';
+                priority = priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+                
+                // Determinar el status apropiado
+                let status = 'Pendiente';
+                if (incident.status && incident.status.includes('Asignada')) {
+                    status = 'Trabajando';
+                } else if (incident.status && incident.status.includes('Escalado')) {
+                    status = 'Escalado';
+                }
+                
+                // Crear objeto adaptado compatible con el frontend existente
+                const adaptedIncident = {
+                    // IDs (usar ambos formatos para compatibilidad)
+                    incident_id: incident.id,
+                    id: incident.id,
+                    
+                    // Información del equipo
+                    equipment: incident.equipment || 'Equipo no especificado',
+                    zone: incident.zone || 'Zona no especificada',
+                    description: incident.description || 'Sin descripción',
+                    
+                    // Prioridad y estado
+                    priority: priority,
+                    status: status,
+                    
+                    // SLA (usar formato que espera el frontend)
+                    sla_end: slaEnd,
+                    
+                    // Técnicos por nivel
+                    l0_technician: incident.l0_technician,
+                    l1_technician: incident.l1_technician,
+                    l2_technicians: incident.l2_technicians,
+                    l2_technicians_notified: incident.l2_technicians_notified,
+                    assigned_technician: incident.assigned_technician,
+                    
+                    // Escalación
+                    escalation_level: incident.escalation_level || '0',
+                    escalation: incident.escalation_paused === 'false' ? 'true' : 'false',
+                    escalation_paused: incident.escalation_paused === 'true',
+                    
+                    // Contactos (mapear a nombres que usa el frontend)
+                    telefono_encargado: incident.supervisor_phone || 'Sin teléfono',
+                    telefono_supervisor: incident.manager_phone || 'Sin teléfono',
+                    telefono_reporta: incident.reporter_phone || 'Sin teléfono',
+                    
+                    // Personas
+                    supervisor: incident.supervisor || 'Sin supervisor',
+                    manager: incident.manager || 'Sin manager',
+                    reporter: incident.reporter || 'Sin reportador',
+                    
+                    // Acciones y información adicional
+                    actions_taken: incident.actions_taken || 'Sin acciones tomadas',
+                    url: incident.url,
+                    
+                    // Respuestas por nivel (para mostrar en la interfaz)
+                    l0_response: incident.l0_response || '⭕ Sin Respuesta',
+                    l0_reject_reason: incident.l0_reject_reason || '',
+                    l0_help_type: incident.l0_help_type || '',
+                    l1_response: incident.l1_response || '⭕ Sin Respuesta',
+                    l1_reject_reason: incident.l1_reject_reason || '',
+                    l1_help_type: incident.l1_help_type || '',
+                    l2_responses: incident.l2_responses || '',
+                    l2_reject_reasons: incident.l2_reject_reasons || '',
+                    
+                    // Tiempo transcurrido
+                    time_elapsed: incident.time_elapsed || '0'
+                };
+                
+                console.log('✅ Incidencia adaptada:', adaptedIncident.incident_id);
+                return adaptedIncident;
+            });
+            
+            console.log(`🎯 Adaptadas ${adaptedIncidents.length} incidencias correctamente`);
+            return adaptedIncidents;
+        }
         async function loadTechnicianDashboard(email, fullAccess) {
             try {
                 showLoading('Cargando incidencias...');
@@ -1373,9 +1478,14 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('📊 Datos incidencias recibidos:', data);
+                    console.log('📊 Datos RAW recibidos:', data);
+                    console.log('📊 Tipo de data:', typeof data);
+                    console.log('📊 data.incidents existe:', !!data.incidents);
+                    console.log('📊 data.incidents tipo:', typeof data.incidents);
+                    console.log('📊 data.incidents length:', data.incidents ? data.incidents.length : 'N/A');
                     
-                    allIncidents = data.incidents || [];
+                    allIncidents = adaptIncidentData(data);
+                    console.log('📊 Incidencias adaptadas:', allIncidents);
                     
                     // Si no se estableció currentTechnician en verifyPIN, usar datos de respuesta
                     if (!currentTechnician || !currentTechnician.name || currentTechnician.name === 'Técnico Autorizado') {
@@ -1387,8 +1497,10 @@
                         };
                     }
                 } else {
-                    console.log('⚠️ Error cargando incidencias, mostrando vacío');
-                    allIncidents = [];
+                 console.log('❌ Error en response:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.log('❌ Error body:', errorText);
+                allIncidents = [];
                 }
 
                 updateUI();
