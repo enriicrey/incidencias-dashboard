@@ -968,6 +968,140 @@
     margin: 15px 0;
     font-style: italic;
 }
+        const improvedCSS = `
+.incidents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.incident-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.incident-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.incident-title h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.priority-badge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.incident-id {
+    font-size: 0.85rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.incident-body {
+    margin-bottom: 15px;
+}
+
+.zone {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.sla-info {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.sla-timer.sla-good {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.sla-timer.sla-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.sla-timer.sla-critical {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sla-expired {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.incident-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.incident-actions .btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+.no-action-info {
+    text-align: center;
+    padding: 10px;
+}
+
+@media (max-width: 768px) {
+    .incidents-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .incident-actions {
+        flex-direction: column;
+    }
+    
+    .incident-actions .btn {
+        min-width: auto;
+    }
+}
         }
     </style>
 </head>
@@ -1532,33 +1666,183 @@
         // ==========================================
         // 🎨 FUNCIONES DE RENDERIZADO
         // ==========================================
-        function renderIncidents() {
-            const container = document.getElementById('incidentsContainer');
-            let filteredIncidents = filterIncidents();
+   function renderIncidents() {
+    const container = document.getElementById('incidentsContainer');
+    const filteredIncidents = filterIncidents();
+    const technicianEmail = currentTechnician?.email || '';
+    
+    console.log('🎨 Renderizando', filteredIncidents.length, 'incidencias');
+    
+    if (filteredIncidents.length === 0) {
+        container.innerHTML = `
+            <div class="no-incidents">
+                <div class="no-incidents-icon">📋</div>
+                <h3>No hay incidencias</h3>
+                <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'con este estado'} en este momento.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // LAYOUT DE 2 COLUMNAS
+    const incidentsHTML = filteredIncidents.map(incident => {
+        const realState = getIncidentRealState(incident, technicianEmail);
+        const canRespond = canTechnicianRespond(incident, technicianEmail);
+        const escalationLevel = parseInt(incident.escalation_level) || 0;
+        
+        // Determinar SLA apropiado
+        let slaEnd = null;
+        if (incident.l0_technician === technicianEmail && incident.sla_l0_end) {
+            slaEnd = incident.sla_l0_end;
+        } else if (incident.l1_technician === technicianEmail && incident.sla_l1_backup_end) {
+            slaEnd = incident.sla_l1_backup_end;
+        } else if (escalationLevel === 2 && incident.sla_l2_equipo_end) {
+            slaEnd = incident.sla_l2_equipo_end;
+        } else if (escalationLevel === 3 && incident.sla_l3_responsable_end) {
+            slaEnd = incident.sla_l3_responsable_end;
+        }
+        
+        // Calcular tiempo SLA
+        let slaInfo = '';
+        if (slaEnd) {
+            const now = new Date();
+            const endTime = new Date(slaEnd);
+            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
             
-            console.log('📊 Total incidencias:', allIncidents.length);
-            console.log('🔍 Filtradas:', filteredIncidents.length);
-            console.log('📋 Estados:', {
-                pending: allIncidents.filter(i => getIncidentState(i) === 'pending').length,
-                working: allIncidents.filter(i => getIncidentState(i) === 'working').length,
-                expired: allIncidents.filter(i => getIncidentState(i) === 'expired').length
-            });
+            if (diffMinutes < 0) {
+                slaInfo = `<span class="sla-expired">⏰ Vencido hace ${Math.abs(diffMinutes)} min</span>`;
+            } else {
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                slaInfo = `<span class="sla-timer" data-end="${slaEnd}">⏱️ ${hours}h ${minutes}min restantes</span>`;
+            }
+        }
+        
+        // Determinar badge de estado
+        let stateBadge = '';
+        if (realState === 'working') {
+            stateBadge = '<span class="badge bg-success">🔄 Trabajando</span>';
+        } else if (realState === 'pending') {
+            stateBadge = '<span class="badge bg-warning">⏳ Pendiente respuesta</span>';
+        } else if (realState === 'expired') {
+            stateBadge = '<span class="badge bg-danger">⏰ Vencida</span>';
+        } else if (incident.escalation_paused === 'true') {
+            stateBadge = '<span class="badge bg-secondary">⏸️ Escalado pausado</span>';
+        } else {
+            stateBadge = `<span class="badge bg-info">L${escalationLevel} En proceso</span>`;
+        }
+        
+        // Prioridad color
+        let priorityColor = '#6c757d';
+        const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+        switch (priority) {
+            case 'CRÍTICA': priorityColor = '#dc3545'; break;
+            case 'ALTA': priorityColor = '#fd7e14'; break;
+            case 'MEDIA': priorityColor = '#ffc107'; break;
+            case 'BAJA': priorityColor = '#28a745'; break;
+        }
+        
+        // Botones de acción solo si puede responder
+        let actionButtons = '';
+        if (canRespond) {
+            actionButtons = `
+                <div class="incident-actions">
+                    <button class="btn btn-success btn-sm" onclick="handleAction('acepto', '${incident.id}')">
+                        ✅ Acepto
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="handleAction('rechazo', '${incident.id}')">
+                        ❌ Rechazo
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="handleAction('ayuda', '${incident.id}')">
+                        🆘 Ayuda
+                    </button>
+                </div>
+            `;
+        } else {
+            let reason = '';
+            if (realState === 'working') {
+                reason = '✅ Ya asignado';
+            } else if (realState === 'expired') {
+                reason = '⏰ Tiempo vencido';
+            } else if (realState === 'not_mine') {
+                reason = '👤 No es tu responsabilidad';
+            }
             
-            if (filteredIncidents.length === 0) {
-                container.innerHTML = createNoIncidentsHTML(
-                    'No hay incidencias',
-                    '📋',
-                    'No se encontraron incidencias con los filtros seleccionados'
-                );
+            actionButtons = `
+                <div class="no-action-info">
+                    <span class="badge bg-light text-dark">${reason}</span>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="incident-card">
+                <div class="incident-header">
+                    <div class="incident-title">
+                        <h4>${incident.equipment}</h4>
+                        <div class="badges">
+                            <span class="priority-badge" style="background-color: ${priorityColor}">${priority}</span>
+                            ${stateBadge}
+                        </div>
+                    </div>
+                    <div class="incident-id">${incident.id}</div>
+                </div>
+                
+                <div class="incident-body">
+                    <div class="zone">📍 ${incident.zone}</div>
+                    <div class="description">${incident.description}</div>
+                    ${slaInfo ? `<div class="sla-info">${slaInfo}</div>` : ''}
+                </div>
+                
+                <div class="incident-footer">
+                    ${actionButtons}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Aplicar layout de 2 columnas
+    container.innerHTML = `
+        <div class="incidents-grid">
+            ${incidentsHTML}
+        </div>
+    `;
+    
+    // Iniciar timers SLA
+    startSLATimers();
+}
+        function startSLATimers() {
+    const timers = document.querySelectorAll('.sla-timer[data-end]');
+    
+    timers.forEach(timer => {
+        const endTime = new Date(timer.dataset.end);
+        
+        const updateTimer = () => {
+            const now = new Date();
+            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+            
+            if (diffMinutes <= 0) {
+                timer.innerHTML = '⏰ VENCIDO';
+                timer.className = 'sla-expired';
                 return;
             }
-
-            const html = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
-            container.innerHTML = html;
             
-            // Iniciar timers SLA
-            startAllSLATimers();
-        }
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            
+            let className = 'sla-timer';
+            if (diffMinutes <= 30) className += ' sla-critical';
+            else if (diffMinutes <= 60) className += ' sla-warning';
+            else className += ' sla-good';
+            
+            timer.className = className;
+            timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}min`;
+        };
+        
+        updateTimer(); // Inicial
+        setInterval(updateTimer, 60000); // Cada minuto
+    });
+}
 
 function renderIncidentCard(incident) {
     const priorityClass = getPriorityClass(incident.priority);
@@ -2207,15 +2491,39 @@ function getCurrentUserEmail() {
         // ==========================================
         // 📊 FUNCIONES AUXILIARES
         // ==========================================
-        function filterIncidents() {
-            return allIncidents.filter(incident => {
-                const statusMatch = currentStatusFilter === 'all' || 
-                    getIncidentState(incident) === currentStatusFilter;
-                const priorityMatch = currentPriorityFilter === 'all' || 
-                    incident.priority === currentPriorityFilter;
-                return statusMatch && priorityMatch;
-            });
+       function filterIncidents() {
+    const technicianEmail = currentTechnician?.email || '';
+    
+    return allIncidents.filter(incident => {
+        const realState = getIncidentRealState(incident, technicianEmail);
+        
+        // Filtro por estado
+        let statusMatch = false;
+        switch (currentStatusFilter) {
+            case 'all':
+                statusMatch = true;
+                break;
+            case 'pending':
+                statusMatch = realState === 'pending';
+                break;
+            case 'working':
+                statusMatch = realState === 'working';
+                break;
+            case 'expired':
+                statusMatch = realState === 'expired';
+                break;
+            default:
+                statusMatch = true;
         }
+        
+        // Filtro por prioridad
+        let priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim().toUpperCase();
+        const priorityMatch = currentPriorityFilter === 'all' || 
+                              priority === currentPriorityFilter.toUpperCase();
+        
+        return statusMatch && priorityMatch;
+    });
+}
 
         function getIncidentState(incident) {
             if (incident.status === 'Trabajando') return 'working';
@@ -2275,17 +2583,26 @@ function getCurrentUserEmail() {
     return 'pending';
 }
 
-        function updateStats() {
-            const totalCount = allIncidents.length;
-            const pendingCount = allIncidents.filter(i => getIncidentState(i) === 'pending').length;
-            const workingCount = allIncidents.filter(i => getIncidentState(i) === 'working').length;
-            const expiredCount = allIncidents.filter(i => getIncidentState(i) === 'expired').length;
-
-            document.getElementById('totalCount').textContent = totalCount;
-            document.getElementById('pendingCount').textContent = pendingCount;
-            document.getElementById('workingCount').textContent = workingCount;
-            document.getElementById('expiredCount').textContent = expiredCount;
-        }
+     function updateStats() {
+    const technicianEmail = currentTechnician?.email || '';
+    
+    const pending = allIncidents.filter(i => 
+        getIncidentRealState(i, technicianEmail) === 'pending'
+    ).length;
+    
+    const working = allIncidents.filter(i => 
+        getIncidentRealState(i, technicianEmail) === 'working'
+    ).length;
+    
+    const expired = allIncidents.filter(i => 
+        getIncidentRealState(i, technicianEmail) === 'expired'
+    ).length;
+    
+    document.getElementById('totalCount').textContent = allIncidents.length;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('workingCount').textContent = working;
+    document.getElementById('expiredCount').textContent = expired;
+}
 
         // ==========================================
         // 📞 FUNCIONES CONTACTOS Y ESCALADO DROPDOWN
