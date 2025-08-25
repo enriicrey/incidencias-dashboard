@@ -2270,51 +2270,6 @@ function startSLATimers() {
     startSLATimers();
 }
         
-// 🎯 RENDERIZAR BOTONES DE ACCIÓN
-       function renderActionButtons(incident, escalationLevel) {
-    const userEmail = getCurrentUserEmail(); // Función que obtiene el email del usuario actual
-    const canAct = canTechnicianAct(incident, escalationLevel, userEmail);
-    
-    if (!canAct) {
-        return `
-            <div class="no-action-info">
-                ${escalationLevel === 3 ? 
-                    '🚨 Incidencia en nivel crítico - Solo supervisor puede actuar' :
-                    '⏸️ No puedes actuar en esta incidencia en este momento'
-                }
-            </div>
-        `;
-    }
-    
-    // Determinar qué técnico eres según el nivel
-    let currentTechRole = '';
-    switch(escalationLevel) {
-        case 0: currentTechRole = 'L0 - Técnico inicial'; break;
-        case 1: currentTechRole = 'L1 - Técnico backup'; break;
-        case 2: currentTechRole = 'L2 - Especialista'; break;
-    }
-    
-    return `
-        <div class="action-section">
-            <div class="action-header">
-                <span>🎯 Tu rol: ${currentTechRole}</span>
-                <span class="action-level">Nivel ${escalationLevel}</span>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="btn-accept" onclick="handleResponse('${incident.id}', 'acepto', ${escalationLevel})">
-                    ✅ Acepto
-                </button>
-                <button class="btn-reject" onclick="showRejectModal('${incident.id}', ${escalationLevel})">
-                    ❌ Rechazo
-                </button>
-                <button class="btn-help" onclick="showHelpModal('${incident.id}', ${escalationLevel})">
-                    🆘 Necesito ayuda
-                </button>
-            </div>
-        </div>
-    `;
-}
 // 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
 function toggleContacts(incidentId) {
     const contactsList = document.getElementById(`contacts-${incidentId}`);
