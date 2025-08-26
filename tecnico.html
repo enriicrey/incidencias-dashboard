@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Técnico - ABC.xyz</title>
+    <title>Dashboard Técnico - Sistema de Incidencias</title>
     <style>
-        /* Reset y Base */
+        /* ==========================================
+           🧹 CSS LIMPIO Y ORGANIZADO - SIN DUPLICADOS
+           ========================================== */
+        
         * {
             margin: 0;
             padding: 0;
@@ -16,95 +19,119 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #1f2937;
+            color: #333;
         }
 
-        /* Container Principal */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* ==========================================
+           🔐 LOGIN SCREEN
+           ========================================== */
+        
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
             padding: 20px;
         }
 
-        /* Login */
-        .login-container {
+        .login-card {
             background: white;
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             text-align: center;
             max-width: 400px;
-            margin: 50px auto;
+            width: 100%;
         }
 
         .login-title {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 8px;
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
 
-        .login-logo { color: #3b82f6; }
-        .login-subtitle { color: #6b7280; margin-bottom: 30px; }
+        .login-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
 
         .input-group {
+            margin-bottom: 20px;
             text-align: left;
-            margin-bottom: 25px;
         }
 
         .input-label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #374151;
+            color: #2c3e50;
+            font-size: 14px;
         }
 
         .input-field {
             width: 100%;
             padding: 15px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         .input-field:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
         .verify-btn {
             width: 100%;
             padding: 15px;
-            background: #3b82f6;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
         }
 
-        .verify-btn:hover {
-            background: #2563eb;
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
         }
 
-        /* Header */
+        .verify-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c0392b;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        /* ==========================================
+           📱 HEADER PRINCIPAL
+           ========================================== */
+        
         .header {
-            background: white;
-            border-radius: 12px;
-            padding: 20px 30px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: none;
         }
 
         .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -113,122 +140,125 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             font-size: 20px;
             font-weight: 700;
         }
-
-        .logo-text { color: #3b82f6; }
 
         .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
-        }
-
-        .auth-status {
-            padding: 8px 16px;
-            border-radius: 20px;
             font-size: 14px;
-            font-weight: 600;
         }
 
         .refresh-button {
-            padding: 10px 20px;
-            background: #10b981;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            border: none;
+            padding: 10px 18px;
             border-radius: 8px;
-            cursor: pointer;
+            font-size: 14px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .last-update {
-            font-size: 12px;
-            color: #6b7280;
+        .refresh-button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.25);
         }
 
-        /* Main Container */
+        .refresh-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ==========================================
+           📊 MAIN CONTAINER
+           ========================================== */
+        
         .main-container {
-            display: none;
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            background: #f8fafc;
+            min-height: calc(100vh - 80px);
         }
 
-        /* Stats Bar */
+        /* ==========================================
+           📈 STATS BAR (FILTROS CLICABLES)
+           ========================================== */
+        
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
         .stat-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: white;
             border-radius: 12px;
             padding: 20px;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .stat-card.active {
-            background: #3b82f6;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-        }
-
-        .stat-card.active .stat-number {
-            color: white !important;
-        }
-
-        .stat-card.active .stat-label {
-            color: rgba(255, 255, 255, 0.9);
+            border-color: #3498db;
+            background: linear-gradient(135deg, #e3f2fd, #ffffff);
         }
 
         .stat-number {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
-        .stat-number.pending { color: #f59e0b; }
-        .stat-number.working { color: #10b981; }
-        .stat-number.expired { color: #ef4444; }
+        .stat-number.pending { color: #f39c12; }
+        .stat-number.working { color: #27ae60; }
+        .stat-number.expired { color: #e74c3c; }
 
         .stat-label {
+            color: #7f8c8d;
             font-size: 14px;
-            color: #6b7280;
-            font-weight: 600;
+            font-weight: 500;
         }
 
-        /* Filters */
+        /* ==========================================
+           🎛️ FILTERS BAR
+           ========================================== */
+        
         .filters-bar {
-            display: flex;
-            gap: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
             margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .filter-label {
             font-weight: 600;
-            color: #374151;
+            color: #2c3e50;
+            font-size: 14px;
         }
 
         .filter-buttons {
@@ -254,561 +284,342 @@
             color: white;
         }
 
-        /* Incidents Grid - 2 columnas en desktop, 1 en móvil */
-        const requiredCSS = `
+        /* ==========================================
+           📋 LAYOUT 2 COLUMNAS - GRID PRINCIPAL
+           ========================================== */
+        
         .incidents-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            padding: 0;
         }
 
+        /* ==========================================
+           🎴 INCIDENT CARDS - DISEÑO LIMPIO
+           ========================================== */
+        
         .incident-card {
             background: white;
             border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 25px;
-            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .incident-card:hover {
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            border-color: #3498db;
         }
 
         .incident-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 20px;
-        }
-
-        .incident-id {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .priority-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .priority-critica { background: #fef2f2; color: #991b1b; }
-        .priority-alta { background: #fef3c7; color: #92400e; }
-        .priority-media { background: #f0f9ff; color: #1e40af; }
-        .priority-baja { background: #f0fdf4; color: #166534; }
-
-        /* SLA Timer */
-        .sla-section {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin: 15px 0;
-        }
-
-        .sla-time {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .sla-time.warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-
-        .sla-time.critical {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .sla-label, .sla-level {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        /* Expired Section */
-        .expired-section {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin: 15px 0;
-        }
-
-        .expired-time {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .expired-label {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .escalation-info {
-            background: rgba(255,255,255,0.2);
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .action-buttons.working-state {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .action-btn {
-            padding: 15px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-
-        .btn-accept {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-        }
-
-        .btn-accept:hover {
-            background: linear-gradient(135deg, #059669, #047857);
-        }
-
-        .btn-reject {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-        }
-
-        .btn-reject:hover {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-        }
-
-        .btn-help {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-        }
-
-        .btn-help:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
-        }
-
-        .btn-complete {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-        }
-
-        .btn-transfer {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-
-        .btn-support {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-        }
-
-        .btn-disabled {
-            background: #f3f4f6 !important;
-            color: #9ca3af !important;
-            cursor: not-allowed !important;
-        }
-
-        /* Info Rows */
-        .incident-info {
-            margin: 15px 0;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
+            padding-bottom: 15px;
             border-bottom: 1px solid #f3f4f6;
         }
 
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-row span:first-child {
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .info-row span:last-child {
-            color: #6b7280;
-            text-align: right;
-            flex: 1;
-            margin-left: 10px;
-        }
-
-        .info-row.response span:last-child {
-            color: #059669;
-            font-weight: 600;
-        }
-
-        /* Contacts */
-        .contacts-section {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-
-        .contacts-title {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-
-        .contact-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-        }
-
-        .contact-name {
-            font-weight: 600;
+        .incident-title h4 {
+            margin: 0 0 10px 0;
             color: #1f2937;
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.2;
         }
 
-        .contact-phone {
-            background: #3b82f6;
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .priority-badge {
             color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .contact-phone:hover {
-            background: #2563eb;
-        }
-
-        /* Modals */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content, .pin-modal {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            transform: scale(0.8);
-            transition: transform 0.3s;
-        }
-
-        .modal-overlay.active .modal-content,
-        .modal-overlay.active .pin-modal {
-            transform: scale(1);
-        }
-
-        .modal-title, .pin-modal-title {
-            font-size: 20px;
-            color: #1f2937;
-            margin-bottom: 20px;
-            text-align: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 700;
-        }
-
-        .reason-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .reason-option {
-            padding: 15px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .reason-option:hover {
-            border-color: #374151;
-            background: #f9fafb;
-        }
-
-        .reason-option.selected {
-            border-color: #3b82f6;
-            background: #eff6ff;
-        }
-
-        .reason-icon { 
-            font-size: 24px; 
-            min-width: 30px; 
-        }
-
-        .reason-text { 
-            flex: 1; 
-        }
-
-        .reason-title { 
-            font-weight: 600; 
-            color: #1f2937; 
-            margin-bottom: 3px; 
-        }
-
-        .reason-description { 
-            font-size: 13px; 
-            color: #6b7280; 
-        }
-
-        .custom-reason-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .custom-reason-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .modal-actions, .pin-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .modal-btn, .pin-btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-cancel, .pin-btn-cancel {
-            background: #f9fafb;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
-        }
-
-        .btn-confirm, .pin-btn-verify {
-            background: #374151;
-            color: white;
-        }
-
-        .btn-confirm:disabled, .pin-btn-verify:disabled {
-            background: #d1d5db;
-            cursor: not-allowed;
-        }
-
-        .pin-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 18px;
-            text-align: center;
-            letter-spacing: 8px;
-            margin-bottom: 20px;
-        }
-
-        /* Success Overlay */
-        .success-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .success-message {
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .success-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .success-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-
-        .success-description {
-            color: #6b7280;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .countdown {
-            font-size: 14px;
-            color: #9ca3af;
-        }
-
-        /* Loading & Utilities */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e5e7eb;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .no-incidents {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .no-incidents-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .no-incidents-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-
-        .no-incidents-description {
-            color: #6b7280;
-            font-size: 16px;
-        }
-
-        .error-message {
-            background: #fef2f2;
-            color: #b91c1c;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border: 1px solid #fecaca;
-        }
-
-        /* Escalation History Styles */
-        .escalation-history {
-            background: #f8fafc;
-            margin: 15px -10px;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #3b82f6;
-        }
-
-        .escalation-title {
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 15px;
-            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .escalation-level {
-            background: white;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .escalation-level:last-child {
-            margin-bottom: 0;
-        }
-
-        .escalation-level-title {
-            font-weight: 600;
-            color: #374151;
+        .incident-id {
             font-size: 13px;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .escalation-detail {
-            font-size: 12px;
             color: #6b7280;
-            margin-bottom: 4px;
-            line-height: 1.4;
+            background: #f9fafb;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
         }
 
-        .escalation-detail:last-child {
-            margin-bottom: 0;
+        .incident-body {
+            margin-bottom: 20px;
         }
-            .container {
+
+        .zone {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .description {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            background: #fafbfc;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #e5e7eb;
+        }
+
+        /* ==========================================
+           ⏱️ SLA TIMERS - DISEÑO MEJORADO
+           ========================================== */
+        
+        .sla-info {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sla-timer.sla-good {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .sla-timer.sla-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+
+        .sla-timer.sla-critical {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .sla-expired {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 2px solid #ef4444;
+            animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ==========================================
+           📞 INFORMACIÓN ADICIONAL - TÉCNICOS Y CONTACTOS
+           ========================================== */
+        
+        .technician-info {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .technician-info.current-tech {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border-left-color: #10b981;
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .contacts-info {
+            background: linear-gradient(135deg, #fefce8, #fef3c7);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #eab308;
+        }
+
+        .contacts-header {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .contacts-list div {
+            margin: 6px 0;
+            font-size: 13px;
+            color: #713f12;
+        }
+
+        .contacts-list a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contacts-list a:hover {
+            text-decoration: underline;
+        }
+
+        .time-elapsed {
+            background: linear-gradient(135deg, #fdf4ff, #fae8ff);
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            color: #7c2d92;
+            font-size: 14px;
+            border-left: 4px solid #a855f7;
+        }
+
+        .actions-taken {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            color: #166534;
+            font-size: 14px;
+            line-height: 1.4;
+            border-left: 4px solid #22c55e;
+        }
+
+        /* ==========================================
+           🎯 BOTONES DE ACCIÓN
+           ========================================== */
+        
+        .incident-footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .incident-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .incident-actions .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .no-action-info {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 8px;
+            color: #64748b;
+            font-style: italic;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ==========================================
+           📱 NO INCIDENTS MESSAGE
+           ========================================== */
+        
+        .no-incidents {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .no-incidents-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .no-incidents h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .no-incidents p {
+            font-size: 16px;
+            color: #6b7280;
+        }
+
+        /* ==========================================
+           📱 RESPONSIVE DESIGN
+           ========================================== */
+        
+        @media (max-width: 1024px) {
+            .incidents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
                 padding: 15px;
             }
             
@@ -830,632 +641,50 @@
             }
             
             .incidents-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .action-buttons.working-state {
-                grid-template-columns: 1fr;
-            }
-            
-            .main-container {
-                padding: 20px;
+                gap: 20px;
             }
             
             .incident-card {
                 padding: 20px;
             }
-        .level-info {
-    margin: 15px 0;
-    padding: 12px;
-    border-radius: 6px;
-    border-left: 4px solid #3b82f6;
-}
-
-.level-info.completed {
-    background: #f0f9ff;
-    border-left-color: #10b981;
-}
-
-.level-info.current {
-    background: #fff7ed;
-    border-left-color: #f59e0b;
-}
-
-.escalation-status.active {
-    color: #059669;
-    background: #ecfdf5;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin: 10px 0;
-}
-
-.escalation-status.paused {
-    color: #d97706;
-    background: #fffbeb;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin: 10px 0;
-}
-
-.critical-escalation {
-    background: linear-gradient(135deg, #fee2e2, #fef2f2);
-    border: 2px solid #ef4444;
-    border-radius: 8px;
-    padding: 15px;
-    margin: 15px 0;
-}
-
-.critical-header {
-    font-size: 16px;
-    font-weight: bold;
-    color: #dc2626;
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-.responses-list {
-    margin-left: 10px;
-}
-
-.response-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
-    margin: 2px 0;
-    background: rgba(0,0,0,0.05);
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.working-section {
-    background: #f0fdf4;
-    border: 1px solid #22c55e;
-    border-radius: 6px;
-    padding: 12px;
-    text-align: center;
-    margin: 15px 0;
-}
-
-.working-status {
-    font-size: 16px;
-    font-weight: bold;
-    color: #16a34a;
-    margin-bottom: 5px;
-}
-
-.system-notes, .contacts-section {
-    margin: 15px 0;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-}
-
-.notes-header, .contacts-header {
-    background: #f9fafb;
-    padding: 10px 15px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 500;
-}
-
-.notes-content, .contacts-list {
-    padding: 15px;
-}
-
-.initial-actions {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    padding: 10px;
-    margin: 10px 0;
-    font-size: 14px;
-}
-
-.actions-header {
-    font-weight: 500;
-    color: #475569;
-    margin-bottom: 5px;
-}
-
-.no-action-info {
-    text-align: center;
-    padding: 15px;
-    background: #f1f5f9;
-    border-radius: 6px;
-    color: #64748b;
-    margin: 15px 0;
-    font-style: italic;
-}
-        const improvedCSS = `
-.incidents-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.incident-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.incident-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-.incident-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-
-.incident-title h4 {
-    margin: 0 0 8px 0;
-    color: #2c3e50;
-    font-size: 1.1rem;
-}
-
-.badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.priority-badge {
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.incident-id {
-    font-size: 0.85rem;
-    color: #6c757d;
-    background: #f8f9fa;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.incident-body {
-    margin-bottom: 15px;
-}
-
-.zone {
-    color: #495057;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-}
-
-.description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 12px;
-}
-
-.sla-info {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.sla-timer.sla-good {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.sla-timer.sla-warning {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.sla-timer.sla-critical {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.sla-expired {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-.incident-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.incident-actions .btn {
-    flex: 1;
-    min-width: 100px;
-}
-
-.no-action-info {
-    text-align: center;
-    padding: 10px;
-}
-
-@media (max-width: 768px) {
-    .incidents-grid {
-        grid-template-columns: 1fr;
-        padding: 10px;
-    }
-    
-    .incident-actions {
-        flex-direction: column;
-    }
-    
-    .incident-actions .btn {
-        min-width: auto;
-    }
-    const improvedCSS = `
-.incidents-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.incident-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.incident-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-.incident-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-
-.incident-title h4 {
-    margin: 0 0 8px 0;
-    color: #2c3e50;
-    font-size: 1.1rem;
-}
-
-.badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.priority-badge {
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.incident-id {
-    font-size: 0.85rem;
-    color: #6c757d;
-    background: #f8f9fa;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.incident-body {
-    margin-bottom: 15px;
-}
-
-.zone {
-    color: #495057;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-}
-
-.description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 12px;
-}
-
-.sla-info {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.sla-timer.sla-good {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.sla-timer.sla-warning {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.sla-timer.sla-critical {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.sla-expired {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-.incident-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.incident-actions .btn {
-    flex: 1;
-    min-width: 100px;
-}
-
-.no-action-info {
-    text-align: center;
-    padding: 10px;
-}
-
-@media (max-width: 768px) {
-    .incidents-grid {
-        grid-template-columns: 1fr;
-        padding: 10px;
-    }
-    
-    .incident-actions {
-        flex-direction: column;
-    }
-    
-    .incident-actions .btn {
-        min-width: auto;
-    }
-}
-    const newCSS = `
-/* ========================================== */
-/* 📱 LAYOUT 2 COLUMNAS Y SLA TIMERS */
-/* ========================================== */
-
-.incidents-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.incident-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    break-inside: avoid;
-}
-
-.incident-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-.incident-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-
-.incident-title h4 {
-    margin: 0 0 8px 0;
-    color: #2c3e50;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.priority-badge {
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.incident-id {
-    font-size: 0.85rem;
-    color: #6c757d;
-    background: #f8f9fa;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-}
-
-.incident-body {
-    margin-bottom: 15px;
-}
-
-.zone {
-    color: #495057;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 12px;
-}
-
-/* 📊 SLA TIMERS */
-.sla-info {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-bottom: 10px;
-}
-
-.sla-timer {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-.sla-timer.sla-good {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.sla-timer.sla-warning {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.sla-timer.sla-critical {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.sla-expired {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-/* 🎯 BOTONES DE ACCIÓN */
-.incident-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.incident-actions .btn {
-    flex: 1;
-    min-width: 100px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-success {
-    background: #28a745;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #218838;
-}
-
-.btn-danger {
-    background: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #c82333;
-}
-
-.btn-warning {
-    background: #ffc107;
-    color: #212529;
-}
-
-.btn-warning:hover {
-    background: #e0a800;
-}
-
-.no-action-info {
-    text-align: center;
-    padding: 10px;
-}
-
-.no-action-info .badge {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-}
-
-/* 📱 RESPONSIVE */
-@media (max-width: 768px) {
-    .incidents-grid {
-        grid-template-columns: 1fr;
-        padding: 10px;
-    }
-    
-    .incident-header {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .incident-actions {
-        flex-direction: column;
-    }
-    
-    .incident-actions .btn {
-        min-width: auto;
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .incident-card {
-        padding: 15px;
-    }
-    
-    .badges {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+            
+            .incident-actions {
+                flex-direction: column;
+            }
+            
+            .incident-actions .btn {
+                min-width: auto;
+            }
         }
+
+        /* ==========================================
+           🎨 BADGES Y ESTADOS
+           ========================================== */
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bg-success { background: #22c55e; color: white; }
+        .bg-warning { background: #f59e0b; color: white; }
+        .bg-danger { background: #ef4444; color: white; }
+        .bg-info { background: #3b82f6; color: white; }
+        .bg-secondary { background: #6b7280; color: white; }
+        .bg-light { background: #f3f4f6; color: #374151; }
+
     </style>
 </head>
 <body>
-    <!-- Login Container -->
-    <div class="container" id="loginContainer">
-        <div class="login-container">
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
             <h1 class="login-title">
                 <span>🔧</span>
-                <span class="login-logo">ABC.xyz</span>
                 <span>Dashboard Técnico</span>
             </h1>
             <p class="login-subtitle">Accede con tu email para gestionar incidencias</p>
@@ -1491,7 +720,7 @@
     </div>
 
     <!-- Main Container -->
-    <div class="main-container" id="mainContainer">
+    <div class="main-container" id="mainContainer" style="display: none;">
         <!-- Stats Bar (Clickeable como filtros) -->
         <div class="stats-bar">
             <div class="stat-card" onclick="filterByStatus('all', this)">
@@ -1518,1179 +747,179 @@
                 <span class="filter-label">Prioridad:</span>
                 <div class="filter-buttons">
                     <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
-                    <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">Crítica</button>
-                    <button class="filter-btn" onclick="filterByPriority('ALTA', this)">Alta</button>
-                    <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">Media</button>
-                    <button class="filter-btn" onclick="filterByPriority('BAJA', this)">Baja</button>
+                    <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">🔴 Crítica</button>
+                    <button class="filter-btn" onclick="filterByPriority('ALTA', this)">🟠 Alta</button>
+                    <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">🟡 Media</button>
+                    <button class="filter-btn" onclick="filterByPriority('BAJA', this)">🟢 Baja</button>
                 </div>
             </div>
         </div>
 
-        <!-- Incidents Grid -->
-        <div class="incidents-grid" id="incidentsContainer">
-            <!-- Contenido dinámico -->
-        </div>
-    </div>
-
-    <!-- Success Overlay -->
-    <div class="success-overlay" id="successOverlay" style="display: none;">
-        <div class="success-message">
-            <div class="success-icon" id="successIcon">✅</div>
-            <div class="success-title" id="successTitle">Acción Completada</div>
-            <div class="success-description" id="successDescription">La acción se ha procesado correctamente</div>
-            <div class="countdown" id="countdown">Actualizando en 3 segundos...</div>
-        </div>
-    </div>
-
-    <!-- PIN Modal -->
-    <div class="modal-overlay" id="pinModal">
-        <div class="pin-modal">
-            <h3 class="pin-modal-title">🔐 Verificación de Seguridad</h3>
-            <p style="text-align: center; color: #6b7280; margin-bottom: 25px;">Introduce tu PIN de 4 dígitos</p>
-            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••" autocomplete="off">
-            <div class="pin-actions">
-                <button class="pin-btn pin-btn-cancel" onclick="closePINModal()">Cancelar</button>
-                <button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>Verificar</button>
-            </div>
-            <div id="pinError" class="error-message" style="display: none;"></div>
-        </div>
-    </div>
-
-    <!-- Reason Modal -->
-    <div class="modal-overlay" id="reasonModal">
-        <div class="modal-content">
-            <h3 class="modal-title" id="modalTitle">Selecciona el motivo</h3>
-            <div class="reason-options" id="reasonOptions"></div>
-            <div class="modal-actions">
-                <button class="modal-btn btn-cancel" onclick="closeReasonModal()">Cancelar</button>
-                <button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>Confirmar</button>
-            </div>
+        <!-- Incidents Container -->
+        <div id="incidentsContainer">
+            <!-- Las incidencias se renderizan aquí -->
         </div>
     </div>
 
     <script>
         // ==========================================
-        // 🎯 VARIABLES GLOBALES
+        // 🔧 VARIABLES GLOBALES
         // ==========================================
-        let currentIncident = null;
-        let currentTechnician = null;
-        let isAuthenticated = false;
-        let pendingAction = null;
-        let selectedReason = null;
-        let customText = '';
-        let accessMode = 'none';
+        
         let allIncidents = [];
+        let currentTechnician = null;
         let currentStatusFilter = 'all';
         let currentPriorityFilter = 'all';
+        let refreshInterval = null;
+        let authToken = null;
+        let slaTimerInterval = null;
+
+        // URLs de la API
+        const API_INCIDENTS = 'https://hook.eu2.make.com/yfvnx6wuypyvqp8ph7cw7tkqlcnh6fpk';
+        const API_RESPONSE = 'https://hook.eu2.make.com/7mh1bxlzb4mj6rjujhd99mqpf9kdmhfi';
 
         // ==========================================
-        // 🔧 MOTIVOS PROFESIONALES ACTUALIZADOS
+        // 🔐 SISTEMA DE AUTENTICACIÓN
         // ==========================================
-
-        // ESTADO PENDIENTE - Motivos de RECHAZO
-        const rejectReasons = [
-            {
-                id: 'ocupado_incidencia_critica',
-                icon: '🚨',
-                title: 'Ocupado con incidencia crítica',
-                description: 'Atendiendo incidencia prioritaria que no puedo abandonar'
-            },
-            {
-                id: 'equipo_no_operativo',
-                icon: '🔧',
-                title: 'Equipo/vehículo no operativo',
-                description: 'Mi equipo de trabajo presenta fallas que impiden intervención'
-            },
-            {
-                id: 'motivo_personal_urgente',
-                icon: '⚠️',
-                title: 'Motivo personal urgente',
-                description: 'Situación personal que impide aceptar la asignación'
-            },
-            {
-                id: 'otro_motivo_rechazo',
-                icon: '✏️',
-                title: 'Otro motivo',
-                description: 'Especificar razón del rechazo',
-                requiresText: true
-            }
-        ];
-
-        // ESTADO PENDIENTE - Motivos de AYUDA INICIAL
-        const helpReasonsInitial = [
-            {
-                id: 'fuera_especialidad',
-                icon: '👨‍🔧',
-                title: 'Fuera de mi especialidad',
-                description: 'Requiero apoyo de técnico especializado para esta intervención'
-            },
-            {
-                id: 'recursos_no_disponibles',
-                icon: '📦',
-                title: 'Recursos no disponibles',
-                description: 'Necesito herramientas, repuestos o equipamiento específico'
-            },
-            {
-                id: 'apoyo_tecnico_necesario',
-                icon: '🤝',
-                title: 'Apoyo técnico necesario',
-                description: 'Requiero segundo técnico o supervisión especializada'
-            },
-            {
-                id: 'otro_tipo_ayuda',
-                icon: '✏️',
-                title: 'Otro tipo de ayuda',
-                description: 'Especificar necesidad de apoyo',
-                requiresText: true
-            }
-        ];
-
-        // ESTADO TRABAJANDO - Motivos de TRANSFERIR
-        const transferReasons = [
-            {
-                id: 'fin_turno',
-                icon: '⏰',
-                title: 'Fin de turno',
-                description: 'Mi turno está finalizando, transferir a relevo'
-            },
-            {
-                id: 'requiere_especialista',
-                icon: '👨‍🔧',
-                title: 'Requiere especialista',
-                description: 'Tras evaluación, necesita técnico con especialización específica'
-            },
-            {
-                id: 'imposible_completar',
-                icon: '⛔',
-                title: 'No puedo completar',
-                description: 'Por circunstancias surgidas, no puedo finalizar la reparación'
-            },
-            {
-                id: 'otro_motivo_transferir',
-                icon: '✏️',
-                title: 'Otro motivo',
-                description: 'Especificar razón de transferencia',
-                requiresText: true
-            }
-        ];
-
-        // ESTADO TRABAJANDO - Motivos de APOYO DURANTE TRABAJO
-        const supportReasonsWorking = [
-            {
-                id: 'recursos_adicionales',
-                icon: '📦',
-                title: 'Recursos adicionales',
-                description: 'Necesito herramientas, repuestos o equipamiento adicional'
-            },
-            {
-                id: 'segundo_tecnico',
-                icon: '👥',
-                title: 'Segundo técnico',
-                description: 'Requiero apoyo de otro técnico para completar la intervención'
-            },
-            {
-                id: 'autorizacion_procedimiento',
-                icon: '✅',
-                title: 'Autorización para proceder',
-                description: 'Necesito autorización supervisor para el procedimiento a seguir'
-            },
-            {
-                id: 'supervision_especializada',
-                icon: '👨‍💼',
-                title: 'Supervisión especializada',
-                description: 'Requiero supervisión directa para intervención crítica'
-            },
-            {
-                id: 'otro_apoyo_trabajo',
-                icon: '✏️',
-                title: 'Otro apoyo',
-                description: 'Especificar tipo de apoyo requerido',
-                requiresText: true
-            }
-        ];
-
-        // ==========================================
-        // 📋 FUNCIONES DE INICIALIZACIÓN
-        // ==========================================
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('🔧 ABC.xyz Dashboard Técnico iniciado');
-            const urlParams = new URLSearchParams(window.location.search);
-            const email = urlParams.get('tecnico') || urlParams.get('technician_email');
-            const nombre = urlParams.get('nombre') || urlParams.get('technician_name');
-            const incidentId = urlParams.get('id') || urlParams.get('incident_id');
-
-            if (email) {
-                document.getElementById('emailInput').value = email;
-                if (nombre) {
-                    currentTechnician = { email: email, name: decodeURIComponent(nombre) };
-                }
-                if (incidentId) {
-                    accessMode = 'read_only';
-                    loadTechnicianDashboard(email, false);
-                }
-            }
-        });
-
-        // ==========================================
-        // 🔐 FUNCIONES DE LOGIN
-        // ==========================================
+        
         async function loginWithPIN() {
-            const email = document.getElementById('emailInput').value.trim();
-            if (!email || !email.includes('@')) {
-                showError('Email válido requerido', document.getElementById('loginError'));
-                return;
-            }
-            showPINModal();
-        }
-
-        function showPINModal() {
-            const modal = document.getElementById('pinModal');
-            const pinInput = document.getElementById('pinInput');
-            const verifyBtn = document.getElementById('verifyPinBtn');
+            const emailInput = document.getElementById('emailInput');
+            const loginBtn = document.getElementById('loginBtn');
+            const loginError = document.getElementById('loginError');
             
-            pinInput.value = '';
-            verifyBtn.disabled = true;
-            modal.classList.add('active');
-            pinInput.focus();
+            const email = emailInput.value.trim();
             
-            pinInput.oninput = () => verifyBtn.disabled = pinInput.value.length !== 4;
-            pinInput.onkeypress = (e) => {
-                if (e.key === 'Enter' && pinInput.value.length === 4) verifyPIN();
-            };
-        }
-
-        function closePINModal() {
-            document.getElementById('pinModal').classList.remove('active');
-            pendingAction = null;
-        }
-
-        async function verifyPIN() {
-            const pin = document.getElementById('pinInput').value;
-            const email = document.getElementById('emailInput').value;
-            const verifyBtn = document.getElementById('verifyPinBtn');
-
-            if (pin.length !== 4) {
-                showError('PIN de 4 dígitos requerido', document.getElementById('pinError'));
+            if (!email) {
+                showLoginError('Ingresa tu email');
                 return;
             }
 
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = 'Verificando...';
+            if (!email.includes('@')) {
+                showLoginError('Email inválido');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '🔐 Verificando...';
+            loginError.style.display = 'none';
 
             try {
-                // Usar webhook existente para verificar PIN
-                const response = await fetch('/api/webhook-respuesta', {
+                // Simular PIN (en producción sería un prompt real)
+                const pin = prompt('Ingresa tu PIN de técnico:');
+                
+                if (!pin || pin.length !== 4) {
+                    showLoginError('PIN inválido');
+                    return;
+                }
+
+                // Validar PIN con la API
+                const response = await fetch(API_INCIDENTS, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
-                        action: 'validate_technician_pin',
-                        technician_email: email,
+                        action: 'validate_technician',
+                        email: email,
                         pin: pin
                     })
                 });
 
                 const data = await response.json();
-                console.log('🔐 Respuesta verificación PIN:', data);
-
-                if (data.status === 'success') {
-                    accessMode = 'full_access';
-                    isAuthenticated = true;
+                
+                if (data.success && data.technician) {
+                    currentTechnician = data.technician;
+                    authToken = data.token;
                     
-                    // Extraer nombre del técnico correctamente
-                    let technicianName = 'Técnico Autorizado';
-                    if (data.technician && data.technician.name) {
-                        // Si viene procesado desde Make
-                        technicianName = data.technician.name;
-                    } else if (data.technician_name) {
-                        // Si viene como campo directo
-                        technicianName = data.technician_name;
-                    }
+                    // Ocultar login y mostrar dashboard
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainHeader').style.display = 'block';
+                    document.getElementById('mainContainer').style.display = 'block';
                     
-                    currentTechnician = { 
-                        email: email, 
-                        name: technicianName,
-                        department: data.technician?.department || 'No especificado',
-                        level: data.technician?.level || 'No especificado'
-                    };
+                    // Cargar dashboard
+                    await loadDashboard();
                     
-                    closePINModal();
-                    await loadTechnicianDashboard(email, true);
+                    // Iniciar actualización automática cada 30 segundos
+                    refreshInterval = setInterval(refreshIncidents, 30000);
                     
-                    if (pendingAction) {
-                        handleAction(pendingAction, currentIncident?.id);
-                    }
                 } else {
-                    throw new Error(data.message || 'PIN incorrecto');
+                    showLoginError(data.message || 'PIN incorrecto');
                 }
+                
             } catch (error) {
-                console.error('Error verificando PIN:', error);
-                showError('PIN incorrecto o error de conexión', document.getElementById('pinError'));
+                console.error('Error en login:', error);
+                showLoginError('Error de conexión');
             } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = 'Verificar';
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🔐 Acceder con PIN';
             }
         }
 
-        // ==========================================
-        // 📊 FUNCIONES DE DASHBOARD
-        // ==========================================
-        // 🔄 ADAPTADOR DE DATOS - Convertir datos de Make al formato frontend
-        function adaptIncidentData(makeData) {
-            console.log('🔄 Adaptando datos de Make:', makeData);
-            
-            if (!makeData.incidents || !Array.isArray(makeData.incidents)) {
-                console.log('❌ No se encontraron incidencias en la respuesta');
-                return [];
-            }
-            
-            const adaptedIncidents = makeData.incidents.map(incident => {
-                // Determinar el SLA apropiado basado en el escalation_level y el técnico actual
-                let slaEnd = null;
-                const currentTechnicianEmail = currentTechnician?.email || '';
-                
-                // Lógica para determinar qué SLA usar
-                if (incident.l0_technician === currentTechnicianEmail && incident.sla_l0_end) {
-                    slaEnd = incident.sla_l0_end;
-                } else if (incident.l1_technician === currentTechnicianEmail && incident.sla_l1_backup_end) {
-                    slaEnd = incident.sla_l1_backup_end;
-                } else if (incident.sla_l2_equipo_end && incident.escalation_level === '2') {
-                    slaEnd = incident.sla_l2_equipo_end;
-                } else if (incident.sla_l3_responsable_end && incident.escalation_level === '3') {
-                    slaEnd = incident.sla_l3_responsable_end;
-                } else {
-                    // Usar el primer SLA disponible
-                    slaEnd = incident.sla_l0_end || incident.sla_l1_backup_end || incident.sla_l2_equipo_end || incident.sla_l3_responsable_end;
-                }
-                
-                // Limpiar priority (quitar emojis)
-                let priority = incident.priority || 'MEDIA';
-                priority = priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-                
-                // Determinar el status apropiado
-                let status = 'Pendiente';
-                if (incident.status && incident.status.includes('Asignada')) {
-                    status = 'Trabajando';
-                } else if (incident.status && incident.status.includes('Escalado')) {
-                    status = 'Escalado';
-                }
-                
-                // Crear objeto adaptado compatible con el frontend existente
-                const adaptedIncident = {
-                    // IDs (usar ambos formatos para compatibilidad)
-                    incident_id: incident.id,
-                    id: incident.id,
-                    
-                    // Información del equipo
-                    equipment: incident.equipment || 'Equipo no especificado',
-                    zone: incident.zone || 'Zona no especificada',
-                    description: incident.description || 'Sin descripción',
-                    
-                    // Prioridad y estado
-                    priority: priority,
-                    status: status,
-                    
-                    // SLA (usar formato que espera el frontend)
-                    sla_end: slaEnd,
-                    
-                    // Técnicos por nivel
-                    l0_technician: incident.l0_technician,
-                    l1_technician: incident.l1_technician,
-                    l2_technicians: incident.l2_technicians,
-                    l2_technicians_notified: incident.l2_technicians_notified,
-                    assigned_technician: incident.assigned_technician,
-                    
-                    // Escalación
-                    escalation_level: incident.escalation_level || '0',
-                    escalation: incident.escalation_paused === 'false' ? 'true' : 'false',
-                    escalation_paused: incident.escalation_paused === 'true',
-                    
-                    // Contactos (mapear a nombres que usa el frontend)
-                    telefono_encargado: incident.supervisor_phone || 'Sin teléfono',
-                    telefono_supervisor: incident.manager_phone || 'Sin teléfono',
-                    telefono_reporta: incident.reporter_phone || 'Sin teléfono',
-                    
-                    // Personas
-                    supervisor: incident.supervisor || 'Sin supervisor',
-                    manager: incident.manager || 'Sin manager',
-                    reporter: incident.reporter || 'Sin reportador',
-                    
-                    // Acciones y información adicional
-                    actions_taken: incident.actions_taken || 'Sin acciones tomadas',
-                    url: incident.url,
-                    
-                    // Respuestas por nivel (para mostrar en la interfaz)
-                    l0_response: incident.l0_response || '⭕ Sin Respuesta',
-                    l0_reject_reason: incident.l0_reject_reason || '',
-                    l0_help_type: incident.l0_help_type || '',
-                    l1_response: incident.l1_response || '⭕ Sin Respuesta',
-                    l1_reject_reason: incident.l1_reject_reason || '',
-                    l1_help_type: incident.l1_help_type || '',
-                    l2_responses: incident.l2_responses || '',
-                    l2_reject_reasons: incident.l2_reject_reasons || '',
-                    
-                    // Tiempo transcurrido
-                    time_elapsed: incident.time_elapsed || '0'
-                };
-                
-                console.log('✅ Incidencia adaptada:', adaptedIncident.incident_id);
-                return adaptedIncident;
-            });
-            
-            console.log(`🎯 Adaptadas ${adaptedIncidents.length} incidencias correctamente`);
-            return adaptedIncidents;
+        function showLoginError(message) {
+            const loginError = document.getElementById('loginError');
+            loginError.textContent = message;
+            loginError.style.display = 'block';
         }
 
-        // FUNCIÓN: Determinar si el técnico puede responder (cambiar nombre de canTechnicianAct)
-function canTechnicianRespond(incident, technicianEmail) {
-    // Si ya respondió en cualquier nivel, NO puede volver a responder
-    if (incident.l0_technician === technicianEmail && 
-        incident.l0_response !== '⭕ Sin Respuesta') {
-        return false; // Ya respondió en L0
-    }
-    
-    if (incident.l1_technician === technicianEmail && 
-        incident.l1_response !== '⭕ Sin Respuesta') {
-        return false; // Ya respondió en L1
-    }
-    
-    // Solo puede responder si es su turno en el nivel actual Y no ha respondido
-    const escalationLevel = parseInt(incident.escalation_level) || 0;
-    const isEscalationActive = incident.escalation_paused !== 'true';
-    
-    switch (escalationLevel) {
-        case 0: // Nivel L0
-            return incident.l0_technician === technicianEmail && 
-                   incident.l0_response === '⭕ Sin Respuesta' &&
-                   isEscalationActive;
-                   
-        case 1: // Nivel L1
-            return incident.l1_technician === technicianEmail && 
-                   incident.l1_response === '⭕ Sin Respuesta' &&
-                   isEscalationActive;
-                   
-        case 2: // Nivel L2
-            const isInL2List = incident.l2_technicians_notified && 
-                               incident.l2_technicians_notified.includes(technicianEmail);
-            const hasNotRespondedL2 = !incident.l2_technicians || 
-                                      !incident.l2_technicians.includes(technicianEmail);
-            return isInL2List && hasNotRespondedL2 && isEscalationActive;
-            
-        case 3: // Nivel L3 - Solo supervisor
-            return false;
-            
-        default:
-            return false;
-    }
-}
-
-// FUNCIÓN: Determinar el estado real de la incidencia para filtros
-function getIncidentRealState(incident, technicianEmail) {
-    // Si el técnico ya está trabajando en ella
-    if (incident.assigned_technician && 
-        incident.assigned_technician.toLowerCase().includes(technicianEmail.split('@')[0])) {
-        return 'working';
-    }
-    
-    // Si puede responder = pendiente
-    if (canTechnicianRespond(incident, technicianEmail)) {
-        return 'pending';
-    }
-    
-    // Si SLA vencido
-    const escalationLevel = parseInt(incident.escalation_level) || 0;
-    let currentSLA = '';
-    switch(escalationLevel) {
-        case 0: currentSLA = incident.sla_l0_end; break;
-        case 1: currentSLA = incident.sla_l1_backup_end; break;
-        case 2: currentSLA = incident.sla_l2_equipo_end; break;
-        case 3: currentSLA = incident.sla_l3_responsable_end; break;
-    }
-    
-    if (currentSLA && new Date(currentSLA) < new Date()) {
-        return 'expired';
-    }
-    
-    // Si ya respondió o no es su responsabilidad
-    return 'not_mine';
-}
-
-// FUNCIÓN: Timers SLA en tiempo real
-function startSLATimers() {
-    const timers = document.querySelectorAll('.sla-timer[data-end]');
-    
-    timers.forEach(timer => {
-        const endTime = new Date(timer.dataset.end);
+        // ==========================================
+        // 📊 CARGA DE DATOS
+        // ==========================================
         
-        const updateTimer = () => {
-            const now = new Date();
-            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
-            
-            if (diffMinutes <= 0) {
-                timer.innerHTML = '⏰ VENCIDO';
-                timer.className = 'sla-expired';
-                return;
-            }
-            
-            const hours = Math.floor(diffMinutes / 60);
-            const minutes = diffMinutes % 60;
-            
-            let className = 'sla-timer';
-            if (diffMinutes <= 30) className += ' sla-critical';
-            else if (diffMinutes <= 60) className += ' sla-warning';
-            else className += ' sla-good';
-            
-            timer.className = className;
-            timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}min`;
-        };
-        
-        updateTimer(); // Inicial
-        const intervalId = setInterval(updateTimer, 60000); // Cada minuto
-        
-        // Guardar el interval ID para poder limpiarlo después
-        timer.setAttribute('data-interval', intervalId);
-    });
-}
-
-
-        
-        async function loadTechnicianDashboard(email, fullAccess) {
+                async function loadDashboard() {
             try {
-                showLoading('Cargando incidencias...');
+                console.log('🔄 Cargando dashboard...');
                 
-                // Usar webhook existente para obtener incidencias
-                const response = await fetch('/api/webhook-respuesta', {
+                const response = await fetch(API_INCIDENTS, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'get_assigned_incidents',
-                        technician_email: email,
-                        read_only: !fullAccess
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'get_incidents',
+                        technician_email: currentTechnician.email,
+                        token: authToken
                     })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('📊 Datos RAW recibidos:', data);
-                    console.log('📊 Tipo de data:', typeof data);
-                    console.log('📊 data.incidents existe:', !!data.incidents);
-                    console.log('📊 data.incidents tipo:', typeof data.incidents);
-                    console.log('📊 data.incidents length:', data.incidents ? data.incidents.length : 'N/A');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allIncidents = data.incidents || [];
+                    renderIncidents();
+                    updateStats();
                     
-                    allIncidents = adaptIncidentData(data);
-                    console.log('📊 Incidencias adaptadas:', allIncidents);
+                    // Actualizar información del header
+                    const fullAccess = currentTechnician.has_full_access || false;
+                    document.getElementById('authMessage').textContent = fullAccess ? 
+                        '✅ Acceso completo' : '👁️ Solo lectura';
+                    document.getElementById('authMessage').style.color = fullAccess ? '#059669' : '#d97706';
                     
-                    // Si no se estableció currentTechnician en verifyPIN, usar datos de respuesta
-                    if (!currentTechnician || !currentTechnician.name || currentTechnician.name === 'Técnico Autorizado') {
-                        currentTechnician = {
-                            email: email,
-                            name: data.technician?.name || email.split('@')[0] || 'Técnico',
-                            department: data.technician?.department,
-                            level: data.technician?.level
-                        };
-                    }
+                    updateLastUpdateTime();
+                    
                 } else {
-                 console.log('❌ Error en response:', response.status, response.statusText);
-                const errorText = await response.text();
-                console.log('❌ Error body:', errorText);
-                allIncidents = [];
+                    console.error('Error cargando incidencias:', data.message);
+                    allIncidents = [];
+                    renderIncidents();
+                    updateStats();
                 }
-
-                updateUI();
-                renderIncidents();
-                updateStats();
-                
-                // Mostrar dashboard
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('mainHeader').style.display = 'block';
-                document.getElementById('mainContainer').style.display = 'block';
-                
-                // Actualizar header con nombre real del técnico
-                document.getElementById('dashboardTitle').textContent = `Dashboard - ${currentTechnician.name}`;
-                document.getElementById('authMessage').textContent = fullAccess ? 
-                    '✅ Acceso completo' : '👁️ Solo lectura';
-                document.getElementById('authMessage').style.color = fullAccess ? '#059669' : '#d97706';
-                
-                updateLastUpdateTime();
                 
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
-                // En caso de error, mostrar sin incidencias
                 allIncidents = [];
                 renderIncidents();
                 updateStats();
             }
         }
 
-        // ==========================================
-        // 🎨 FUNCIONES DE RENDERIZADO
-        // ==========================================
-   function renderIncidents() {
-    const container = document.getElementById('incidentsContainer');
-    const filteredIncidents = filterIncidents();
-    const technicianEmail = currentTechnician?.email || '';
-    
-    console.log('🎨 Renderizando', filteredIncidents.length, 'incidencias');
-    
-    if (filteredIncidents.length === 0) {
-        container.innerHTML = `
-            <div class="no-incidents">
-                <div class="no-incidents-icon">📋</div>
-                <h3>No hay incidencias</h3>
-                <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'con este estado'} en este momento.</p>
-            </div>
-        `;
-        return;
-    }
-
-    // LAYOUT DE 2 COLUMNAS
-    const incidentsHTML = filteredIncidents.map(incident => {
-        const realState = getIncidentRealState(incident, technicianEmail);
-        const canRespond = canTechnicianRespond(incident, technicianEmail);
-        const escalationLevel = parseInt(incident.escalation_level) || 0;
-        
-        // Determinar SLA apropiado
-        let slaEnd = null;
-        if (incident.l0_technician === technicianEmail && incident.sla_l0_end) {
-            slaEnd = incident.sla_l0_end;
-        } else if (incident.l1_technician === technicianEmail && incident.sla_l1_backup_end) {
-            slaEnd = incident.sla_l1_backup_end;
-        } else if (escalationLevel === 2 && incident.sla_l2_equipo_end) {
-            slaEnd = incident.sla_l2_equipo_end;
-        } else if (escalationLevel === 3 && incident.sla_l3_responsable_end) {
-            slaEnd = incident.sla_l3_responsable_end;
-        }
-        
-        // Calcular tiempo SLA
-        let slaInfo = '';
-        if (slaEnd) {
-            const now = new Date();
-            const endTime = new Date(slaEnd);
-            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+        async function refreshIncidents() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '🔄 Actualizando...';
             
-            if (diffMinutes < 0) {
-                slaInfo = `<span class="sla-expired">⏰ Vencido hace ${Math.abs(diffMinutes)} min</span>`;
-            } else {
-                const hours = Math.floor(diffMinutes / 60);
-                const minutes = diffMinutes % 60;
-                slaInfo = `<span class="sla-timer" data-end="${slaEnd}">⏱️ ${hours}h ${minutes}min restantes</span>`;
-            }
-        }
-        
-        // Determinar badge de estado
-        let stateBadge = '';
-        if (realState === 'working') {
-            stateBadge = '<span class="badge bg-success">🔄 Trabajando</span>';
-        } else if (realState === 'pending') {
-            stateBadge = '<span class="badge bg-warning">⏳ Pendiente respuesta</span>';
-        } else if (realState === 'expired') {
-            stateBadge = '<span class="badge bg-danger">⏰ Vencida</span>';
-        } else if (incident.escalation_paused === 'true') {
-            stateBadge = '<span class="badge bg-secondary">⏸️ Escalado pausado</span>';
-        } else {
-            stateBadge = `<span class="badge bg-info">L${escalationLevel} En proceso</span>`;
-        }
-        
-        // Prioridad color
-        let priorityColor = '#6c757d';
-        const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-        switch (priority) {
-            case 'CRÍTICA': priorityColor = '#dc3545'; break;
-            case 'ALTA': priorityColor = '#fd7e14'; break;
-            case 'MEDIA': priorityColor = '#ffc107'; break;
-            case 'BAJA': priorityColor = '#28a745'; break;
-        }
-        
-        // Botones de acción solo si puede responder
-        let actionButtons = '';
-        if (canRespond) {
-            actionButtons = `
-                <div class="incident-actions">
-                    <button class="btn btn-success btn-sm" onclick="handleAction('acepto', '${incident.id}')">
-                        ✅ Acepto
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="handleAction('rechazo', '${incident.id}')">
-                        ❌ Rechazo
-                    </button>
-                    <button class="btn btn-warning btn-sm" onclick="handleAction('ayuda', '${incident.id}')">
-                        🆘 Ayuda
-                    </button>
-                </div>
-            `;
-        } else {
-            let reason = '';
-            if (realState === 'working') {
-                reason = '✅ Ya asignado';
-            } else if (realState === 'expired') {
-                reason = '⏰ Tiempo vencido';
-            } else if (realState === 'not_mine') {
-                reason = '👤 No es tu responsabilidad';
-            }
+            await loadDashboard();
             
-            actionButtons = `
-                <div class="no-action-info">
-                    <span class="badge bg-light text-dark">${reason}</span>
-                </div>
-            `;
-        }
-        
-        return `
-            <div class="incident-card">
-                <div class="incident-header">
-                    <div class="incident-title">
-                        <h4>${incident.equipment}</h4>
-                        <div class="badges">
-                            <span class="priority-badge" style="background-color: ${priorityColor}">${priority}</span>
-                            ${stateBadge}
-                        </div>
-                    </div>
-                    <div class="incident-id">${incident.id}</div>
-                </div>
-                
-                <div class="incident-body">
-                    <div class="zone">📍 ${incident.zone}</div>
-                    <div class="description">${incident.description}</div>
-                    ${slaInfo ? `<div class="sla-info">${slaInfo}</div>` : ''}
-                </div>
-                
-                <div class="incident-footer">
-                    ${actionButtons}
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    // Aplicar layout de 2 columnas
-    container.innerHTML = `
-        <div class="incidents-grid">
-            ${incidentsHTML}
-        </div>
-    `;
-    
-    // Iniciar timers SLA
-    startSLATimers();
-}
-        
-// 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
-function toggleContacts(incidentId) {
-    const contactsList = document.getElementById(`contacts-${incidentId}`);
-    const isVisible = contactsList.style.display !== 'none';
-    contactsList.style.display = isVisible ? 'none' : 'block';
-    
-    // Cambiar icono
-    const icon = contactsList.parentElement.querySelector('.toggle-icon');
-    icon.textContent = isVisible ? '▼' : '▲';
-}
-
-function toggleSystemNotes(incidentId) {
-    const notesContent = document.getElementById(`notes-${incidentId}`);
-    const isVisible = notesContent.style.display !== 'none';
-    notesContent.style.display = isVisible ? 'none' : 'block';
-    
-    // Cambiar icono
-    const icon = notesContent.parentElement.querySelector('.toggle-icon');
-    icon.textContent = isVisible ? '▼' : '▲';
-}
-function getCurrentUserEmail() {
-    return currentTechnician ? currentTechnician.email : '';
-}
-        
-
-        // ==========================================
-        // 🔄 FUNCIONES DE ACCIÓN
-        // ==========================================
-        function handleAction(action, incidentId) {
-            currentIncident = allIncidents.find(inc => inc.id === incidentId);
-            if (!currentIncident) {
-                console.error('Incidencia no encontrada:', incidentId);
-                return;
-            }
-
-            if (accessMode !== 'full_access') {
-                pendingAction = action;
-                showPINModal();
-                return;
-            }
-
-            if (action === 'acepto') {
-                // Acepto directo sin modal
-                confirmAction();
-            } else if (action === 'completar') {
-                // Completar con descripción obligatoria
-                showCompletionModal();
-            } else {
-                // Mostrar modal de motivos
-                showReasonModal(action);
-            }
-        }
-
-        function showReasonModal(action) {
-            pendingAction = action;
-            selectedReason = null;
-            customText = '';
-
-            const modal = document.getElementById('reasonModal');
-            const title = document.getElementById('modalTitle');
-            const options = document.getElementById('reasonOptions');
-            const confirmBtn = document.getElementById('confirmBtn');
-
-            let reasons = [];
-            let modalTitle = '';
-            let buttonText = '';
-
-            switch(action) {
-                case 'rechazo':
-                    modalTitle = '❌ Motivo del Rechazo';
-                    buttonText = 'Rechazar';
-                    reasons = rejectReasons;
-                    break;
-                case 'solicitar_ayuda':
-                    modalTitle = '🆘 Tipo de Ayuda Inicial';
-                    buttonText = 'Solicitar Ayuda';
-                    reasons = helpReasonsInitial;
-                    break;
-                case 'transferir':
-                    modalTitle = '🔄 Motivo de Transferencia';
-                    buttonText = 'Transferir';
-                    reasons = transferReasons;
-                    break;
-                case 'solicitar_apoyo':
-                    modalTitle = '🆘 Tipo de Apoyo Necesario';
-                    buttonText = 'Solicitar Apoyo';
-                    reasons = supportReasonsWorking;
-                    break;
-            }
-
-            title.textContent = modalTitle;
-            confirmBtn.textContent = buttonText;
-
-            options.innerHTML = reasons.map(reason => `
-                <div class="reason-option" onclick="selectReason('${reason.id}', ${reason.requiresText || false})">
-                    <div class="reason-icon">${reason.icon}</div>
-                    <div class="reason-text">
-                        <div class="reason-title">${reason.title}</div>
-                        <div class="reason-description">${reason.description}</div>
-                    </div>
-                </div>
-                ${reason.requiresText ? `
-                    <div class="custom-reason-input-container" id="customInput-${reason.id}" style="display: none;">
-                        <textarea class="custom-reason-input" 
-                                placeholder="Especifica el motivo..." 
-                                maxlength="200"
-                                oninput="updateCustomText(this.value)"></textarea>
-                    </div>
-                ` : ''}
-            `).join('');
-
-            confirmBtn.disabled = true;
-            modal.classList.add('active');
-        }
-
-        function selectReason(reasonId, requiresText = false) {
-            selectedReason = reasonId;
-            customText = '';
-
-            // Limpiar selecciones anteriores
-            document.querySelectorAll('.reason-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            document.querySelectorAll('.custom-reason-input-container').forEach(container => {
-                container.style.display = 'none';
-            });
-
-            // Seleccionar nueva opción
-            event.currentTarget.classList.add('selected');
-            
-            if (requiresText) {
-                const customContainer = document.getElementById(`customInput-${reasonId}`);
-                if (customContainer) {
-                    customContainer.style.display = 'block';
-                    const textarea = customContainer.querySelector('textarea');
-                    textarea.focus();
-                }
-                document.getElementById('confirmBtn').disabled = true;
-            } else {
-                document.getElementById('confirmBtn').disabled = false;
-            }
-        }
-
-        function updateCustomText(text) {
-            customText = text.trim();
-            document.getElementById('confirmBtn').disabled = customText.length < 10;
-        }
-
-        function closeReasonModal() {
-            document.getElementById('reasonModal').classList.remove('active');
-            pendingAction = null;
-            selectedReason = null;
-            customText = '';
-        }
-
-        async function confirmAction() {
-            if (!pendingAction || !currentIncident) return;
-
-            const confirmBtn = document.getElementById('confirmBtn');
-            const originalText = confirmBtn?.textContent || 'Confirmar';
-
-            try {
-                if (confirmBtn) {
-                    confirmBtn.disabled = true;
-                    confirmBtn.textContent = 'Procesando...';
-                }
-
-                // Payload para Make
-                const payload = {
-                    timestamp: new Date().toISOString(),
-                    action: pendingAction,
-                    incident_id: currentIncident.id,
-                    technician_email: currentTechnician.email,
-                    technician_name: currentTechnician.name,
-                    escalation_level: getCurrentEscalationLevel(currentIncident),
-                    reason_id: selectedReason,
-                    custom_text: customText,
-                    current_state: currentIncident.status === 'Trabajando' ? 'trabajando' : 'pendiente',
-                    user_agent: navigator.userAgent,
-                    ip_address: 'client-side' // Se obtiene en servidor
-                };
-
-                console.log('📤 Enviando a Make:', payload);
-
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    closeReasonModal();
-                    showSuccessMessage(data);
-                } else {
-                    throw new Error(data.message || 'Error procesando respuesta');
-                }
-
-            } catch (error) {
-                console.error('Error enviando respuesta:', error);
-                showError('Error de conexión. Inténtalo más tarde.');
-            } finally {
-                if (confirmBtn) {
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = originalText;
-                }
-            }
-        }
-
-        // ==========================================
-        // 📊 FUNCIONES AUXILIARES
-        // ==========================================
-   function filterIncidents() {
-    const technicianEmail = currentTechnician?.email || '';
-    
-    return allIncidents.filter(incident => {
-        const realState = getIncidentRealState(incident, technicianEmail);
-        
-        // Filtro por estado
-        let statusMatch = false;
-        switch (currentStatusFilter) {
-            case 'all':
-                statusMatch = true;
-                break;
-            case 'pending':
-                statusMatch = realState === 'pending';
-                break;
-            case 'working':
-                statusMatch = realState === 'working';
-                break;
-            case 'expired':
-                statusMatch = realState === 'expired';
-                break;
-            default:
-                statusMatch = true;
-        }
-        
-        // Filtro por prioridad
-        let priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim().toUpperCase();
-        const priorityMatch = currentPriorityFilter === 'all' || 
-                              priority === currentPriorityFilter.toUpperCase();
-        
-        return statusMatch && priorityMatch;
-    });
-}
-
-
-        function getCurrentEscalationLevel(incident) {
-            return incident.escalation_level === 0 ? 'L0' : 
-                   incident.escalation_level === 1 ? 'L1' : 
-                   incident.escalation_level === 2 ? 'L2' : 'L3';
-        }
-
-        function getPriorityClass(priority) {
-            // Limpiar emojis y obtener solo el texto
-            const cleanPriority = priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-            
-            const priorityMap = {
-                'CRÍTICA': 'priority-critica',
-                'ALTA': 'priority-alta', 
-                'MEDIA': 'priority-media',
-                'BAJA': 'priority-baja'
-            };
-            return priorityMap[cleanPriority] || 'priority-media';
-        }
-
-    
-     function updateStats() {
-    const technicianEmail = currentTechnician?.email || '';
-    
-    const pending = allIncidents.filter(i => 
-        getIncidentRealState(i, technicianEmail) === 'pending'
-    ).length;
-    
-    const working = allIncidents.filter(i => 
-        getIncidentRealState(i, technicianEmail) === 'working'
-    ).length;
-    
-    const expired = allIncidents.filter(i => 
-        getIncidentRealState(i, technicianEmail) === 'expired'
-    ).length;
-    
-    document.getElementById('totalCount').textContent = allIncidents.length;
-    document.getElementById('pendingCount').textContent = pending;
-    document.getElementById('workingCount').textContent = working;
-    document.getElementById('expiredCount').textContent = expired;
-}
-function getIncidentState(incident) {
-    // Para compatibilidad con el código existente
-    const technicianEmail = currentTechnician?.email || '';
-    return getIncidentRealState(incident, technicianEmail);
-}
-        
-        // ==========================================
-        // 📞 FUNCIONES CONTACTOS Y ESCALADO DROPDOWN
-        // ==========================================
-        function toggleSupervisorContact(incidentId) {
-            const supervisorDiv = document.getElementById(`supervisor-${incidentId}`);
-            const isVisible = supervisorDiv.style.display !== 'none';
-            
-            supervisorDiv.style.display = isVisible ? 'none' : 'block';
-            
-            // Actualizar texto del botón
-            const toggleButton = supervisorDiv.previousElementSibling.querySelector('.contact-name');
-            if (toggleButton) {
-                toggleButton.textContent = isVisible ? 
-                    '👨‍💼 Ver supervisor ▼' : 
-                    '👨‍💼 Ocultar supervisor ▲';
-            }
-        }
-
-        function toggleEscalationHistory(incidentId) {
-            const historyDiv = document.getElementById(`escalation-${incidentId}`);
-            const isVisible = historyDiv.style.display !== 'none';
-            
-            historyDiv.style.display = isVisible ? 'none' : 'block';
-            
-            // Actualizar texto del botón
-            const toggleButton = historyDiv.previousElementSibling.querySelector('[onclick*="toggleEscalationHistory"]');
-            if (toggleButton) {
-                const span = toggleButton.querySelector('span');
-                if (span) {
-                    span.textContent = isVisible ? 
-                        '📊 Ver historial completo escalado ▼' : 
-                        '📊 Ocultar historial escalado ▲';
-                }
-            }
-        }
-
-
-        // ==========================================
-        // 🔄 FUNCIONES DE FILTRO ACTUALIZADAS
-        // ==========================================
-        function filterByStatus(status, buttonElement) {
-            currentStatusFilter = status;
-            
-            // Actualizar visual de las tarjetas stats
-            document.querySelectorAll('.stat-card').forEach(card => {
-                card.classList.remove('active');
-            });
-            buttonElement.classList.add('active');
-            
-            renderIncidents();
-        }
-
-        function filterByPriority(priority, buttonElement) {
-            currentPriorityFilter = priority;
-            
-            buttonElement.closest('.filter-buttons').querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            buttonElement.classList.add('active');
-            
-            renderIncidents();
-        }
-
-        // ==========================================
-        // ✨ FUNCIONES DE UI
-        // ==========================================
-        function showSuccessMessage(data) {
-            const messages = {
-                'acepto': '✅ Incidencia aceptada correctamente. ¡Puedes empezar a trabajar!',
-                'rechazo': '❌ Incidencia rechazada. Se escalará automáticamente.',
-                'solicitar_ayuda': '🆘 Ayuda solicitada. Un supervisor se pondrá en contacto.',
-                'completar': '✅ Incidencia completada exitosamente.',
-                'transferir': '🔄 Incidencia transferida correctamente.',
-                'solicitar_apoyo': '🆘 Apoyo solicitado. Un supervisor gestionará tu petición.'
-            };
-
-            const icons = {
-                'acepto': '✅',
-                'rechazo': '❌', 
-                'solicitar_ayuda': '🆘',
-                'completar': '✅',
-                'transferir': '🔄',
-                'solicitar_apoyo': '🆘'
-            };
-
-            const makeMessage = data.message || messages[pendingAction];
-            const actionIcon = icons[pendingAction];
-
-            const overlay = document.getElementById('successOverlay');
-            const iconElement = document.getElementById('successIcon');
-            const titleElement = document.getElementById('successTitle');
-            const descriptionElement = document.getElementById('successDescription');
-            const countdownElement = document.getElementById('countdown');
-
-            iconElement.textContent = actionIcon;
-            titleElement.textContent = 'Acción Completada';
-            descriptionElement.textContent = makeMessage;
-
-            let countdown = 5;
-            countdownElement.textContent = `Actualizando en ${countdown} segundos...`;
-
-            overlay.style.display = 'flex';
-
-            const countdownInterval = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    countdownElement.textContent = `Actualizando en ${countdown} segundos...`;
-                } else {
-                    clearInterval(countdownInterval);
-                    overlay.style.display = 'none';
-                    refreshIncidents();
-                }
-            }, 1000);
-
-            // Click para cerrar
-            overlay.onclick = function(e) {
-                if (e.target === overlay) {
-                    clearInterval(countdownInterval);
-                    overlay.style.display = 'none';
-                    refreshIncidents();
-                }
-            };
-        }
-
-        function updateUI() {
-            updateLastUpdateTime();
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '🔄 Actualizar';
         }
 
         function updateLastUpdateTime() {
@@ -2699,127 +928,512 @@ function getIncidentState(incident) {
                 hour: '2-digit', 
                 minute: '2-digit' 
             });
-            document.getElementById('lastUpdate').textContent = `Última actualización: ${timeString}`;
-        }
-
-        async function refreshIncidents() {
-            if (!currentTechnician) return;
-            const btn = document.getElementById('refreshBtn');
-            btn.disabled = true;
-            btn.textContent = '🔄 Actualizando...';
-            try {
-                await loadTechnicianDashboard(currentTechnician.email, accessMode === 'full_access');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔄 Actualizar';
-            }
-        }
-
-        function showLoading(msg = 'Cargando...') {
-            document.getElementById('incidentsContainer').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <div>${msg}</div>
-                </div>`;
-        }
-
-        function createNoIncidentsHTML(title, icon, desc) {
-            return `
-                <div class="no-incidents">
-                    <div class="no-incidents-icon">${icon}</div>
-                    <h3 class="no-incidents-title">${title}</h3>
-                    <p class="no-incidents-description">${desc}</p>
-                </div>`;
-        }
-
-        function showError(msg, el = null) {
-            if (el) {
-                el.textContent = msg;
-                el.style.display = 'block';
-                setTimeout(() => el.style.display = 'none', 5000);
-            } else {
-                console.error('Error:', msg);
-                alert(msg); // Fallback
-            }
+            document.getElementById('lastUpdate').textContent = timeString;
         }
 
         // ==========================================
-        // 🎯 EVENTOS Y CONTROLES
+        // 🎨 FUNCIONES DE RENDERIZADO CON INFORMACIÓN COMPLETA
         // ==========================================
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
-                const input = document.getElementById('emailInput');
-                if (input.value.trim()) loginWithPIN();
-            }
-            if (e.key === 'Escape') {
-                closeReasonModal();
-                closePINModal();
-            }
-        });
-
-        document.getElementById('reasonModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeReasonModal();
-        });
-
-        document.getElementById('pinModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closePINModal();
-        });
-
-        // ==========================================
-        // 📝 MODAL DE COMPLETAR (con textarea obligatorio)
-        // ==========================================
-        function showCompletionModal() {
-            const modal = document.getElementById('reasonModal');
-            const title = document.getElementById('modalTitle');
-            const options = document.getElementById('reasonOptions');
-            const confirmBtn = document.getElementById('confirmBtn');
-
-            title.textContent = '✅ Completar Incidencia';
-            confirmBtn.textContent = 'Completar';
+        
+        function renderIncidents() {
+            const container = document.getElementById('incidentsContainer');
+            const filteredIncidents = filterIncidents();
+            const technicianEmail = currentTechnician?.email || '';
             
-            options.innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <p style="color: #374151; font-weight: 600; margin-bottom: 10px;">
-                        Describe las acciones realizadas para resolver la incidencia:
-                    </p>
-                    <textarea 
-                        class="custom-reason-input" 
-                        placeholder="Ejemplo: Reemplazada bomba defectuosa, verificado funcionamiento correcto, sistema operativo..." 
-                        maxlength="500"
-                        oninput="updateCompletionText(this.value)"
-                        style="height: 120px;"></textarea>
-                    <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 5px;">
-                        Mínimo 20 caracteres
+            console.log('🎨 Renderizando', filteredIncidents.length, 'incidencias');
+            
+            if (filteredIncidents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-incidents">
+                        <div class="no-incidents-icon">📋</div>
+                        <h3>No hay incidencias</h3>
+                        <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'con este estado'} en este momento.</p>
                     </div>
+                `;
+                return;
+            }
+
+            // ==========================================
+            // 🎯 RENDERIZADO CON INFORMACIÓN COMPLETA
+            // ==========================================
+            const incidentsHTML = filteredIncidents.map(incident => {
+                const realState = getIncidentRealState(incident, technicianEmail);
+                const canRespond = canTechnicianRespond(incident, technicianEmail);
+                const escalationLevel = parseInt(incident.escalation_level) || 0;
+                
+                // =======================================
+                // ⏱️ DETERMINAR SLA APROPIADO Y NIVEL
+                // =======================================
+                let slaEnd = null;
+                let slaLabel = '';
+                if (incident.l0_technician === technicianEmail && incident.sla_l0_end) {
+                    slaEnd = incident.sla_l0_end;
+                    slaLabel = 'SLA L0';
+                } else if (incident.l1_technician === technicianEmail && incident.sla_l1_backup_end) {
+                    slaEnd = incident.sla_l1_backup_end;
+                    slaLabel = 'SLA L1';
+                } else if (escalationLevel === 2 && incident.sla_l2_equipo_end) {
+                    slaEnd = incident.sla_l2_equipo_end;
+                    slaLabel = 'SLA L2';
+                } else if (escalationLevel === 3 && incident.sla_l3_responsable_end) {
+                    slaEnd = incident.sla_l3_responsable_end;
+                    slaLabel = 'SLA L3';
+                } else {
+                    // Mostrar SLA del nivel actual aunque no sea nuestro
+                    switch(escalationLevel) {
+                        case 0: slaEnd = incident.sla_l0_end; slaLabel = 'SLA L0'; break;
+                        case 1: slaEnd = incident.sla_l1_backup_end; slaLabel = 'SLA L1'; break;
+                        case 2: slaEnd = incident.sla_l2_equipo_end; slaLabel = 'SLA L2'; break;
+                        case 3: slaEnd = incident.sla_l3_responsable_end; slaLabel = 'SLA L3'; break;
+                    }
+                }
+                
+                // =======================================
+                // ⏰ CALCULAR TIEMPO SLA RESTANTE
+                // =======================================
+                let slaInfo = '';
+                if (slaEnd) {
+                    const now = new Date();
+                    const endTime = new Date(slaEnd);
+                    const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+                    
+                    if (diffMinutes < 0) {
+                        slaInfo = `<div class="sla-expired">⏰ VENCIDO hace ${Math.abs(diffMinutes)} min (${slaLabel})</div>`;
+                    } else {
+                        const hours = Math.floor(diffMinutes / 60);
+                        const minutes = diffMinutes % 60;
+                        let slaClass = '';
+                        if (diffMinutes <= 30) slaClass = 'sla-critical';
+                        else if (diffMinutes <= 60) slaClass = 'sla-warning';
+                        else slaClass = 'sla-good';
+                        
+                        slaInfo = `<div class="sla-timer ${slaClass}" data-end="${slaEnd}">ⱌ️ ${hours}h ${minutes.toString().padStart(2, '0')}m (${slaLabel})</div>`;
+                    }
+                }
+                
+                // =======================================
+                // 🏷️ DETERMINAR BADGE DE ESTADO
+                // =======================================
+                let stateBadge = '';
+                if (realState === 'working') {
+                    stateBadge = '<span class="badge bg-success">🔄 Trabajando</span>';
+                } else if (realState === 'pending') {
+                    stateBadge = '<span class="badge bg-warning">⏳ Puedes responder</span>';
+                } else if (realState === 'expired') {
+                    stateBadge = '<span class="badge bg-danger">⏰ Vencida</span>';
+                } else if (incident.escalation_paused === 'true') {
+                    stateBadge = '<span class="badge bg-secondary">⏸️ Pausado</span>';
+                } else {
+                    stateBadge = `<span class="badge bg-info">L${escalationLevel} Activo</span>`;
+                }
+                
+                // =======================================
+                // 👨‍🔧 INFORMACIÓN DE TÉCNICOS ASIGNADOS
+                // =======================================
+                let technicianInfo = '';
+                if (incident.l0_technician) {
+                    const isCurrentTech = incident.l0_technician === technicianEmail;
+                    technicianInfo = `
+                        <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
+                            👨‍🔧 L0: <strong>${incident.l0_technician.split('@')[0]}</strong>
+                            ${isCurrentTech ? ' (TÚ)' : ''}
+                            ${incident.l0_response ? ` - ${incident.l0_response}` : ''}
+                        </div>
+                    `;
+                }
+                
+                if (escalationLevel >= 1 && incident.l1_technician) {
+                    const isCurrentTech = incident.l1_technician === technicianEmail;
+                    technicianInfo += `
+                        <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
+                            👨‍🔧 L1: <strong>${incident.l1_technician.split('@')[0]}</strong>
+                            ${isCurrentTech ? ' (TÚ)' : ''}
+                            ${incident.l1_response ? ` - ${incident.l1_response}` : ''}
+                        </div>
+                    `;
+                }
+                
+                if (escalationLevel >= 2 && incident.l2_technicians) {
+                    technicianInfo += `
+                        <div class="technician-info">
+                            👥 L2: <strong>${incident.l2_technicians}</strong>
+                        </div>
+                    `;
+                }
+                
+                // =======================================
+                // 📞 INFORMACIÓN DE CONTACTOS
+                // =======================================
+                let contactsInfo = '';
+                if (incident.supervisor_phone || incident.reporter_phone) {
+                    contactsInfo = `
+                        <div class="contacts-info">
+                            <div class="contacts-header">📞 Contactos:</div>
+                            <div class="contacts-list">
+                                ${incident.reporter ? `<div>📋 ${incident.reporter}: <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>` : ''}
+                                ${incident.supervisor ? `<div>👨‍💼 ${incident.supervisor}: <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>` : ''}
+                                ${incident.zone_manager ? `<div>🏢 ${incident.zone_manager}: <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // =======================================
+                // ⏱️ TIEMPO TRANSCURRIDO
+                // =======================================
+                let timeInfo = '';
+                if (incident.time_elapsed) {
+                    const elapsed = parseInt(incident.time_elapsed);
+                    const hours = Math.floor(elapsed / 60);
+                    const minutes = elapsed % 60;
+                    timeInfo = `<div class="time-elapsed">🕒 Tiempo transcurrido: ${hours}h ${minutes}m</div>`;
+                }
+                
+                // =======================================
+                // 🎨 COLOR DE PRIORIDAD
+                // =======================================
+                let priorityColor = '#6c757d';
+                const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+                switch (priority) {
+                    case 'CRÍTICA': priorityColor = '#dc3545'; break;
+                    case 'ALTA': priorityColor = '#fd7e14'; break;
+                    case 'MEDIA': priorityColor = '#ffc107'; break;
+                    case 'BAJA': priorityColor = '#28a745'; break;
+                }
+                
+                // =======================================
+                // 🎯 BOTONES DE ACCIÓN
+                // =======================================
+                let actionButtons = '';
+                if (canRespond) {
+                    actionButtons = `
+                        <div class="incident-actions">
+                            <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">
+                                ✅ Acepto
+                            </button>
+                            <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">
+                                ❌ Rechazo
+                            </button>
+                            <button class="btn btn-warning" onclick="handleAction('ayuda', '${incident.id}')">
+                                🆘 Ayuda
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    let reason = '';
+                    if (realState === 'working') {
+                        reason = '✅ Ya asignado';
+                    } else if (realState === 'expired') {
+                        reason = '⏰ Tiempo vencido';
+                    } else if (realState === 'not_mine') {
+                        reason = `👤 No es tu responsabilidad (L${escalationLevel})`;
+                    }
+                    
+                    actionButtons = `
+                        <div class="no-action-info">
+                            <span class="badge bg-light">${reason}</span>
+                        </div>
+                    `;
+                }
+                
+                // =======================================
+                // 📝 RENDERIZADO FINAL DE LA CARD
+                // =======================================
+                return `
+                    <div class="incident-card">
+                        <div class="incident-header">
+                            <div class="incident-title">
+                                <h4>${incident.equipment || incident.component}</h4>
+                                <div class="badges">
+                                    <span class="priority-badge" style="background-color: ${priorityColor}; color: white;">${priority}</span>
+                                    ${stateBadge}
+                                </div>
+                            </div>
+                            <div class="incident-id">${incident.id}</div>
+                        </div>
+                        
+                        <div class="incident-body">
+                            <div class="zone">📍 <strong>${incident.zone}</strong></div>
+                            <div class="description">${incident.description}</div>
+                            
+                            ${technicianInfo}
+                            ${slaInfo}
+                            ${timeInfo}
+                            
+                            ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' ? 
+                                `<div class="actions-taken">🔧 <strong>Acciones tomadas:</strong> ${incident.actions_taken}</div>` : ''
+                            }
+                            
+                            ${contactsInfo}
+                        </div>
+                        
+                        <div class="incident-footer">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // =======================================
+            // 🎨 APLICAR LAYOUT DE 2 COLUMNAS
+            // =======================================
+            container.innerHTML = `
+                <div class="incidents-grid">
+                    ${incidentsHTML}
                 </div>
             `;
-
-            confirmBtn.disabled = true;
-            modal.classList.add('active');
             
-            // Focus en textarea
-            setTimeout(() => {
-                const textarea = options.querySelector('textarea');
-                if (textarea) textarea.focus();
-            }, 100);
-        }
-
-        function updateCompletionText(text) {
-            customText = text.trim();
-            document.getElementById('confirmBtn').disabled = customText.length < 20;
+            // =======================================
+            // ⏱️ INICIAR TIMERS SLA EN TIEMPO REAL
+            // =======================================
+            startSLATimers();
         }
 
         // ==========================================
-        // 📱 RESPONSIVE Y DEBUGGING
+        // ⏱️ SISTEMA DE TIMERS SLA EN TIEMPO REAL
         // ==========================================
-        console.log('🔧 Dashboard ABC.xyz - Versión Profesional cargada');
-        console.log('📋 Motivos configurados:', {
-            rechazo: rejectReasons.length,
-            ayuda_inicial: helpReasonsInitial.length,
-            transferir: transferReasons.length,
-            apoyo_trabajo: supportReasonsWorking.length
+        
+        function startSLATimers() {
+            // Limpiar interval anterior si existe
+            if (slaTimerInterval) {
+                clearInterval(slaTimerInterval);
+            }
+            
+            slaTimerInterval = setInterval(() => {
+                const timers = document.querySelectorAll('.sla-timer[data-end]');
+                
+                timers.forEach(timer => {
+                    const endTime = new Date(timer.dataset.end);
+                    const now = new Date();
+                    const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+                    
+                    if (diffMinutes < 0) {
+                        // SLA vencido
+                        const expiredMinutes = Math.abs(diffMinutes);
+                        timer.className = 'sla-expired';
+                        timer.innerHTML = `⏰ VENCIDO hace ${expiredMinutes} min`;
+                    } else {
+                        // SLA activo
+                        const hours = Math.floor(diffMinutes / 60);
+                        const minutes = diffMinutes % 60;
+                        
+                        // Actualizar clase según tiempo restante
+                        timer.className = 'sla-timer sla-info ';
+                        if (diffMinutes <= 30) {
+                            timer.className += 'sla-critical';
+                        } else if (diffMinutes <= 60) {
+                            timer.className += 'sla-warning';
+                        } else {
+                            timer.className += 'sla-good';
+                        }
+                        
+                        timer.innerHTML = `ⱌ️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
+                    }
+                });
+            }, 60000); // Actualizar cada minuto
+        }
+
+        // ==========================================
+        // 🎛️ FUNCIONES DE FILTRADO
+        // ==========================================
+        
+        function filterIncidents() {
+            return allIncidents.filter(incident => {
+                // Filtro por estado
+                if (currentStatusFilter !== 'all') {
+                    const realState = getIncidentRealState(incident, currentTechnician.email);
+                    if (realState !== currentStatusFilter) {
+                        return false;
+                    }
+                }
+                
+                // Filtro por prioridad
+                if (currentPriorityFilter !== 'all') {
+                    const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+                    if (priority !== currentPriorityFilter) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        }
+
+        function filterByStatus(status, element) {
+            currentStatusFilter = status;
+            
+            // Actualizar UI de filtros
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            renderIncidents();
+        }
+
+        function filterByPriority(priority, element) {
+            currentPriorityFilter = priority;
+            
+            // Actualizar UI de filtros
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            renderIncidents();
+        }
+
+        // ==========================================
+        // 🎯 LÓGICA DE ESTADOS Y PERMISOS
+        // ==========================================
+        
+        function getIncidentRealState(incident, technicianEmail) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
+            // Si está pausado
+            if (incident.escalation_paused === 'true') {
+                return 'paused';
+            }
+            
+            // Verificar si el técnico ya respondió
+            if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
+                if (incident.l0_response === 'acepto') return 'working';
+                if (incident.l0_response === 'rechazo' || incident.l0_response === 'ayuda') return 'escalated';
+            }
+            
+            if (escalationLevel === 1 && incident.l1_technician === technicianEmail) {
+                if (incident.l1_response === 'acepto') return 'working';
+                if (incident.l1_response === 'rechazo' || incident.l1_response === 'ayuda') return 'escalated';
+            }
+            
+            // Verificar SLA
+            let slaEnd = null;
+            if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
+                slaEnd = incident.sla_l0_end;
+            } else if (escalationLevel === 1 && incident.l1_technician === technicianEmail) {
+                slaEnd = incident.sla_l1_backup_end;
+            } else if (escalationLevel === 2 && incident.l2_technicians?.includes(technicianEmail)) {
+                slaEnd = incident.sla_l2_equipo_end;
+            } else if (escalationLevel === 3 && incident.l3_supervisor === technicianEmail) {
+                slaEnd = incident.sla_l3_responsable_end;
+            }
+            
+            if (slaEnd) {
+                const now = new Date();
+                const endTime = new Date(slaEnd);
+                
+                if (now > endTime) {
+                    return 'expired';
+                } else {
+                    return 'pending';
+                }
+            }
+            
+            return 'not_mine';
+        }
+
+        function canTechnicianRespond(incident, technicianEmail) {
+            const state = getIncidentRealState(incident, technicianEmail);
+            return state === 'pending';
+        }
+
+        // ==========================================
+        // 📊 ACTUALIZAR ESTADÍSTICAS
+        // ==========================================
+        
+        function updateStats() {
+            const technicianEmail = currentTechnician?.email || '';
+            
+            let pendingCount = 0;
+            let workingCount = 0;
+            let expiredCount = 0;
+            
+            allIncidents.forEach(incident => {
+                const state = getIncidentRealState(incident, technicianEmail);
+                switch (state) {
+                    case 'pending':
+                        pendingCount++;
+                        break;
+                    case 'working':
+                        workingCount++;
+                        break;
+                    case 'expired':
+                        expiredCount++;
+                        break;
+                }
+            });
+            
+            document.getElementById('totalCount').textContent = allIncidents.length;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('workingCount').textContent = workingCount;
+            document.getElementById('expiredCount').textContent = expiredCount;
+        }
+
+        // ==========================================
+        // 🎯 MANEJO DE ACCIONES (ACEPTO/RECHAZO/AYUDA)
+        // ==========================================
+        
+        async function handleAction(action, incidentId) {
+            const motivo = prompt(`¿Cuál es el motivo del ${action}?`);
+            
+            if (!motivo || motivo.trim() === '') {
+                alert('El motivo es obligatorio');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_RESPONSE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        incident_id: incidentId,
+                        technician_email: currentTechnician.email,
+                        action: action,
+                        reason: motivo.trim(),
+                        token: authToken
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`${action.toUpperCase()} registrado correctamente`);
+                    await loadDashboard(); // Recargar datos
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo registrar la respuesta'));
+                }
+                
+            } catch (error) {
+                console.error('Error enviando respuesta:', error);
+                alert('Error de conexión');
+            }
+        }
+
+        // ==========================================
+        // 🚀 INICIALIZACIÓN AL CARGAR LA PÁGINA
+        // ==========================================
+        
+        window.addEventListener('load', () => {
+            console.log('🚀 Dashboard Técnico inicializado');
+            
+            // Auto-focus en el campo email
+            document.getElementById('emailInput').focus();
+            
+            // Enter key en el campo email
+            document.getElementById('emailInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loginWithPIN();
+                }
+            });
         });
 
+        // Limpiar intervals al cerrar la página
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+            if (slaTimerInterval) clearInterval(slaTimerInterval);
+        });
     </script>
 </body>
 </html>
