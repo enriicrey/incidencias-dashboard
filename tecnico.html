@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@
         }
 
         /* ==========================================
-           🔐 LOGIN SCREEN
+           🔒 LOGIN SCREEN
            ========================================== */
         
         .login-container {
@@ -714,6 +714,248 @@
         }
 
         /* ==========================================
+           🔒 MODALES COMPLETOS DEL SISTEMA
+           ========================================== */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content, .pin-modal {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content,
+        .modal-overlay.active .pin-modal {
+            transform: scale(1);
+        }
+
+        .modal-title, .pin-modal-title {
+            font-size: 20px;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .reason-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .reason-option {
+            padding: 15px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .reason-option:hover {
+            border-color: #374151;
+            background: #f9fafb;
+        }
+
+        .reason-option.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .reason-icon { 
+            font-size: 24px; 
+            min-width: 30px; 
+        }
+
+        .reason-text { 
+            flex: 1; 
+        }
+
+        .reason-title { 
+            font-weight: 600; 
+            color: #1f2937; 
+            margin-bottom: 3px; 
+        }
+
+        .reason-description { 
+            font-size: 13px; 
+            color: #6b7280; 
+        }
+
+        .custom-reason-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .custom-reason-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .modal-actions, .pin-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn, .pin-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel, .pin-btn-cancel {
+            background: #f9fafb;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-confirm, .pin-btn-verify {
+            background: #374151;
+            color: white;
+        }
+
+        .btn-confirm:disabled, .pin-btn-verify:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        /* ==========================================
+           🎉 SUCCESS OVERLAY
+           ========================================== */
+
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .success-message {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .success-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .countdown {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        /* ==========================================
+           🎨 BADGES Y ESTADOS ADICIONALES
+           ========================================== */
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .bg-success { background: #22c55e; color: white; }
+        .bg-warning { background: #f59e0b; color: white; }
+        .bg-danger { background: #ef4444; color: white; }
+        .bg-info { background: #3b82f6; color: white; }
+        .bg-secondary { background: #6b7280; color: white; }
+        .bg-light { background: #f3f4f6; color: #374151; }
+        
+        /* Estilos para las secciones colapsables */
+        .toggle-icon {
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+        
+        .escalation-header:hover .toggle-icon,
+        .contacts-header:hover .toggle-icon {
+            transform: scale(1.2);
+        }
+
+        /* ==========================================
            📱 RESPONSIVE DESIGN
            ========================================== */
         
@@ -768,38 +1010,6 @@
             }
         }
 
-        /* ==========================================
-           🎨 BADGES Y ESTADOS ADICIONALES
-           ========================================== */
-        
-        .badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-block;
-        }
-
-        .bg-success { background: #22c55e; color: white; }
-        .bg-warning { background: #f59e0b; color: white; }
-        .bg-danger { background: #ef4444; color: white; }
-        .bg-info { background: #3b82f6; color: white; }
-        .bg-secondary { background: #6b7280; color: white; }
-        .bg-light { background: #f3f4f6; color: #374151; }
-        
-        /* Estilos para las secciones colapsables */
-        .toggle-icon {
-            font-size: 14px;
-            transition: transform 0.3s ease;
-        }
-        
-        .escalation-header:hover .toggle-icon,
-        .contacts-header:hover .toggle-icon {
-            transform: scale(1.2);
-        }
-
     </style>
 </head>
 <body>
@@ -816,7 +1026,7 @@
                 <input type="email" class="input-field" id="emailInput" placeholder="ejemplo@empresa.com" autocomplete="email">
             </div>
             <button onclick="loginWithPIN()" class="verify-btn" id="loginBtn">
-                🔐 Acceder con PIN
+                🔒 Acceder con PIN
             </button>
             <div id="loginError" class="error-message" style="display: none;"></div>
         </div>
@@ -884,6 +1094,42 @@
         </div>
     </div>
 
+    <!-- PIN Modal -->
+    <div class="modal-overlay" id="pinModal">
+        <div class="pin-modal">
+            <h3 class="pin-modal-title">🔒 Verificación de Seguridad</h3>
+            <p style="text-align: center; color: #6b7280; margin-bottom: 25px;">Introduce tu PIN de 4 dígitos</p>
+            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••" autocomplete="off">
+            <div class="pin-actions">
+                <button class="pin-btn pin-btn-cancel" onclick="closePINModal()">Cancelar</button>
+                <button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>Verificar</button>
+            </div>
+            <div id="pinError" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Reason Modal -->
+    <div class="modal-overlay" id="reasonModal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">Selecciona el motivo</h3>
+            <div class="reason-options" id="reasonOptions"></div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeReasonModal()">Cancelar</button>
+                <button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="successOverlay" style="display: none;">
+        <div class="success-message">
+            <div class="success-icon" id="successIcon">✅</div>
+            <div class="success-title" id="successTitle">Acción Completada</div>
+            <div class="success-description" id="successDescription">La acción se ha procesado correctamente</div>
+            <div class="countdown" id="countdown">Actualizando en 3 segundos...</div>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // 🔧 VARIABLES GLOBALES
@@ -895,81 +1141,227 @@
         let currentPriorityFilter = 'all';
         let refreshInterval = null;
         let slaTimerInterval = null;
+        let pendingAction = null;
+        let selectedReason = null;
+        let customText = '';
+        let currentIncident = null;
+        let accessMode = 'read_only'; // 'read_only' o 'full_access'
 
-        // URLs de la API - Compatible con Make
-        const API_BASE_URL = 'https://hook.eu2.make.com/yfvnx6wuypyvqp8ph7cw7tkqlcnh6fpk';
-        const API_RESPONSE = 'https://hook.eu2.make.com/7mh1bxlzb4mj6rjujhd99mqpf9kdmhfi';
+        // ✅ CORRECCIÓN: Usar TUS APIs de Vercel, no URLs directas a Make
+        const API_BASE_URL = '/api/webhook-respuesta';
+        const API_RESPONSE = '/api/webhook-respuesta';
 
         // ==========================================
-        // 🔐 SISTEMA DE AUTENTICACIÓN CORREGIDO
+        // 🎯 MOTIVOS DETALLADOS COMO EN TECNICO(12)
+        // ==========================================
+
+        // Motivos de RECHAZO
+        const rejectReasons = [
+            {
+                id: 'ocupado_otra',
+                icon: '⚠️',
+                title: 'Ocupado con otra incidencia',
+                description: 'Actualmente atendiendo otra incidencia prioritaria'
+            },
+            {
+                id: 'fuera_especialidad',
+                icon: '🔧',
+                title: 'Fuera de mi especialidad',
+                description: 'Requiere conocimientos específicos que no poseo'
+            },
+            {
+                id: 'no_disponible',
+                icon: '🚫',
+                title: 'No disponible ahora',
+                description: 'Fuera de horario o en descanso programado'
+            },
+            {
+                id: 'falta_herramientas',
+                icon: '🛠️',
+                title: 'Faltan herramientas/repuestos',
+                description: 'No dispongo del equipamiento necesario'
+            },
+            {
+                id: 'ubicacion_lejos',
+                icon: '📍',
+                title: 'Muy lejos de mi ubicación',
+                description: 'Distancia excesiva desde mi posición actual'
+            },
+            {
+                id: 'sobrecarga_trabajo',
+                icon: '📊',
+                title: 'Sobrecarga de trabajo',
+                description: 'Carga actual impide atender correctamente'
+            }
+        ];
+
+        // Motivos de AYUDA INICIAL
+        const helpReasonsInitial = [
+            {
+                id: 'apoyo_tecnico',
+                icon: '👨‍🔧',
+                title: 'Necesito apoyo técnico',
+                description: 'Requiero asistencia de otro técnico'
+            },
+            {
+                id: 'consulta_supervisor',
+                icon: '👨‍💼',
+                title: 'Consulta con supervisor',
+                description: 'Necesito autorización o consulta supervisorial'
+            },
+            {
+                id: 'herramientas_especiales',
+                icon: '🔨',
+                title: 'Herramientas especiales',
+                description: 'Requiero equipamiento especializado'
+            },
+            {
+                id: 'procedimiento_dudas',
+                icon: '❓',
+                title: 'Dudas sobre procedimiento',
+                description: 'Incertidumbre sobre el método a seguir'
+            },
+            {
+                id: 'seguridad_riesgo',
+                icon: '⚠️',
+                title: 'Problema de seguridad',
+                description: 'Situación de riesgo que requiere supervisión'
+            },
+            {
+                id: 'repuestos_urgentes',
+                icon: '📦',
+                title: 'Repuestos urgentes',
+                description: 'Necesito componentes no disponibles localmente'
+            }
+        ];
+
+        // Motivos de TRANSFERIR (estado trabajando)
+        const transferReasons = [
+            {
+                id: 'fin_turno',
+                icon: '🕐',
+                title: 'Fin de turno',
+                description: 'Mi turno está finalizando, transferir a relevo'
+            },
+            {
+                id: 'requiere_especialista',
+                icon: '👨‍🔧',
+                title: 'Requiere especialista',
+                description: 'Tras evaluación, necesita técnico con especialización específica'
+            },
+            {
+                id: 'imposible_completar',
+                icon: '⛔',
+                title: 'No puedo completar',
+                description: 'Por circunstancias surgidas, no puedo finalizar la reparación'
+            },
+            {
+                id: 'otro_motivo_transferir',
+                icon: '✏️',
+                title: 'Otro motivo',
+                description: 'Especificar razón de transferencia',
+                requiresText: true
+            }
+        ];
+
+        // Motivos de SOLICITAR APOYO EN TRABAJO
+        const supportReasonsWorking = [
+            {
+                id: 'recursos_adicionales',
+                icon: '📦',
+                title: 'Recursos adicionales',
+                description: 'Necesito herramientas, repuestos o equipamiento adicional'
+            },
+            {
+                id: 'segundo_tecnico',
+                icon: '👥',
+                title: 'Segundo técnico',
+                description: 'Requiero apoyo de otro técnico para completar la intervención'
+            },
+            {
+                id: 'autorizacion_procedimiento',
+                icon: '✅',
+                title: 'Autorización para proceder',
+                description: 'Necesito autorización supervisor para el procedimiento a seguir'
+            },
+            {
+                id: 'supervision_especializada',
+                icon: '👨‍💼',
+                title: 'Supervisión especializada',
+                description: 'Requiero supervisión directa para intervención crítica'
+            },
+            {
+                id: 'otro_apoyo_trabajo',
+                icon: '✏️',
+                title: 'Otro apoyo',
+                description: 'Especificar tipo de apoyo requerido',
+                requiresText: true
+            }
+        ];
+
+        // ==========================================
+        // 🔒 SISTEMA DE AUTENTICACIÓN CON MODAL PIN
         // ==========================================
         
         async function loginWithPIN() {
-            const emailInput = document.getElementById('emailInput');
-            const loginBtn = document.getElementById('loginBtn');
-            const loginError = document.getElementById('loginError');
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email || !email.includes('@')) {
+                showError('Email válido requerido', document.getElementById('loginError'));
+                return;
+            }
+            showPINModal();
+        }
+
+        function showPINModal() {
+            const modal = document.getElementById('pinModal');
+            const pinInput = document.getElementById('pinInput');
+            const verifyBtn = document.getElementById('verifyPinBtn');
             
-            const email = emailInput.value.trim();
+            pinInput.value = '';
+            verifyBtn.disabled = true;
+            modal.classList.add('active');
+            pinInput.focus();
             
-            if (!email) {
-                showLoginError('Ingresa tu email');
+            pinInput.oninput = () => verifyBtn.disabled = pinInput.value.length !== 4;
+            pinInput.onkeypress = (e) => {
+                if (e.key === 'Enter' && pinInput.value.length === 4) verifyPIN();
+            };
+        }
+
+        function closePINModal() {
+            document.getElementById('pinModal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        async function verifyPIN() {
+            const pin = document.getElementById('pinInput').value;
+            const email = document.getElementById('emailInput').value;
+            const verifyBtn = document.getElementById('verifyPinBtn');
+
+            if (pin.length !== 4) {
+                showError('PIN de 4 dígitos requerido', document.getElementById('pinError'));
                 return;
             }
 
-            if (!email.includes('@')) {
-                showLoginError('Email inválido');
-                return;
-            }
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = '🔐 Verificando...';
-            loginError.style.display = 'none';
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verificando...';
 
             try {
-                // Prompt para PIN
-                const pin = prompt('Ingresa tu PIN de técnico (4 dígitos):');
-                
-                if (!pin || pin.trim() === '') {
-                    showLoginError('PIN es obligatorio');
-                    return;
-                }
-
-                if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-                    showLoginError('PIN debe ser 4 dígitos numéricos');
-                    return;
-                }
-
-                // Validar con la API
+                // ✅ CORRECCIÓN: Usar tu API de Vercel
                 const response = await fetch(API_BASE_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'verify_pin',
-                        email: email,
+                        action: 'validate_technician_pin',
+                        technician_email: email,
                         pin: pin
                     })
                 });
 
-                // ✅ CORRECCIÓN: Manejo robusto de respuestas
-                let data = null;
-                try {
-                    const contentType = response.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        data = await response.json();
-                    } else {
-                        const textResponse = await response.text();
-                        console.warn('Respuesta no JSON:', textResponse);
-                        throw new Error('Respuesta inválida del servidor');
-                    }
-                } catch (parseError) {
-                    console.error('Error parsing JSON:', parseError);
-                    throw new Error('Error procesando respuesta del servidor');
-                }
-                
-                // ✅ CORRECCIÓN: Validación mejorada
-                if (response.ok && data && data.success) {
+                const data = await response.json();
+                console.log('🔒 PIN Response:', data);
+
+                if (data.status === 'success') {
                     currentTechnician = {
                         email: email,
                         name: data.technician?.name || email.split('@')[0],
@@ -977,8 +1369,16 @@
                         level: data.technician?.level || 1,
                         hasFullAccess: Boolean(data.technician?.hasFullAccess)
                     };
-                    
-                    // Cargar dashboard
+
+                    accessMode = data.technician?.hasFullAccess ? 'full_access' : 'read_only';
+                    closePINModal();
+
+                    // Si había acción pendiente, ejecutar
+                    if (pendingAction) {
+                        executeAction();
+                        return;
+                    }
+
                     await loadDashboard();
                     
                     // Mostrar interfaz principal
@@ -986,27 +1386,24 @@
                     document.getElementById('mainHeader').style.display = 'block';
                     document.getElementById('mainContainer').style.display = 'block';
                     
-                    // Iniciar actualización automática cada 30 segundos
+                    // Iniciar actualización automática
                     refreshInterval = setInterval(loadDashboard, 30000);
-                    
                 } else {
-                    const errorMessage = (data && data.message) || 'PIN incorrecto o error del servidor';
-                    showLoginError(errorMessage);
+                    showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
                 }
-                
             } catch (error) {
-                console.error('Error en login:', error);
-                showLoginError('Error de conexión: ' + error.message);
+                console.error('Error verificando PIN:', error);
+                showError('Error de conexión', document.getElementById('pinError'));
             } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = '🔐 Acceder con PIN';
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verificar';
             }
         }
 
-        function showLoginError(message) {
-            const loginError = document.getElementById('loginError');
-            loginError.textContent = message;
-            loginError.style.display = 'block';
+        function showError(message, element) {
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => element.style.display = 'none', 5000);
         }
 
         // ==========================================
@@ -1021,18 +1418,18 @@
                     throw new Error('No hay técnico autenticado');
                 }
                 
+                // ✅ CORRECCIÓN: Usar tu API de Vercel
                 const response = await fetch(API_BASE_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'get_incidents',
+                        action: 'get_assigned_incidents',
                         technician_email: currentTechnician.email
                     })
                 });
 
-                // ✅ CORRECCIÓN: Manejo robusto de respuestas
                 let data = null;
                 try {
                     const contentType = response.headers.get('content-type') || '';
@@ -1040,19 +1437,18 @@
                         data = await response.json();
                     } else {
                         console.warn('Respuesta no JSON en loadDashboard, usando datos vacíos');
-                        data = { success: false, incidents: [] };
+                        data = { status: 'error', incidents: [] };
                     }
                 } catch (parseError) {
                     console.error('Error parsing JSON en loadDashboard:', parseError);
-                    data = { success: false, incidents: [] };
+                    data = { status: 'error', incidents: [] };
                 }
 
-                if (response.ok && data && data.success) {
+                if (response.ok && data && data.status === 'success') {
                     allIncidents = adaptIncidentData(data);
                     renderIncidents();
                     updateStats();
                     
-                    // ✅ CORRECCIÓN: Acceso seguro a propiedades
                     const hasFullAccess = currentTechnician?.hasFullAccess || false;
                     const technicianName = currentTechnician?.name || 'Técnico';
                     
@@ -1072,7 +1468,6 @@
                 
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
-                // ✅ CORRECCIÓN: Manejo graceful de errores
                 allIncidents = [];
                 renderIncidents();
                 updateStats();
@@ -1119,7 +1514,6 @@
         // ==========================================
 
         function adaptIncidentData(data) {
-            // ✅ CORRECCIÓN: Validación robusta de datos
             let incidents = [];
             
             try {
@@ -1135,7 +1529,6 @@
                 }
                 
                 return incidents.map(incident => {
-                    // ✅ CORRECCIÓN: Validación de cada incidencia
                     if (!incident || typeof incident !== 'object') {
                         console.warn('Incidencia inválida:', incident);
                         return null;
@@ -1151,7 +1544,7 @@
                         escalation_level: parseInt(incident.escalation_level || incident.nivel_escalado || 0),
                         escalation_paused: String(incident.escalation_paused || incident.escalado_pausado || 'false'),
                         
-                        // Técnicos - con validación
+                        // Técnicos
                         l0_technician: incident.l0_technician || incident.tecnico_l0 || '',
                         l1_technician: incident.l1_technician || incident.tecnico_l1_backup || '',
                         l2_technicians: incident.l2_technicians || incident.tecnicos_l2_equipo || '',
@@ -1163,7 +1556,7 @@
                         l2_response: incident.l2_response || incident.respuesta_tecnico_l2 || '',
                         l3_response: incident.l3_response || incident.respuesta_supervisor_l3 || '',
                         
-                        // SLA - con validación de fechas
+                        // SLA
                         sla_l0_end: validateDate(incident.sla_l0_end || incident.sla_l0),
                         sla_l1_backup_end: validateDate(incident.sla_l1_backup_end || incident.sla_l1_backup),
                         sla_l2_equipo_end: validateDate(incident.sla_l2_equipo_end || incident.sla_l2_equipo),
@@ -1192,19 +1585,16 @@
                         time_elapsed: parseInt(incident.time_elapsed || incident.tiempo_transcurrido || 0),
                         actions_taken: incident.actions_taken || incident.acciones_tomadas || '',
                         occurrence_date: validateDate(incident.occurrence_date || incident.fecha_ocurrencia),
-                        report_date: validateDate(incident.report_date || incident.fecha_reporte)
+                        report_date: validateDate(incident.report_date || incident.fecha_reporte),
+                        assignment_notes: incident.assignment_notes || incident.nota_asignacion || ''
                     };
-                }).filter(incident => incident !== null); // ✅ CORRECCIÓN: Filtrar nulos
+                }).filter(incident => incident !== null);
                 
             } catch (error) {
                 console.error('Error adaptando datos:', error);
                 return [];
             }
         }
-
-        // ==========================================
-        // 🛠️ FUNCIÓN AUXILIAR PARA VALIDAR FECHAS
-        // ==========================================
 
         function validateDate(dateString) {
             if (!dateString) return '';
@@ -1220,9 +1610,9 @@
                 return '';
             }
         }
-
+        
         // ==========================================
-        // 🎨 FUNCIÓN DE RENDERIZADO CON INFORMACIÓN COMPLETA
+        // 🎨 FUNCIÓN DE RENDERIZADO COMPLETA CON INFORMACIÓN DETALLADA
         // ==========================================
         
         function renderIncidents() {
@@ -1243,9 +1633,6 @@
                 return;
             }
 
-            // ==========================================
-            // 🎯 RENDERIZADO CON INFORMACIÓN COMPLETA
-            // ==========================================
             const incidentsHTML = filteredIncidents.map(incident => {
                 const realState = getIncidentRealState(incident, technicianEmail);
                 const canRespond = canTechnicianRespond(incident, technicianEmail);
@@ -1407,7 +1794,19 @@
                     const elapsed = parseInt(incident.time_elapsed) || 0;
                     const hours = Math.floor(elapsed / 60);
                     const minutes = elapsed % 60;
-                    timeInfo = `<div class="time-elapsed">🕒 Tiempo transcurrido: ${hours}h ${minutes}m</div>`;
+                    timeInfo = `<div class="time-elapsed">🕐 Tiempo transcurrido: ${hours}h ${minutes}m</div>`;
+                }
+                
+                // =======================================
+                // 📝 NOTAS DE ASIGNACIÓN
+                // =======================================
+                let assignmentNotes = '';
+                if (incident.assignment_notes && incident.assignment_notes.trim()) {
+                    assignmentNotes = `
+                        <div class="actions-taken">
+                            📝 <strong>Notas de asignación:</strong> ${incident.assignment_notes}
+                        </div>
+                    `;
                 }
                 
                 // =======================================
@@ -1421,7 +1820,7 @@
                 // L0
                 let l0Status = 'pending';
                 if (incident.l0_response === 'acepto') l0Status = 'completed';
-                else if (incident.l0_response === 'rechazo' || incident.l0_response === 'ayuda') l0Status = 'escalated';
+                else if (incident.l0_response === 'rechazo' || incident.l0_response === 'solicitar_ayuda') l0Status = 'escalated';
                 else if (escalationLevel > 0) l0Status = 'expired';
                 
                 historyLevels.push({
@@ -1439,7 +1838,7 @@
                 if (escalationLevel >= 1) {
                     let l1Status = escalationLevel === 1 ? 'current' : 'completed';
                     if (incident.l1_response === 'acepto') l1Status = 'completed';
-                    else if (incident.l1_response === 'rechazo' || incident.l1_response === 'ayuda') l1Status = 'escalated';
+                    else if (incident.l1_response === 'rechazo' || incident.l1_response === 'solicitar_ayuda') l1Status = 'escalated';
                     else if (escalationLevel > 1) l1Status = 'expired';
                     
                     historyLevels.push({
@@ -1492,7 +1891,7 @@
                         case 'completed': statusText = '✅ Completado'; break;
                         case 'current': statusText = '🔄 Activo'; break;
                         case 'expired': statusText = '⏰ Vencido'; break;
-                        case 'escalated': statusText = '📤 Escalado'; break;
+                        case 'escalated': statusText = '🔼 Escalado'; break;
                         case 'pending': statusText = '⏳ Pendiente'; break;
                     }
                     
@@ -1551,7 +1950,7 @@
                             <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">
                                 ❌ Rechazo
                             </button>
-                            <button class="btn btn-warning" onclick="handleAction('ayuda', '${incident.id}')">
+                            <button class="btn btn-warning" onclick="handleAction('solicitar_ayuda', '${incident.id}')">
                                 🆘 Ayuda
                             </button>
                         </div>
@@ -1581,7 +1980,7 @@
                     } else if (realState === 'paused') {
                         reason = '⏸️ Escalado pausado por supervisor';
                     } else if (realState === 'escalated') {
-                        reason = '📤 Ya escalado - Esperando siguiente nivel';
+                        reason = '🔼 Ya escalado - Esperando siguiente nivel';
                     }
                     
                     actionButtons = `
@@ -1592,7 +1991,7 @@
                 }
                 
                 // =======================================
-                // 📝 RENDERIZADO FINAL DE LA CARD
+                // 🏗️ RENDERIZADO FINAL DE LA CARD
                 // =======================================
                 return `
                     <div class="incident-card">
@@ -1614,6 +2013,7 @@
                             ${technicianInfo}
                             ${slaInfo}
                             ${timeInfo}
+                            ${assignmentNotes}
                             
                             ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' && incident.actions_taken !== '' ? 
                                 `<div class="actions-taken">🔧 <strong>Acciones tomadas:</strong> ${incident.actions_taken}</div>` : ''
@@ -1638,7 +2038,6 @@
                     ${incidentsHTML}
                 </div>
             `;
-            
             // =======================================
             // ⏱️ INICIAR TIMERS SLA EN TIEMPO REAL
             // =======================================
@@ -1673,50 +2072,6 @@
             if (toggleIcon) {
                 toggleIcon.textContent = isVisible ? '▼' : '▲';
             }
-        }
-
-        // ==========================================
-        // ⏱️ SISTEMA DE TIMERS SLA EN TIEMPO REAL
-        // ==========================================
-
-        function startSLATimers() {
-            // Limpiar interval anterior si existe
-            if (slaTimerInterval) {
-                clearInterval(slaTimerInterval);
-            }
-            
-            slaTimerInterval = setInterval(() => {
-                const timers = document.querySelectorAll('.sla-timer[data-end]');
-                
-                timers.forEach(timer => {
-                    const endTime = new Date(timer.dataset.end);
-                    const now = new Date();
-                    const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
-                    
-                    if (diffMinutes < 0) {
-                        // SLA vencido
-                        const expiredMinutes = Math.abs(diffMinutes);
-                        timer.className = 'sla-expired';
-                        timer.innerHTML = `⏰ VENCIDO hace ${expiredMinutes} min`;
-                    } else {
-                        // SLA activo
-                        const hours = Math.floor(diffMinutes / 60);
-                        const minutes = diffMinutes % 60;
-                        
-                        // Actualizar clase según tiempo restante
-                        timer.className = 'sla-timer sla-info ';
-                        if (diffMinutes <= 30) {
-                            timer.className += 'sla-critical';
-                        } else if (diffMinutes <= 60) {
-                            timer.className += 'sla-warning';
-                        } else {
-                            timer.className += 'sla-good';
-                        }
-                        
-                        timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
-                    }
-                });
-            }, 60000); // Actualizar cada minuto
         }
 
         // ==========================================
@@ -1784,17 +2139,17 @@
             // Verificar si el técnico ya respondió
             if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
                 if (incident.l0_response === 'acepto') return 'working';
-                if (incident.l0_response === 'rechazo' || incident.l0_response === 'ayuda') return 'escalated';
+                if (incident.l0_response === 'rechazo' || incident.l0_response === 'solicitar_ayuda') return 'escalated';
             }
             
             if (escalationLevel === 1 && incident.l1_technician === technicianEmail) {
                 if (incident.l1_response === 'acepto') return 'working';
-                if (incident.l1_response === 'rechazo' || incident.l1_response === 'ayuda') return 'escalated';
+                if (incident.l1_response === 'rechazo' || incident.l1_response === 'solicitar_ayuda') return 'escalated';
             }
             
             if (escalationLevel === 2 && incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
                 if (incident.l2_response === 'acepto') return 'working';
-                if (incident.l2_response === 'rechazo' || incident.l2_response === 'ayuda') return 'escalated';
+                if (incident.l2_response === 'rechazo' || incident.l2_response === 'solicitar_ayuda') return 'escalated';
             }
             
             // Verificar SLA
@@ -1861,33 +2216,212 @@
         }
 
         // ==========================================
-        // 🎯 MANEJO DE ACCIONES CORREGIDO - PREPARADO PARA MAKE
+        // 🎯 MANEJO DE ACCIONES CON MODALES COMPLETOS
         // ==========================================
         
-        async function handleAction(action, incidentId) {
-            // ✅ CORRECCIÓN: Validación de parámetros
-            if (!action || !incidentId) {
-                alert('Error: Datos de acción inválidos');
-                return;
-            }
-            
-            if (!currentTechnician?.email) {
-                alert('Error: Sesión no válida');
+        function handleAction(action, incidentId) {
+            currentIncident = allIncidents.find(inc => inc.id === incidentId);
+            if (!currentIncident) {
+                console.error('Incidencia no encontrada:', incidentId);
                 return;
             }
 
-            const motivo = prompt(`¿Cuál es el motivo del ${action}?`);
-            
-            if (!motivo || motivo.trim() === '') {
-                alert('El motivo es obligatorio');
+            if (accessMode !== 'full_access') {
+                pendingAction = action;
+                showPINModal();
                 return;
             }
 
-            // Validar longitud del motivo
-            if (motivo.trim().length < 10) {
-                alert('El motivo debe tener al menos 10 caracteres');
+            if (action === 'acepto') {
+                // Acepto directo sin modal
+                pendingAction = action;
+                confirmAction();
+            } else if (action === 'completar') {
+                // Completar con descripción obligatoria
+                showCompletionModal();
+            } else {
+                // Mostrar modal de motivos
+                showReasonModal(action);
+            }
+        }
+
+        function executeAction() {
+            if (!pendingAction) return;
+            
+            if (pendingAction === 'acepto') {
+                confirmAction();
+            } else if (pendingAction === 'completar') {
+                showCompletionModal();
+            } else {
+                showReasonModal(pendingAction);
+            }
+        }
+
+        function showReasonModal(action) {
+            pendingAction = action;
+            selectedReason = null;
+            customText = '';
+
+            const modal = document.getElementById('reasonModal');
+            const title = document.getElementById('modalTitle');
+            const options = document.getElementById('reasonOptions');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            let reasons = [];
+            let modalTitle = '';
+            let buttonText = '';
+
+            switch(action) {
+                case 'rechazo':
+                    modalTitle = '❌ Motivo del Rechazo';
+                    buttonText = 'Rechazar';
+                    reasons = rejectReasons;
+                    break;
+                case 'solicitar_ayuda':
+                    modalTitle = '🆘 Tipo de Ayuda Inicial';
+                    buttonText = 'Solicitar Ayuda';
+                    reasons = helpReasonsInitial;
+                    break;
+                case 'transferir':
+                    modalTitle = '🔄 Motivo de Transferencia';
+                    buttonText = 'Transferir';
+                    reasons = transferReasons;
+                    break;
+                case 'solicitar_apoyo':
+                    modalTitle = '🆘 Tipo de Apoyo en Trabajo';
+                    buttonText = 'Solicitar Apoyo';
+                    reasons = supportReasonsWorking;
+                    break;
+                default:
+                    console.error('Acción no reconocida:', action);
+                    return;
+            }
+
+            title.textContent = modalTitle;
+            confirmBtn.textContent = buttonText;
+            confirmBtn.disabled = true;
+
+            // Generar opciones de motivos
+            const reasonsHTML = reasons.map(reason => {
+                return `
+                    <div class="reason-option" onclick="selectReason('${reason.id}', ${reason.requiresText || false})">
+                        <div class="reason-icon">${reason.icon}</div>
+                        <div class="reason-text">
+                            <div class="reason-title">${reason.title}</div>
+                            <div class="reason-description">${reason.description}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            options.innerHTML = reasonsHTML;
+            modal.classList.add('active');
+        }
+
+        function selectReason(reasonId, requiresText = false) {
+            selectedReason = reasonId;
+            customText = '';
+            
+            // Marcar opción seleccionada
+            document.querySelectorAll('.reason-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Si requiere texto personalizado, mostrar textarea
+            const options = document.getElementById('reasonOptions');
+            const existingTextarea = options.querySelector('.custom-reason-input');
+            if (existingTextarea) {
+                existingTextarea.remove();
+            }
+            
+            if (requiresText) {
+                const textarea = document.createElement('textarea');
+                textarea.className = 'custom-reason-input';
+                textarea.placeholder = 'Especifica los detalles...';
+                textarea.oninput = () => {
+                    customText = textarea.value.trim();
+                    updateConfirmButton();
+                };
+                options.appendChild(textarea);
+                textarea.focus();
+            } else {
+                updateConfirmButton();
+            }
+        }
+
+        function updateConfirmButton() {
+            const confirmBtn = document.getElementById('confirmBtn');
+            const requiresText = selectedReason && (selectedReason.includes('otro') || selectedReason === 'otro_motivo_transferir' || selectedReason === 'otro_apoyo_trabajo');
+            
+            if (selectedReason) {
+                if (requiresText) {
+                    confirmBtn.disabled = customText.length < 10;
+                } else {
+                    confirmBtn.disabled = false;
+                }
+            } else {
+                confirmBtn.disabled = true;
+            }
+        }
+
+        function closeReasonModal() {
+            document.getElementById('reasonModal').classList.remove('active');
+            selectedReason = null;
+            customText = '';
+            pendingAction = null;
+        }
+
+        function showCompletionModal() {
+            const modal = document.getElementById('reasonModal');
+            const title = document.getElementById('modalTitle');
+            const options = document.getElementById('reasonOptions');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            title.textContent = '✅ Completar Incidencia';
+            confirmBtn.textContent = 'Completar';
+            
+            options.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #374151; font-weight: 600; margin-bottom: 10px;">
+                        Describe las acciones realizadas para resolver la incidencia:
+                    </p>
+                    <textarea 
+                        class="custom-reason-input" 
+                        placeholder="Ejemplo: Reemplazada bomba defectuosa, verificado funcionamiento correcto, sistema operativo..." 
+                        maxlength="500"
+                        oninput="updateCompletionText(this.value)"
+                        style="height: 120px;"></textarea>
+                    <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 5px;">
+                        Mínimo 20 caracteres
+                    </div>
+                </div>
+            `;
+
+            confirmBtn.disabled = true;
+            modal.classList.add('active');
+            
+            // Focus en textarea
+            setTimeout(() => {
+                const textarea = options.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }, 100);
+        }
+
+        function updateCompletionText(text) {
+            customText = text.trim();
+            document.getElementById('confirmBtn').disabled = customText.length < 20;
+        }
+
+        async function confirmAction() {
+            if (!pendingAction || !currentIncident) {
+                console.error('No hay acción pendiente o incidencia seleccionada');
                 return;
             }
+
+            const reasonText = selectedReason ? 
+                (customText || selectedReason.replace(/_/g, ' ')) : 
+                (customText || 'Confirmado');
 
             try {
                 const response = await fetch(API_RESPONSE, {
@@ -1896,16 +2430,15 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        incident_id: incidentId,
+                        incident_id: currentIncident.id,
                         technician_email: currentTechnician.email,
                         technician_name: currentTechnician.name,
-                        action: action,
-                        reason: motivo.trim(),
+                        action: pendingAction,
+                        reason: reasonText,
                         timestamp: new Date().toISOString()
                     })
                 });
 
-                // ✅ CORRECCIÓN: Manejo robusto de respuestas
                 let data = null;
                 try {
                     const contentType = response.headers.get('content-type') || '';
@@ -1919,17 +2452,22 @@
                     throw new Error('Error procesando respuesta del servidor');
                 }
                 
-                if (response.ok && data && data.success) {
+                if (response.ok && data && data.status === 'success') {
                     const successMessages = {
                         'acepto': '✅ Incidencia aceptada correctamente. ¡Puedes empezar a trabajar!',
                         'rechazo': '❌ Incidencia rechazada. Se escalará automáticamente.',
-                        'ayuda': '🆘 Ayuda solicitada. Un supervisor se pondrá en contacto.',
+                        'solicitar_ayuda': '🆘 Ayuda solicitada. Un supervisor se pondrá en contacto.',
                         'completar': '✅ Incidencia completada exitosamente.',
                         'transferir': '🔄 Incidencia transferida correctamente.',
                         'solicitar_apoyo': '🆘 Apoyo solicitado. Un supervisor gestionará tu petición.'
                     };
                     
-                    alert(successMessages[action] || `${action.toUpperCase()} registrado correctamente`);
+                    showSuccessOverlay(
+                        successMessages[pendingAction] || `${pendingAction.toUpperCase()} registrado correctamente`,
+                        pendingAction === 'acepto' ? '🔄' : '✅'
+                    );
+                    
+                    closeReasonModal();
                     await loadDashboard(); // Recargar datos
                 } else {
                     const errorMsg = (data && data.message) || `Error ${response.status}: No se pudo registrar la respuesta`;
@@ -1939,7 +2477,39 @@
             } catch (error) {
                 console.error('Error enviando respuesta:', error);
                 alert('Error de conexión: ' + error.message);
+            } finally {
+                pendingAction = null;
+                currentIncident = null;
+                selectedReason = null;
+                customText = '';
             }
+        }
+
+        function showSuccessOverlay(message, icon = '✅') {
+            const overlay = document.getElementById('successOverlay');
+            const iconEl = document.getElementById('successIcon');
+            const titleEl = document.getElementById('successTitle');
+            const descEl = document.getElementById('successDescription');
+            const countdownEl = document.getElementById('countdown');
+            
+            iconEl.textContent = icon;
+            titleEl.textContent = 'Acción Completada';
+            descEl.textContent = message;
+            
+            overlay.style.display = 'flex';
+            
+            let seconds = 3;
+            countdownEl.textContent = `Actualizando en ${seconds} segundos...`;
+            
+            const countdown = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    countdownEl.textContent = `Actualizando en ${seconds} segundos...`;
+                } else {
+                    clearInterval(countdown);
+                    overlay.style.display = 'none';
+                }
+            }, 1000);
         }
 
         // ==========================================
@@ -1952,9 +2522,20 @@
             // Verificar parámetros URL para login automático
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('tecnico') || urlParams.get('technician_email');
+            const nombre = urlParams.get('nombre') || urlParams.get('technician_name');
+            const incidentId = urlParams.get('id') || urlParams.get('incident_id');
             
             if (email) {
                 document.getElementById('emailInput').value = email;
+                if (nombre) {
+                    currentTechnician = { 
+                        email: email, 
+                        name: decodeURIComponent(nombre) 
+                    };
+                }
+                if (incidentId) {
+                    accessMode = 'read_only';
+                }
                 document.getElementById('emailInput').focus();
             } else {
                 document.getElementById('emailInput').focus();
@@ -1968,11 +2549,49 @@
             });
         });
 
+        // ==========================================
+        // 🎯 EVENTOS Y CONTROLES ADICIONALES
+        // ==========================================
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
+                const input = document.getElementById('emailInput');
+                if (input.value.trim()) loginWithPIN();
+            }
+            if (e.key === 'Escape') {
+                closeReasonModal();
+                closePINModal();
+            }
+        });
+
+        document.getElementById('reasonModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeReasonModal();
+        });
+
+        document.getElementById('pinModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closePINModal();
+        });
+
         // Limpiar intervals al cerrar la página
         window.addEventListener('beforeunload', () => {
             if (refreshInterval) clearInterval(refreshInterval);
             if (slaTimerInterval) clearInterval(slaTimerInterval);
         });
+
+        // ==========================================
+        // 📱 RESPONSIVE Y DEBUGGING
+        // ==========================================
+        
+        console.log('🔧 Dashboard ABC.xyz - Versión Profesional cargada');
+        console.log('📋 Motivos configurados:', {
+            rechazo: rejectReasons.length,
+            ayuda_inicial: helpReasonsInitial.length,
+            transferir: transferReasons.length,
+            apoyo_trabajo: supportReasonsWorking.length
+        });
+
     </script>
 </body>
 </html>
+            
+          
