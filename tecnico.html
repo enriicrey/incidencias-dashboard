@@ -1385,9 +1385,7 @@
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('mainHeader').style.display = 'block';
                     document.getElementById('mainContainer').style.display = 'block';
-                    
-                    // Iniciar actualización automática
-                    refreshInterval = setInterval(loadDashboard, 30000);
+                    // AUTO-REFRESH ELIMINADO - Solo actualización manual
                 } else {
                     showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
                 }
