@@ -1072,6 +1072,10 @@
                 <div class="stat-number expired" id="expiredCount">0</div>
                 <div class="stat-label">Vencidas</div>
             </div>
+           <div class="stat-card" onclick="filterByStatus('seguimiento', this)">
+               <div class="stat-number" id="seguimientoCount" style="color: #8b5cf6;">0</div>
+               <div class="stat-label">Seguimiento</div>
+          </div>
         </div>
 
         <!-- Filters Bar - Solo Prioridad -->
@@ -2168,55 +2172,86 @@ function startSLATimers() {
         // 🎯 LÓGICA DE ESTADOS Y PERMISOS
         // ==========================================
         
-        function getIncidentRealState(incident, technicianEmail) {
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            
-            // Si está pausado
-            if (incident.escalation_paused === 'true') {
-                return 'paused';
-            }
-            
-            // Verificar si el técnico ya respondió
-            if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
-                if (incident.l0_response === 'acepto') return 'working';
-                if (incident.l0_response === 'rechazo' || incident.l0_response === 'solicitar_ayuda') return 'escalated';
-            }
-            
-            if (escalationLevel === 1 && incident.l1_technician === technicianEmail) {
-                if (incident.l1_response === 'acepto') return 'working';
-                if (incident.l1_response === 'rechazo' || incident.l1_response === 'solicitar_ayuda') return 'escalated';
-            }
-            
-            if (escalationLevel === 2 && incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
-                if (incident.l2_response === 'acepto') return 'working';
-                if (incident.l2_response === 'rechazo' || incident.l2_response === 'solicitar_ayuda') return 'escalated';
-            }
-            
-            // Verificar SLA
-            let slaEnd = null;
-            if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
-                slaEnd = incident.sla_l0_end;
-            } else if (escalationLevel === 1 && incident.l1_technician === technicianEmail) {
-                slaEnd = incident.sla_l1_backup_end;
-            } else if (escalationLevel === 2 && incident.l2_technicians?.includes(technicianEmail)) {
-                slaEnd = incident.sla_l2_equipo_end;
-            } else if (escalationLevel === 3 && incident.l3_supervisor === technicianEmail) {
-                slaEnd = incident.sla_l3_responsable_end;
-            }
-            
-            if (slaEnd) {
-                const now = new Date();
-                const endTime = new Date(slaEnd);
-                
-                if (now > endTime) {
-                    return 'expired';
-                } else {
-                    return 'pending';
-                }
-            }
-            
-            return 'not_mine';
+function getIncidentRealState(incident, technicianEmail) {
+    const escalationLevel = parseInt(incident.escalation_level) || 0;
+    
+    // Si está pausado
+    if (incident.escalation_paused === 'true') {
+        return 'paused';
+    }
+    
+    // 1. ¿Está asignado en el nivel actual?
+    const isCurrentlyAssigned = checkCurrentAssignment(incident, technicianEmail, escalationLevel);
+    
+    if (isCurrentlyAssigned) {
+        // Verificar si ya respondió
+        if (hasAcceptedAtLevel(incident, technicianEmail, escalationLevel)) {
+            return 'working';
         }
+        
+        if (hasRejectedAtLevel(incident, technicianEmail, escalationLevel)) {
+            return 'seguimiento';
+        }
+        
+        // Verificar SLA del nivel actual
+        const currentSLA = getCurrentLevelSLA(incident, escalationLevel);
+        if (currentSLA && new Date(currentSLA) < new Date()) {
+            return 'expired';
+        }
+        
+        return 'pending';
+    }
+    
+    // 2. ¿Participó en niveles anteriores?
+    if (hasParticipatedBefore(incident, technicianEmail)) {
+        return 'seguimiento';
+    }
+    
+    return 'not_mine';
+}
+     function checkCurrentAssignment(incident, technicianEmail, level) {
+    switch (level) {
+        case 0: return incident.l0_technician === technicianEmail;
+        case 1: return incident.l1_technician === technicianEmail;
+        case 2: return incident.l2_technicians && incident.l2_technicians.includes(technicianEmail);
+        case 3: return incident.l3_supervisor === technicianEmail;
+        default: return false;
+    }
+}
+
+function hasAcceptedAtLevel(incident, technicianEmail, level) {
+    switch (level) {
+        case 0: return incident.l0_response === 'Aceptado' && incident.l0_technician === technicianEmail;
+        case 1: return incident.l1_response === 'Aceptado' && incident.l1_technician === technicianEmail;
+        case 2: return incident.l2_responses && incident.l2_responses.includes('Aceptado');
+        case 3: return incident.l3_response === 'Aceptado';
+        default: return false;
+    }
+}
+
+function hasRejectedAtLevel(incident, technicianEmail, level) {
+    switch (level) {
+        case 0: return (incident.l0_response === 'Rechazado' || incident.l0_response === 'Ayuda') && incident.l0_technician === technicianEmail;
+        case 1: return (incident.l1_response === 'Rechazado' || incident.l1_response === 'Ayuda') && incident.l1_technician === technicianEmail;
+        case 2: return incident.l2_responses && (incident.l2_responses.includes('Rechazado') || incident.l2_responses.includes('Ayuda'));
+        default: return false;
+    }
+}
+
+function hasParticipatedBefore(incident, technicianEmail) {
+    return (incident.l0_technician === technicianEmail && incident.l0_response !== '⭕ Sin Respuesta') ||
+           (incident.l1_technician === technicianEmail && incident.l1_response !== '⭕ Sin Respuesta');
+}
+
+function getCurrentLevelSLA(incident, level) {
+    switch (level) {
+        case 0: return incident.sla_l0_end;
+        case 1: return incident.sla_l1_backup_end;
+        case 2: return incident.sla_l2_equipo_end;
+        case 3: return incident.sla_l3_responsable_end;
+        default: return null;
+    }
+}
 
         function canTechnicianRespond(incident, technicianEmail) {
             const state = getIncidentRealState(incident, technicianEmail);
@@ -2227,33 +2262,43 @@ function startSLATimers() {
         // 📊 ACTUALIZAR ESTADÍSTICAS
         // ==========================================
         
-        function updateStats() {
-            const technicianEmail = currentTechnician?.email || '';
-            
-            let pendingCount = 0;
-            let workingCount = 0;
-            let expiredCount = 0;
-            
-            allIncidents.forEach(incident => {
-                const state = getIncidentRealState(incident, technicianEmail);
-                switch (state) {
-                    case 'pending':
-                        pendingCount++;
-                        break;
-                    case 'working':
-                        workingCount++;
-                        break;
-                    case 'expired':
-                        expiredCount++;
-                        break;
-                }
-            });
-            
-            document.getElementById('totalCount').textContent = allIncidents.length;
-            document.getElementById('pendingCount').textContent = pendingCount;
-            document.getElementById('workingCount').textContent = workingCount;
-            document.getElementById('expiredCount').textContent = expiredCount;
+function updateStats() {
+    const technicianEmail = currentTechnician?.email || '';
+    
+    let pendingCount = 0;
+    let workingCount = 0;
+    let expiredCount = 0;
+    let seguimientoCount = 0;
+    
+    allIncidents.forEach(incident => {
+        const state = getIncidentRealState(incident, technicianEmail);
+        switch (state) {
+            case 'pending':
+                pendingCount++;
+                break;
+            case 'working':
+                workingCount++;
+                break;
+            case 'expired':
+                expiredCount++;
+                break;
+            case 'seguimiento':
+                seguimientoCount++;
+                break;
         }
+    });
+    
+    document.getElementById('totalCount').textContent = allIncidents.length;
+    document.getElementById('pendingCount').textContent = pendingCount;
+    document.getElementById('workingCount').textContent = workingCount;
+    document.getElementById('expiredCount').textContent = expiredCount;
+    
+    // Actualizar contador de seguimiento
+    const seguimientoElement = document.getElementById('seguimientoCount');
+    if (seguimientoElement) {
+        seguimientoElement.textContent = seguimientoCount;
+    }
+}
 
         // ==========================================
         // 🎯 MANEJO DE ACCIONES CON MODALES COMPLETOS
