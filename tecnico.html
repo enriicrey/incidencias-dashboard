@@ -1714,24 +1714,7 @@
                 // ⏰ CALCULAR TIEMPO SLA RESTANTE
                 // =======================================
                 let slaInfo = '';
-                if (slaEnd) {
-                    const now = new Date();
-                    const endTime = new Date(slaEnd);
-                    const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
-                    
-                    if (diffMinutes < 0) {
-                        slaInfo = `<div class="sla-expired">⏰ VENCIDO hace ${Math.abs(diffMinutes)} min (${slaLabel})</div>`;
-                    } else {
-                        const hours = Math.floor(diffMinutes / 60);
-                        const minutes = diffMinutes % 60;
-                        let slaClass = '';
-                        if (diffMinutes <= 30) slaClass = 'sla-critical';
-                        else if (diffMinutes <= 60) slaClass = 'sla-warning';
-                        else slaClass = 'sla-good';
-                        
-                        slaInfo = `<div class="sla-timer ${slaClass}" data-end="${slaEnd}">⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m (${slaLabel})</div>`;
-                    }
-                }
+
                 
                 // =======================================
                 // 🏷️ DETERMINAR BADGE DE ESTADO
@@ -2098,7 +2081,6 @@
                             <div class="description">${incident.description}</div>
                             
                             ${technicianInfo}
-                            ${slaInfo}
                             ${timeInfo}
                             ${assignmentNotes}
                             
