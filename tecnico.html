@@ -1388,14 +1388,15 @@
                 const data = await response.json();
                 console.log('🔒 PIN Response:', data);
 
-                if (data.status === 'success') {
-                    currentTechnician = {
-                        email: email,
-                        name: data.technician?.name || email.split('@')[0],
-                        department: data.technician?.department || 'Sin departamento',
-                        level: data.technician?.level || 1,
-                        hasFullAccess: Boolean(data.technician?.hasFullAccess)
-                    };
+             if (data.status === 'success') {
+                   currentTechnician = {
+                       email: email,
+                       name: data.technician?.name || email.split('@')[0],
+                       department: data.technician?.department || 'Sin departamento',
+                       level: data.technician?.level || 1,
+                       hasFullAccess: Boolean(data.technician?.hasFullAccess),
+                       authenticated: true  // ← AÑADIR ESTA LÍNEA
+                   };
 
                     accessMode = data.technician?.hasFullAccess ? 'full_access' : 'read_only';
                     closePINModal();
@@ -2045,8 +2046,11 @@
     let reason = '';
     if (realState === 'paused') {
         reason = '⏸️ Escalado pausado por supervisor';
-    } else if (realState === 'not_mine') {
-        reason = `👤 No es tu responsabilidad (L${escalationLevel})`;
+   } else {
+    // OTROS ESTADOS - Sin acción posible
+    let reason = '';
+    if (realState === 'paused') {
+        reason = '⏸️ Escalado pausado por supervisor';
     } else {
         reason = '❓ Estado desconocido';
     }
@@ -2189,27 +2193,32 @@ function startSLATimers() {
         // 🎛️ FUNCIONES DE FILTRADO
         // ==========================================
         
-        function filterIncidents() {
-            return allIncidents.filter(incident => {
-                // Filtro por estado
-                if (currentStatusFilter !== 'all') {
-                    const realState = getIncidentRealState(incident, currentTechnician.email);
-                    if (realState !== currentStatusFilter) {
-                        return false;
-                    }
+       function filterIncidents() {
+        return allIncidents.filter(incident => {
+            // PRIMERO: Filtrar incidencias que no son del técnico
+            const realState = getIncidentRealState(incident, currentTechnician.email);
+            if (realState === 'not_mine') {
+                return false; // No mostrar incidencias que no son suyas
+            }
+            
+            // Filtro por estado
+            if (currentStatusFilter !== 'all') {
+                if (realState !== currentStatusFilter) {
+                    return false;
                 }
-                
-                // Filtro por prioridad
-                if (currentPriorityFilter !== 'all') {
-                    const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-                    if (priority !== currentPriorityFilter) {
-                        return false;
-                    }
+            }
+            
+            // Filtro por prioridad
+            if (currentPriorityFilter !== 'all') {
+                const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+                if (priority !== currentPriorityFilter) {
+                    return false;
                 }
-                
-                return true;
-            });
-        }
+            }
+            
+            return true;
+        });
+    }
 
         function filterByStatus(status, element) {
             currentStatusFilter = status;
@@ -2402,7 +2411,7 @@ function updateStats() {
                 return;
             }
 
-            if (accessMode !== 'full_access') {
+            if (!currentTechnician?.authenticated) {
                 pendingAction = action;
                 showPINModal();
                 return;
