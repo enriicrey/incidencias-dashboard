@@ -2043,6 +2043,48 @@
             // =======================================
             startSLATimers();
         }
+     
+     // ==========================================
+// ⏱️ FUNCIÓN PARA ACTUALIZAR TIMERS SLA EN TIEMPO REAL
+// ==========================================
+function startSLATimers() {
+    // Limpiar cualquier timer anterior
+    if (window.slaTimer) {
+        clearInterval(window.slaTimer);
+    }
+    
+    // Actualizar timers cada 30 segundos
+    window.slaTimer = setInterval(function() {
+        const slaElements = document.querySelectorAll('.sla-timer[data-end]');
+        
+        slaElements.forEach(function(element) {
+            const endTime = new Date(element.dataset.end);
+            const now = new Date();
+            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+            
+            if (diffMinutes < 0) {
+                // SLA vencido
+                element.className = 'sla-expired';
+                element.innerHTML = `⏰ VENCIDO hace ${Math.abs(diffMinutes)} min`;
+            } else {
+                // SLA activo
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                
+                // Determinar clase según tiempo restante
+                let slaClass = 'sla-timer ';
+                if (diffMinutes <= 30) slaClass += 'sla-critical';
+                else if (diffMinutes <= 60) slaClass += 'sla-warning';
+                else slaClass += 'sla-good';
+                
+                element.className = slaClass;
+                element.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
+            }
+        });
+    }, 30000); // Actualizar cada 30 segundos
+    
+    console.log('⏱️ Timers SLA iniciados - actualización cada 30 segundos');
+}
 
         // ==========================================
         // 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
