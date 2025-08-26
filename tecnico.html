@@ -1009,6 +1009,29 @@
                 min-width: auto;
             }
         }
+              .sla-badge {
+             padding: 4px 8px;
+             border-radius: 12px;
+             font-size: 11px;
+             font-weight: 600;
+             margin-left: 5px;
+         }
+         
+         .sla-badge.sla-good {
+             background: #22c55e;
+             color: white;
+         }
+         
+         .sla-badge.sla-warning {
+             background: #f59e0b;
+             color: white;
+         }
+         
+         .sla-badge.sla-critical {
+             background: #ef4444;
+             color: white;
+             animation: pulse 1s infinite;
+         }
 
     </style>
 </head>
@@ -1713,18 +1736,51 @@
                 // =======================================
                 // 🏷️ DETERMINAR BADGE DE ESTADO
                 // =======================================
-                let stateBadge = '';
-                if (realState === 'working') {
-                    stateBadge = '<span class="badge bg-success">🔄 Trabajando</span>';
-                } else if (realState === 'pending') {
-                    stateBadge = '<span class="badge bg-warning">⏳ Puedes responder</span>';
-                } else if (realState === 'expired') {
-                    stateBadge = '<span class="badge bg-danger">⏰ Vencida</span>';
-                } else if (incident.escalation_paused === 'true') {
-                    stateBadge = '<span class="badge bg-secondary">⏸️ Pausado</span>';
-                } else {
-                    stateBadge = `<span class="badge bg-info">L${escalationLevel} Activo</span>`;
-                }
+              // BADGES DEL HEADER MEJORADO
+                 const priorityBadge = getPriorityBadge(incident.priority);
+                 const levelBadge = `<span class="badge bg-info">L${escalationLevel} ACTIVO</span>`;
+                 const slaBadge = slaInfo ? `<span class="sla-badge ${getSlaClass(slaEnd)}">${getSlaText(slaEnd)}</span>` : '';
+                 const stateBadge = getStateBadge(realState);
+
+                function getPriorityBadge(priority) {
+                 const priorityText = priority.replace(/[🔴🟠🟡🟢]/g, '').trim();
+                 const colors = {
+                     'CRÍTICA': '#dc3545',
+                     'ALTA': '#fd7e14', 
+                     'MEDIA': '#ffc107',
+                     'BAJA': '#28a745'
+                 };
+                 const color = colors[priorityText] || '#6c757d';
+                 return `<span class="priority-badge" style="background: ${color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${priorityText}</span>`;
+             }
+             
+             function getStateBadge(state) {
+                 const badges = {
+                     'pending': { text: 'PUEDES RESPONDER', class: 'bg-warning' },
+                     'working': { text: 'TRABAJANDO', class: 'bg-success' },
+                     'expired': { text: 'VENCIDA', class: 'bg-danger' },
+                     'seguimiento': { text: 'SEGUIMIENTO', class: 'bg-info' }
+                 };
+                 const config = badges[state] || { text: 'DESCONOCIDO', class: 'bg-secondary' };
+                 return `<span class="badge ${config.class}">${config.text}</span>`;
+             }
+             
+             function getSlaClass(slaEnd) {
+                 if (!slaEnd) return 'sla-good';
+                 const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
+                 if (diffMinutes <= 30) return 'sla-critical';
+                 if (diffMinutes <= 60) return 'sla-warning';
+                 return 'sla-good';
+             }
+             
+             function getSlaText(slaEnd) {
+                 if (!slaEnd) return '';
+                 const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
+                 if (diffMinutes < 0) return `${Math.abs(diffMinutes)}m vencido`;
+                 const hours = Math.floor(diffMinutes / 60);
+                 const minutes = diffMinutes % 60;
+                 return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+             }
                 
                 // =======================================
                 // 👨‍🔧 INFORMACIÓN DE TÉCNICOS ASIGNADOS
@@ -1791,13 +1847,34 @@
                 // =======================================
                 // ⏱️ TIEMPO TRANSCURRIDO
                 // =======================================
-                let timeInfo = '';
-                if (incident.time_elapsed !== undefined && incident.time_elapsed !== null) {
-                    const elapsed = parseInt(incident.time_elapsed) || 0;
-                    const hours = Math.floor(elapsed / 60);
-                    const minutes = elapsed % 60;
-                    timeInfo = `<div class="time-elapsed">🕐 Tiempo transcurrido: ${hours}h ${minutes}m</div>`;
+            // TIEMPO TRANSCURRIDO (solo en estado TRABAJANDO)
+                 let timeInfo = '';
+                 if (realState === 'working') {
+                     timeInfo = calculateWorkingTime(incident, technicianEmail);
+                 }
+
+               function calculateWorkingTime(incident, technicianEmail) {
+                let acceptanceDate = null;
+                
+                if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
+                    acceptanceDate = incident.l0_acceptance_date;
+                } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
+                    acceptanceDate = incident.l1_acceptance_date;
+                } else if (incident.l2_acceptance_date) {
+                    acceptanceDate = incident.l2_acceptance_date;
                 }
+                
+                if (!acceptanceDate) return '';
+                
+                const now = new Date();
+                const accepted = new Date(acceptanceDate);
+                const diffMinutes = Math.floor((now - accepted) / 60000);
+                
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                
+                return `<div class="time-elapsed">🔧 Trabajando: ${hours}h ${minutes}m</div>`;
+            }
                 
                 // =======================================
                 // 📝 NOTAS DE ASIGNACIÓN
@@ -1972,26 +2049,32 @@
                             </button>
                         </div>
                     `;
-                } else {
-                    // OTROS ESTADOS - Sin acción posible
-                    let reason = '';
-                    if (realState === 'expired') {
-                        reason = '⏰ SLA vencido - Contactar por teléfono';
-                    } else if (realState === 'not_mine') {
-                        reason = `👤 No es tu responsabilidad (L${escalationLevel})`;
-                    } else if (realState === 'paused') {
-                        reason = '⏸️ Escalado pausado por supervisor';
-                    } else if (realState === 'escalated') {
-                        reason = '🔼 Ya escalado - Esperando siguiente nivel';
-                    }
-                    
-                    actionButtons = `
-                        <div class="no-action-info">
-                            <span class="badge bg-light">${reason}</span>
-                        </div>
+                } else if (realState === 'seguimiento' || realState === 'expired') {
+                   actionButtons = `
+                       <div class="incident-actions">
+                           <button class="btn btn-info" onclick="handleAction('solicitar_cargo', '${incident.id}')">
+                               🙋‍♂️ SOLICITAR HACERSE CARGO
+                           </button>
+                       </div>
                     `;
-                }
-                
+                 } else {
+    // OTROS ESTADOS - Sin acción posible
+    let reason = '';
+    if (realState === 'paused') {
+        reason = '⏸️ Escalado pausado por supervisor';
+    } else if (realState === 'not_mine') {
+        reason = `👤 No es tu responsabilidad (L${escalationLevel})`;
+    } else {
+        reason = '❓ Estado desconocido';
+    }
+    
+    actionButtons = `
+        <div class="no-action-info">
+            <span class="badge bg-light">${reason}</span>
+        </div>
+    `;
+}
+    
                 // =======================================
                 // 🏗️ RENDERIZADO FINAL DE LA CARD
                 // =======================================
