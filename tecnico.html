@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Técnico - Sistema de Incidencias</title>
+    <title>Dashboard Técnico - Sistema de Incidencias ABC.xyz</title>
+    
     <style>
         /* ==========================================
            🧹 CSS LIMPIO Y ORGANIZADO - SIN DUPLICADOS
@@ -26,7 +27,7 @@
            🔐 LOGIN SCREEN
            ========================================== */
         
-        .login-screen {
+        .login-container {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -289,10 +290,11 @@
            ========================================== */
         
         .incidents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 25px;
-            padding: 0;
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)) !important;
+            gap: 25px !important;
+            padding: 0 !important;
+            width: 100% !important;
         }
 
         /* ==========================================
@@ -300,20 +302,23 @@
            ========================================== */
         
         .incident-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 16px !important;
+            padding: 25px !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+            transition: all 0.3s ease !important;
             position: relative;
             overflow: hidden;
+            break-inside: avoid;
+            min-width: 450px;
+            width: 100%;
         }
 
         .incident-card:hover {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            transform: translateY(-3px);
-            border-color: #3498db;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+            transform: translateY(-3px) !important;
+            border-color: #3498db !important;
         }
 
         .incident-header {
@@ -428,12 +433,12 @@
         }
 
         .sla-expired {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            color: #991b1b;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-weight: 700;
-            border: 2px solid #ef4444;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+            color: #991b1b !important;
+            padding: 12px 16px !important;
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            border: 2px solid #ef4444 !important;
             animation: pulse 2s infinite;
             display: flex;
             align-items: center;
@@ -454,10 +459,10 @@
         }
 
         .technician-info.current-tech {
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-            border-left-color: #10b981;
-            color: #065f46;
-            font-weight: 600;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important;
+            border-left-color: #10b981 !important;
+            color: #065f46 !important;
+            font-weight: 600 !important;
         }
 
         .contacts-info {
@@ -473,6 +478,18 @@
             color: #92400e;
             margin-bottom: 8px;
             font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .contacts-header:hover {
+            color: #78350f;
+        }
+
+        .contacts-list {
+            margin-top: 10px;
         }
 
         .contacts-list div {
@@ -510,6 +527,84 @@
             font-size: 14px;
             line-height: 1.4;
             border-left: 4px solid #22c55e;
+        }
+
+        /* ==========================================
+           📊 HISTORIAL DE ESCALADO
+           ========================================== */
+
+        .escalation-history {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .escalation-header {
+            background: #e2e8f0;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #475569;
+            transition: background 0.3s ease;
+        }
+
+        .escalation-header:hover {
+            background: #cbd5e1;
+        }
+
+        .escalation-content {
+            display: none;
+            padding: 15px;
+        }
+
+        .escalation-level {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .escalation-level.completed {
+            background: #f0f9ff;
+            border-left: 4px solid #10b981;
+        }
+
+        .escalation-level.current {
+            background: #fff7ed;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .escalation-level.pending {
+            background: #f8fafc;
+            border-left: 4px solid #94a3b8;
+        }
+
+        .escalation-level.expired {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .escalation-level.escalated {
+            background: #f3f4f6;
+            border-left: 4px solid #6b7280;
+        }
+
+        .level-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        .level-details {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.4;
         }
 
         /* ==========================================
@@ -572,6 +667,16 @@
             box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3);
         }
 
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        }
+
         .no-action-info {
             text-align: center;
             padding: 15px;
@@ -612,9 +717,14 @@
            📱 RESPONSIVE DESIGN
            ========================================== */
         
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
             .incidents-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr !important;
+            }
+            
+            .incident-card {
+                min-width: auto;
+                max-width: none;
             }
         }
 
@@ -641,11 +751,12 @@
             }
             
             .incidents-grid {
-                gap: 20px;
+                gap: 20px !important;
+                padding: 10px !important;
             }
             
             .incident-card {
-                padding: 20px;
+                padding: 20px !important;
             }
             
             .incident-actions {
@@ -658,7 +769,7 @@
         }
 
         /* ==========================================
-           🎨 BADGES Y ESTADOS
+           🎨 BADGES Y ESTADOS ADICIONALES
            ========================================== */
         
         .badge {
@@ -668,6 +779,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-block;
         }
 
         .bg-success { background: #22c55e; color: white; }
@@ -676,12 +788,23 @@
         .bg-info { background: #3b82f6; color: white; }
         .bg-secondary { background: #6b7280; color: white; }
         .bg-light { background: #f3f4f6; color: #374151; }
+        
+        /* Estilos para las secciones colapsables */
+        .toggle-icon {
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+        
+        .escalation-header:hover .toggle-icon,
+        .contacts-header:hover .toggle-icon {
+            transform: scale(1.2);
+        }
 
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
+    <!-- Login Container -->
+    <div class="login-container" id="loginContainer">
         <div class="login-card">
             <h1 class="login-title">
                 <span>🔧</span>
@@ -723,7 +846,7 @@
     <div class="main-container" id="mainContainer" style="display: none;">
         <!-- Stats Bar (Clickeable como filtros) -->
         <div class="stats-bar">
-            <div class="stat-card" onclick="filterByStatus('all', this)">
+            <div class="stat-card active" onclick="filterByStatus('all', this)">
                 <div class="stat-number" id="totalCount" style="color: #6b7280;">0</div>
                 <div class="stat-label">Todas</div>
             </div>
@@ -771,15 +894,14 @@
         let currentStatusFilter = 'all';
         let currentPriorityFilter = 'all';
         let refreshInterval = null;
-        let authToken = null;
         let slaTimerInterval = null;
 
-        // URLs de la API
-        const API_INCIDENTS = 'https://hook.eu2.make.com/yfvnx6wuypyvqp8ph7cw7tkqlcnh6fpk';
+        // URLs de la API - Compatible con Make
+        const API_BASE_URL = 'https://hook.eu2.make.com/yfvnx6wuypyvqp8ph7cw7tkqlcnh6fpk';
         const API_RESPONSE = 'https://hook.eu2.make.com/7mh1bxlzb4mj6rjujhd99mqpf9kdmhfi';
 
         // ==========================================
-        // 🔐 SISTEMA DE AUTENTICACIÓN
+        // 🔐 SISTEMA DE AUTENTICACIÓN CORREGIDO
         // ==========================================
         
         async function loginWithPIN() {
@@ -804,51 +926,77 @@
             loginError.style.display = 'none';
 
             try {
-                // Simular PIN (en producción sería un prompt real)
-                const pin = prompt('Ingresa tu PIN de técnico:');
+                // Prompt para PIN
+                const pin = prompt('Ingresa tu PIN de técnico (4 dígitos):');
                 
-                if (!pin || pin.length !== 4) {
-                    showLoginError('PIN inválido');
+                if (!pin || pin.trim() === '') {
+                    showLoginError('PIN es obligatorio');
                     return;
                 }
 
-                // Validar PIN con la API
-                const response = await fetch(API_INCIDENTS, {
+                if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                    showLoginError('PIN debe ser 4 dígitos numéricos');
+                    return;
+                }
+
+                // Validar con la API
+                const response = await fetch(API_BASE_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'validate_technician',
+                        action: 'verify_pin',
                         email: email,
                         pin: pin
                     })
                 });
 
-                const data = await response.json();
+                // ✅ CORRECCIÓN: Manejo robusto de respuestas
+                let data = null;
+                try {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        const textResponse = await response.text();
+                        console.warn('Respuesta no JSON:', textResponse);
+                        throw new Error('Respuesta inválida del servidor');
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing JSON:', parseError);
+                    throw new Error('Error procesando respuesta del servidor');
+                }
                 
-                if (data.success && data.technician) {
-                    currentTechnician = data.technician;
-                    authToken = data.token;
-                    
-                    // Ocultar login y mostrar dashboard
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainHeader').style.display = 'block';
-                    document.getElementById('mainContainer').style.display = 'block';
+                // ✅ CORRECCIÓN: Validación mejorada
+                if (response.ok && data && data.success) {
+                    currentTechnician = {
+                        email: email,
+                        name: data.technician?.name || email.split('@')[0],
+                        department: data.technician?.department || 'Sin departamento',
+                        level: data.technician?.level || 1,
+                        hasFullAccess: Boolean(data.technician?.hasFullAccess)
+                    };
                     
                     // Cargar dashboard
                     await loadDashboard();
                     
+                    // Mostrar interfaz principal
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('mainHeader').style.display = 'block';
+                    document.getElementById('mainContainer').style.display = 'block';
+                    
                     // Iniciar actualización automática cada 30 segundos
-                    refreshInterval = setInterval(refreshIncidents, 30000);
+                    refreshInterval = setInterval(loadDashboard, 30000);
                     
                 } else {
-                    showLoginError(data.message || 'PIN incorrecto');
+                    const errorMessage = (data && data.message) || 'PIN incorrecto o error del servidor';
+                    showLoginError(errorMessage);
                 }
                 
             } catch (error) {
                 console.error('Error en login:', error);
-                showLoginError('Error de conexión');
+                showLoginError('Error de conexión: ' + error.message);
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = '🔐 Acceder con PIN';
@@ -862,42 +1010,61 @@
         }
 
         // ==========================================
-        // 📊 CARGA DE DATOS
+        // 📊 CARGA DE DATOS CORREGIDA
         // ==========================================
-        
-                async function loadDashboard() {
+
+        async function loadDashboard() {
             try {
                 console.log('🔄 Cargando dashboard...');
                 
-                const response = await fetch(API_INCIDENTS, {
+                if (!currentTechnician?.email) {
+                    throw new Error('No hay técnico autenticado');
+                }
+                
+                const response = await fetch(API_BASE_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         action: 'get_incidents',
-                        technician_email: currentTechnician.email,
-                        token: authToken
+                        technician_email: currentTechnician.email
                     })
                 });
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    allIncidents = data.incidents || [];
+                // ✅ CORRECCIÓN: Manejo robusto de respuestas
+                let data = null;
+                try {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        console.warn('Respuesta no JSON en loadDashboard, usando datos vacíos');
+                        data = { success: false, incidents: [] };
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing JSON en loadDashboard:', parseError);
+                    data = { success: false, incidents: [] };
+                }
+
+                if (response.ok && data && data.success) {
+                    allIncidents = adaptIncidentData(data);
                     renderIncidents();
                     updateStats();
                     
+                    // ✅ CORRECCIÓN: Acceso seguro a propiedades
+                    const hasFullAccess = currentTechnician?.hasFullAccess || false;
+                    const technicianName = currentTechnician?.name || 'Técnico';
+                    
                     // Actualizar información del header
-                    const fullAccess = currentTechnician.has_full_access || false;
-                    document.getElementById('authMessage').textContent = fullAccess ? 
+                    document.getElementById('dashboardTitle').textContent = `Dashboard - ${technicianName}`;
+                    document.getElementById('authMessage').textContent = hasFullAccess ? 
                         '✅ Acceso completo' : '👁️ Solo lectura';
-                    document.getElementById('authMessage').style.color = fullAccess ? '#059669' : '#d97706';
+                    document.getElementById('authMessage').style.color = hasFullAccess ? '#059669' : '#d97706';
                     
                     updateLastUpdateTime();
-                    
                 } else {
-                    console.error('Error cargando incidencias:', data.message);
+                    console.error('Error en datos:', data?.message || 'Respuesta inválida');
                     allIncidents = [];
                     renderIncidents();
                     updateStats();
@@ -905,9 +1072,25 @@
                 
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
+                // ✅ CORRECCIÓN: Manejo graceful de errores
                 allIncidents = [];
                 renderIncidents();
                 updateStats();
+                
+                // Mostrar mensaje de error en UI
+                const container = document.getElementById('incidentsContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="no-incidents">
+                            <div class="no-incidents-icon">⚠️</div>
+                            <h3>Error de conexión</h3>
+                            <p>No se pudieron cargar las incidencias. Verifica tu conexión.</p>
+                            <button onclick="loadDashboard()" style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                🔄 Reintentar
+                            </button>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -932,7 +1115,114 @@
         }
 
         // ==========================================
-        // 🎨 FUNCIONES DE RENDERIZADO CON INFORMACIÓN COMPLETA
+        // 🔧 FUNCIÓN ADAPTADOR DE DATOS MEJORADA
+        // ==========================================
+
+        function adaptIncidentData(data) {
+            // ✅ CORRECCIÓN: Validación robusta de datos
+            let incidents = [];
+            
+            try {
+                if (data && data.incidents && Array.isArray(data.incidents)) {
+                    incidents = data.incidents;
+                } else if (data && data.data && Array.isArray(data.data)) {
+                    incidents = data.data;
+                } else if (Array.isArray(data)) {
+                    incidents = data;
+                } else {
+                    console.warn('Formato de datos no reconocido:', data);
+                    return [];
+                }
+                
+                return incidents.map(incident => {
+                    // ✅ CORRECCIÓN: Validación de cada incidencia
+                    if (!incident || typeof incident !== 'object') {
+                        console.warn('Incidencia inválida:', incident);
+                        return null;
+                    }
+                    
+                    return {
+                        id: incident.id || incident.incident_id || `INC-${Date.now()}`,
+                        equipment: incident.equipment || incident.component || incident.equipo_afectado || 'Equipo no especificado',
+                        component: incident.component || incident.equipment || '',
+                        zone: incident.zone || incident.zona || 'Sin zona',
+                        description: incident.description || incident.descripcion || 'Sin descripción',
+                        priority: incident.priority || incident.prioridad || 'MEDIA',
+                        escalation_level: parseInt(incident.escalation_level || incident.nivel_escalado || 0),
+                        escalation_paused: String(incident.escalation_paused || incident.escalado_pausado || 'false'),
+                        
+                        // Técnicos - con validación
+                        l0_technician: incident.l0_technician || incident.tecnico_l0 || '',
+                        l1_technician: incident.l1_technician || incident.tecnico_l1_backup || '',
+                        l2_technicians: incident.l2_technicians || incident.tecnicos_l2_equipo || '',
+                        l3_supervisor: incident.l3_supervisor || incident.l3_responsable || '',
+                        
+                        // Respuestas
+                        l0_response: incident.l0_response || incident.respuesta_tecnico_l0 || '',
+                        l1_response: incident.l1_response || incident.respuesta_tecnico_l1 || '',
+                        l2_response: incident.l2_response || incident.respuesta_tecnico_l2 || '',
+                        l3_response: incident.l3_response || incident.respuesta_supervisor_l3 || '',
+                        
+                        // SLA - con validación de fechas
+                        sla_l0_end: validateDate(incident.sla_l0_end || incident.sla_l0),
+                        sla_l1_backup_end: validateDate(incident.sla_l1_backup_end || incident.sla_l1_backup),
+                        sla_l2_equipo_end: validateDate(incident.sla_l2_equipo_end || incident.sla_l2_equipo),
+                        sla_l3_responsable_end: validateDate(incident.sla_l3_responsable_end || incident.sla_l3_responsable),
+                        
+                        // Fechas
+                        l0_acceptance_date: validateDate(incident.l0_acceptance_date || incident.fecha_aceptacion_l0),
+                        l0_rejection_date: validateDate(incident.l0_rejection_date || incident.fecha_rechazo_l0),
+                        l1_acceptance_date: validateDate(incident.l1_acceptance_date || incident.fecha_aceptacion_l1),
+                        l1_rejection_date: validateDate(incident.l1_rejection_date || incident.fecha_rechazo_l1),
+                        l2_acceptance_date: validateDate(incident.l2_acceptance_date || incident.fecha_aceptacion_l2),
+                        
+                        // Motivos
+                        l0_rejection_reason: incident.l0_rejection_reason || incident.motivo_rechazo_l0 || '',
+                        l1_rejection_reason: incident.l1_rejection_reason || incident.motivo_rechazo_l1 || '',
+                        
+                        // Contactos
+                        reporter: incident.reporter || incident.reportador || '',
+                        reporter_phone: incident.reporter_phone || incident.telefono_reporta || '',
+                        supervisor: incident.supervisor || incident.supervisor_nombre || '',
+                        supervisor_phone: incident.supervisor_phone || incident.telefono_supervisor || '',
+                        zone_manager: incident.zone_manager || incident.encargado_zona || '',
+                        zone_manager_phone: incident.zone_manager_phone || incident.telefono_encargado || '',
+                        
+                        // Información adicional
+                        time_elapsed: parseInt(incident.time_elapsed || incident.tiempo_transcurrido || 0),
+                        actions_taken: incident.actions_taken || incident.acciones_tomadas || '',
+                        occurrence_date: validateDate(incident.occurrence_date || incident.fecha_ocurrencia),
+                        report_date: validateDate(incident.report_date || incident.fecha_reporte)
+                    };
+                }).filter(incident => incident !== null); // ✅ CORRECCIÓN: Filtrar nulos
+                
+            } catch (error) {
+                console.error('Error adaptando datos:', error);
+                return [];
+            }
+        }
+
+        // ==========================================
+        // 🛠️ FUNCIÓN AUXILIAR PARA VALIDAR FECHAS
+        // ==========================================
+
+        function validateDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    return '';
+                }
+                return dateString;
+            } catch (error) {
+                console.warn('Fecha inválida:', dateString);
+                return '';
+            }
+        }
+
+        // ==========================================
+        // 🎨 FUNCIÓN DE RENDERIZADO CON INFORMACIÓN COMPLETA
         // ==========================================
         
         function renderIncidents() {
@@ -981,10 +1271,30 @@
                 } else {
                     // Mostrar SLA del nivel actual aunque no sea nuestro
                     switch(escalationLevel) {
-                        case 0: slaEnd = incident.sla_l0_end; slaLabel = 'SLA L0'; break;
-                        case 1: slaEnd = incident.sla_l1_backup_end; slaLabel = 'SLA L1'; break;
-                        case 2: slaEnd = incident.sla_l2_equipo_end; slaLabel = 'SLA L2'; break;
-                        case 3: slaEnd = incident.sla_l3_responsable_end; slaLabel = 'SLA L3'; break;
+                        case 0: 
+                            if (incident.sla_l0_end) {
+                                slaEnd = incident.sla_l0_end; 
+                                slaLabel = 'SLA L0';
+                            }
+                            break;
+                        case 1: 
+                            if (incident.sla_l1_backup_end) {
+                                slaEnd = incident.sla_l1_backup_end; 
+                                slaLabel = 'SLA L1';
+                            }
+                            break;
+                        case 2: 
+                            if (incident.sla_l2_equipo_end) {
+                                slaEnd = incident.sla_l2_equipo_end; 
+                                slaLabel = 'SLA L2';
+                            }
+                            break;
+                        case 3: 
+                            if (incident.sla_l3_responsable_end) {
+                                slaEnd = incident.sla_l3_responsable_end; 
+                                slaLabel = 'SLA L3';
+                            }
+                            break;
                     }
                 }
                 
@@ -1007,7 +1317,7 @@
                         else if (diffMinutes <= 60) slaClass = 'sla-warning';
                         else slaClass = 'sla-good';
                         
-                        slaInfo = `<div class="sla-timer ${slaClass}" data-end="${slaEnd}">ⱌ️ ${hours}h ${minutes.toString().padStart(2, '0')}m (${slaLabel})</div>`;
+                        slaInfo = `<div class="sla-timer ${slaClass}" data-end="${slaEnd}">⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m (${slaLabel})</div>`;
                     }
                 }
                 
@@ -1038,6 +1348,7 @@
                             👨‍🔧 L0: <strong>${incident.l0_technician.split('@')[0]}</strong>
                             ${isCurrentTech ? ' (TÚ)' : ''}
                             ${incident.l0_response ? ` - ${incident.l0_response}` : ''}
+                            ${incident.l0_acceptance_date ? ` - ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}` : ''}
                         </div>
                     `;
                 }
@@ -1049,30 +1360,40 @@
                             👨‍🔧 L1: <strong>${incident.l1_technician.split('@')[0]}</strong>
                             ${isCurrentTech ? ' (TÚ)' : ''}
                             ${incident.l1_response ? ` - ${incident.l1_response}` : ''}
+                            ${incident.l1_acceptance_date ? ` - ${new Date(incident.l1_acceptance_date).toLocaleString('es-ES')}` : ''}
                         </div>
                     `;
                 }
                 
                 if (escalationLevel >= 2 && incident.l2_technicians) {
+                    const l2Techs = incident.l2_technicians.split(',');
+                    const isCurrentInL2 = l2Techs.some(tech => tech.trim() === technicianEmail);
                     technicianInfo += `
-                        <div class="technician-info">
-                            👥 L2: <strong>${incident.l2_technicians}</strong>
+                        <div class="technician-info ${isCurrentInL2 ? 'current-tech' : ''}">
+                            👥 L2: <strong>${l2Techs.map(t => t.split('@')[0]).join(', ')}</strong>
+                            ${isCurrentInL2 ? ' (INCLUYE A TI)' : ''}
+                            ${incident.l2_response ? ` - ${incident.l2_response}` : ''}
                         </div>
                     `;
                 }
                 
                 // =======================================
-                // 📞 INFORMACIÓN DE CONTACTOS
+                // 📞 INFORMACIÓN DE CONTACTOS (COLAPSABLE)
                 // =======================================
                 let contactsInfo = '';
-                if (incident.supervisor_phone || incident.reporter_phone) {
+                if (incident.supervisor_phone || incident.reporter_phone || incident.zone_manager_phone) {
                     contactsInfo = `
                         <div class="contacts-info">
-                            <div class="contacts-header">📞 Contactos:</div>
-                            <div class="contacts-list">
-                                ${incident.reporter ? `<div>📋 ${incident.reporter}: <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>` : ''}
-                                ${incident.supervisor ? `<div>👨‍💼 ${incident.supervisor}: <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>` : ''}
-                                ${incident.zone_manager ? `<div>🏢 ${incident.zone_manager}: <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>` : ''}
+                            <div class="contacts-header" onclick="toggleContacts('${incident.id}')">
+                                📞 Contactos <span class="toggle-icon">▼</span>
+                            </div>
+                            <div class="contacts-list" id="contacts-${incident.id}" style="display: none;">
+                                ${incident.reporter && incident.reporter_phone ? 
+                                    `<div>📋 Reportador: <strong>${incident.reporter}</strong> - <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>` : ''}
+                                ${incident.supervisor && incident.supervisor_phone ? 
+                                    `<div>👨‍💼 Supervisor: <strong>${incident.supervisor}</strong> - <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>` : ''}
+                                ${incident.zone_manager && incident.zone_manager_phone ? 
+                                    `<div>🏢 Encargado Zona: <strong>${incident.zone_manager}</strong> - <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>` : ''}
                             </div>
                         </div>
                     `;
@@ -1082,12 +1403,126 @@
                 // ⏱️ TIEMPO TRANSCURRIDO
                 // =======================================
                 let timeInfo = '';
-                if (incident.time_elapsed) {
-                    const elapsed = parseInt(incident.time_elapsed);
+                if (incident.time_elapsed !== undefined && incident.time_elapsed !== null) {
+                    const elapsed = parseInt(incident.time_elapsed) || 0;
                     const hours = Math.floor(elapsed / 60);
                     const minutes = elapsed % 60;
                     timeInfo = `<div class="time-elapsed">🕒 Tiempo transcurrido: ${hours}h ${minutes}m</div>`;
                 }
+                
+                // =======================================
+                // 📊 HISTORIAL COMPLETO DE ESCALADO
+                // =======================================
+                let escalationHistory = '';
+                
+                // Construir historial de todos los niveles
+                const historyLevels = [];
+                
+                // L0
+                let l0Status = 'pending';
+                if (incident.l0_response === 'acepto') l0Status = 'completed';
+                else if (incident.l0_response === 'rechazo' || incident.l0_response === 'ayuda') l0Status = 'escalated';
+                else if (escalationLevel > 0) l0Status = 'expired';
+                
+                historyLevels.push({
+                    level: 'L0',
+                    technician: incident.l0_technician,
+                    status: l0Status,
+                    response: incident.l0_response,
+                    sla_end: incident.sla_l0_end,
+                    acceptance_date: incident.l0_acceptance_date,
+                    rejection_date: incident.l0_rejection_date,
+                    reason: incident.l0_rejection_reason
+                });
+                
+                // L1
+                if (escalationLevel >= 1) {
+                    let l1Status = escalationLevel === 1 ? 'current' : 'completed';
+                    if (incident.l1_response === 'acepto') l1Status = 'completed';
+                    else if (incident.l1_response === 'rechazo' || incident.l1_response === 'ayuda') l1Status = 'escalated';
+                    else if (escalationLevel > 1) l1Status = 'expired';
+                    
+                    historyLevels.push({
+                        level: 'L1',
+                        technician: incident.l1_technician,
+                        status: l1Status,
+                        response: incident.l1_response,
+                        sla_end: incident.sla_l1_backup_end,
+                        acceptance_date: incident.l1_acceptance_date,
+                        rejection_date: incident.l1_rejection_date,
+                        reason: incident.l1_rejection_reason
+                    });
+                }
+                
+                // L2
+                if (escalationLevel >= 2) {
+                    let l2Status = escalationLevel === 2 ? 'current' : 'completed';
+                    if (incident.l2_response) l2Status = 'completed';
+                    else if (escalationLevel > 2) l2Status = 'expired';
+                    
+                    historyLevels.push({
+                        level: 'L2',
+                        technician: incident.l2_technicians,
+                        status: l2Status,
+                        response: incident.l2_response,
+                        sla_end: incident.sla_l2_equipo_end,
+                        acceptance_date: incident.l2_acceptance_date
+                    });
+                }
+                
+                // L3
+                if (escalationLevel >= 3) {
+                    historyLevels.push({
+                        level: 'L3',
+                        technician: incident.l3_supervisor,
+                        status: 'current',
+                        response: incident.l3_response,
+                        sla_end: incident.sla_l3_responsable_end
+                    });
+                }
+                
+                // Generar HTML del historial
+                const historyHTML = historyLevels.map(level => {
+                    const isCurrentTech = level.technician === technicianEmail || 
+                                         (level.technician && level.technician.includes && level.technician.includes(technicianEmail));
+                    
+                    let statusClass = level.status;
+                    let statusText = '';
+                    switch(level.status) {
+                        case 'completed': statusText = '✅ Completado'; break;
+                        case 'current': statusText = '🔄 Activo'; break;
+                        case 'expired': statusText = '⏰ Vencido'; break;
+                        case 'escalated': statusText = '📤 Escalado'; break;
+                        case 'pending': statusText = '⏳ Pendiente'; break;
+                    }
+                    
+                    return `
+                        <div class="escalation-level ${statusClass}">
+                            <div class="level-header">
+                                ${level.level} - ${statusText} ${isCurrentTech ? '(TÚ)' : ''}
+                            </div>
+                            <div class="level-details">
+                                <strong>Técnico:</strong> ${level.technician ? level.technician.split('@')[0] : 'No asignado'}<br>
+                                ${level.response ? `<strong>Respuesta:</strong> ${level.response}<br>` : ''}
+                                ${level.reason ? `<strong>Motivo:</strong> ${level.reason}<br>` : ''}
+                                ${level.sla_end ? `<strong>SLA:</strong> ${new Date(level.sla_end).toLocaleString('es-ES')}<br>` : ''}
+                                ${level.acceptance_date ? `<strong>Fecha aceptación:</strong> ${new Date(level.acceptance_date).toLocaleString('es-ES')}<br>` : ''}
+                                ${level.rejection_date ? `<strong>Fecha rechazo:</strong> ${new Date(level.rejection_date).toLocaleString('es-ES')}` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                escalationHistory = `
+                    <div class="escalation-history">
+                        <div class="escalation-header" onclick="toggleEscalationHistory('${incident.id}')">
+                            📊 Historial de Escalado <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="escalation-content" id="escalation-${incident.id}">
+                            ${historyHTML}
+                        </div>
+                    </div>
+                `;
                 
                 // =======================================
                 // 🎨 COLOR DE PRIORIDAD
@@ -1102,10 +1537,12 @@
                 }
                 
                 // =======================================
-                // 🎯 BOTONES DE ACCIÓN
+                // 🎯 BOTONES DE ACCIÓN - PREPARADO PARA MAKE
                 // =======================================
                 let actionButtons = '';
+                
                 if (canRespond) {
+                    // ESTADO PENDIENTE - Botones iniciales
                     actionButtons = `
                         <div class="incident-actions">
                             <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">
@@ -1119,14 +1556,32 @@
                             </button>
                         </div>
                     `;
+                } else if (realState === 'working') {
+                    // ESTADO TRABAJANDO - Botones de progreso (preparado para Make)
+                    actionButtons = `
+                        <div class="incident-actions">
+                            <button class="btn btn-success" onclick="handleAction('completar', '${incident.id}')">
+                                ✅ Completar
+                            </button>
+                            <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">
+                                🆘 Solicitar Apoyo
+                            </button>
+                            <button class="btn btn-info" onclick="handleAction('transferir', '${incident.id}')">
+                                🔄 Transferir
+                            </button>
+                        </div>
+                    `;
                 } else {
+                    // OTROS ESTADOS - Sin acción posible
                     let reason = '';
-                    if (realState === 'working') {
-                        reason = '✅ Ya asignado';
-                    } else if (realState === 'expired') {
-                        reason = '⏰ Tiempo vencido';
+                    if (realState === 'expired') {
+                        reason = '⏰ SLA vencido - Contactar por teléfono';
                     } else if (realState === 'not_mine') {
                         reason = `👤 No es tu responsabilidad (L${escalationLevel})`;
+                    } else if (realState === 'paused') {
+                        reason = '⏸️ Escalado pausado por supervisor';
+                    } else if (realState === 'escalated') {
+                        reason = '📤 Ya escalado - Esperando siguiente nivel';
                     }
                     
                     actionButtons = `
@@ -1143,7 +1598,7 @@
                     <div class="incident-card">
                         <div class="incident-header">
                             <div class="incident-title">
-                                <h4>${incident.equipment || incident.component}</h4>
+                                <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
                                 <div class="badges">
                                     <span class="priority-badge" style="background-color: ${priorityColor}; color: white;">${priority}</span>
                                     ${stateBadge}
@@ -1160,11 +1615,12 @@
                             ${slaInfo}
                             ${timeInfo}
                             
-                            ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' ? 
+                            ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' && incident.actions_taken !== '' ? 
                                 `<div class="actions-taken">🔧 <strong>Acciones tomadas:</strong> ${incident.actions_taken}</div>` : ''
                             }
                             
                             ${contactsInfo}
+                            ${escalationHistory}
                         </div>
                         
                         <div class="incident-footer">
@@ -1190,9 +1646,39 @@
         }
 
         // ==========================================
+        // 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
+        // ==========================================
+
+        function toggleContacts(incidentId) {
+            const contactsList = document.getElementById(`contacts-${incidentId}`);
+            if (!contactsList) return;
+            
+            const toggleIcon = contactsList.parentElement.querySelector('.toggle-icon');
+            const isVisible = contactsList.style.display !== 'none';
+            
+            contactsList.style.display = isVisible ? 'none' : 'block';
+            if (toggleIcon) {
+                toggleIcon.textContent = isVisible ? '▼' : '▲';
+            }
+        }
+
+        function toggleEscalationHistory(incidentId) {
+            const historyContent = document.getElementById(`escalation-${incidentId}`);
+            if (!historyContent) return;
+            
+            const toggleIcon = historyContent.parentElement.querySelector('.toggle-icon');
+            const isVisible = historyContent.style.display !== 'none';
+            
+            historyContent.style.display = isVisible ? 'none' : 'block';
+            if (toggleIcon) {
+                toggleIcon.textContent = isVisible ? '▼' : '▲';
+            }
+        }
+
+        // ==========================================
         // ⏱️ SISTEMA DE TIMERS SLA EN TIEMPO REAL
         // ==========================================
-        
+
         function startSLATimers() {
             // Limpiar interval anterior si existe
             if (slaTimerInterval) {
@@ -1227,7 +1713,7 @@
                             timer.className += 'sla-good';
                         }
                         
-                        timer.innerHTML = `ⱌ️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
+                        timer.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
                     }
                 });
             }, 60000); // Actualizar cada minuto
@@ -1306,6 +1792,11 @@
                 if (incident.l1_response === 'rechazo' || incident.l1_response === 'ayuda') return 'escalated';
             }
             
+            if (escalationLevel === 2 && incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+                if (incident.l2_response === 'acepto') return 'working';
+                if (incident.l2_response === 'rechazo' || incident.l2_response === 'ayuda') return 'escalated';
+            }
+            
             // Verificar SLA
             let slaEnd = null;
             if (escalationLevel === 0 && incident.l0_technician === technicianEmail) {
@@ -1370,14 +1861,31 @@
         }
 
         // ==========================================
-        // 🎯 MANEJO DE ACCIONES (ACEPTO/RECHAZO/AYUDA)
+        // 🎯 MANEJO DE ACCIONES CORREGIDO - PREPARADO PARA MAKE
         // ==========================================
         
         async function handleAction(action, incidentId) {
+            // ✅ CORRECCIÓN: Validación de parámetros
+            if (!action || !incidentId) {
+                alert('Error: Datos de acción inválidos');
+                return;
+            }
+            
+            if (!currentTechnician?.email) {
+                alert('Error: Sesión no válida');
+                return;
+            }
+
             const motivo = prompt(`¿Cuál es el motivo del ${action}?`);
             
             if (!motivo || motivo.trim() === '') {
                 alert('El motivo es obligatorio');
+                return;
+            }
+
+            // Validar longitud del motivo
+            if (motivo.trim().length < 10) {
+                alert('El motivo debe tener al menos 10 caracteres');
                 return;
             }
 
@@ -1390,24 +1898,47 @@
                     body: JSON.stringify({
                         incident_id: incidentId,
                         technician_email: currentTechnician.email,
+                        technician_name: currentTechnician.name,
                         action: action,
                         reason: motivo.trim(),
-                        token: authToken
+                        timestamp: new Date().toISOString()
                     })
                 });
 
-                const data = await response.json();
+                // ✅ CORRECCIÓN: Manejo robusto de respuestas
+                let data = null;
+                try {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        throw new Error('Respuesta no es JSON válido');
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing respuesta de acción:', parseError);
+                    throw new Error('Error procesando respuesta del servidor');
+                }
                 
-                if (data.success) {
-                    alert(`${action.toUpperCase()} registrado correctamente`);
+                if (response.ok && data && data.success) {
+                    const successMessages = {
+                        'acepto': '✅ Incidencia aceptada correctamente. ¡Puedes empezar a trabajar!',
+                        'rechazo': '❌ Incidencia rechazada. Se escalará automáticamente.',
+                        'ayuda': '🆘 Ayuda solicitada. Un supervisor se pondrá en contacto.',
+                        'completar': '✅ Incidencia completada exitosamente.',
+                        'transferir': '🔄 Incidencia transferida correctamente.',
+                        'solicitar_apoyo': '🆘 Apoyo solicitado. Un supervisor gestionará tu petición.'
+                    };
+                    
+                    alert(successMessages[action] || `${action.toUpperCase()} registrado correctamente`);
                     await loadDashboard(); // Recargar datos
                 } else {
-                    alert('Error: ' + (data.message || 'No se pudo registrar la respuesta'));
+                    const errorMsg = (data && data.message) || `Error ${response.status}: No se pudo registrar la respuesta`;
+                    alert(errorMsg);
                 }
                 
             } catch (error) {
                 console.error('Error enviando respuesta:', error);
-                alert('Error de conexión');
+                alert('Error de conexión: ' + error.message);
             }
         }
 
@@ -1415,11 +1946,19 @@
         // 🚀 INICIALIZACIÓN AL CARGAR LA PÁGINA
         // ==========================================
         
-        window.addEventListener('load', () => {
-            console.log('🚀 Dashboard Técnico inicializado');
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 ABC.xyz Dashboard Técnico iniciado');
             
-            // Auto-focus en el campo email
-            document.getElementById('emailInput').focus();
+            // Verificar parámetros URL para login automático
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('tecnico') || urlParams.get('technician_email');
+            
+            if (email) {
+                document.getElementById('emailInput').value = email;
+                document.getElementById('emailInput').focus();
+            } else {
+                document.getElementById('emailInput').focus();
+            }
             
             // Enter key en el campo email
             document.getElementById('emailInput').addEventListener('keypress', (e) => {
