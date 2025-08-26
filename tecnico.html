@@ -2083,10 +2083,12 @@
                         <div class="incident-header">
                             <div class="incident-title">
                                 <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
-                                <div class="badges">
-                                    <span class="priority-badge" style="background-color: ${priorityColor}; color: white;">${priority}</span>
-                                    ${stateBadge}
-                                </div>
+                               <div class="badges">
+                               <span class="priority-badge" style="background-color: ${priorityColor}; color: white;">${priority}</span>
+                               <span class="level-badge" style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">L${escalationLevel} ACTIVO</span>
+                               ${getSLABadge(slaEnd)}
+                               ${stateBadge}
+                           </div>
                             </div>
                             <div class="incident-id">${incident.id}</div>
                         </div>
@@ -2335,6 +2337,30 @@ function getCurrentLevelSLA(incident, level) {
         default: return null;
     }
 }
+     
+     function getSLABadge(slaEnd) {
+             if (!slaEnd) return '';
+             
+             const now = new Date();
+             const endTime = new Date(slaEnd);
+             const diffMinutes = Math.floor((endTime - now) / 60000);
+             
+             let text, bgColor;
+             if (diffMinutes < 0) {
+                 text = `${Math.abs(diffMinutes)}m vencido`;
+                 bgColor = '#ef4444';
+             } else {
+                 const hours = Math.floor(diffMinutes / 60);
+                 const minutes = diffMinutes % 60;
+                 text = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                 
+                 if (diffMinutes <= 30) bgColor = '#ef4444';
+                 else if (diffMinutes <= 60) bgColor = '#f59e0b';
+                 else bgColor = '#22c55e';
+             }
+             
+             return `<span class="sla-badge" style="background: ${bgColor}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">⏰ ${text}</span>`;
+         }
 
         function canTechnicianRespond(incident, technicianEmail) {
             const state = getIncidentRealState(incident, technicianEmail);
