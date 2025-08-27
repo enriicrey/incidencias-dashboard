@@ -1203,6 +1203,49 @@
         </div>
     </div>
 
+    <!-- MODAL SOLICITAR MATERIALES -->
+    <div id="materialesModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>📦 Solicitar Materiales</h2>
+            <div id="materialesList">
+                <div class="material-item">
+                    <input type="text" placeholder="Material/Componente" class="material-name">
+                    <input type="number" placeholder="Cantidad" class="material-qty">
+                    <select class="material-urgency">
+                        <option value="media">Media</option>
+                        <option value="alta">Alta</option>
+                        <option value="critica">Crítica</option>
+                    </select>
+                    <textarea placeholder="Justificación" class="material-reason"></textarea>
+                </div>
+            </div>
+            <button onclick="addMaterial()">+ Añadir Material</button>
+            <div class="modal-actions">
+                <button onclick="closeModal()">Cancelar</button>
+                <button onclick="confirmMateriales()">📦 Solicitar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL DERIVAR DEPARTAMENTO -->
+    <div id="derivarModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>🔄 Derivar Departamento</h2>
+            <select id="targetDepartment">
+                <option value="Eléctrico">Eléctrico</option>
+                <option value="Mecánico">Mecánico</option>
+                <option value="Campo">Campo</option>
+                <option value="IT">IT</option>
+            </select>
+            <textarea id="derivationReason" placeholder="¿Por qué necesita derivarse?"></textarea>
+            <textarea id="technicalNotes" placeholder="Notas técnicas para el nuevo departamento"></textarea>
+            <div class="modal-actions">
+                <button onclick="closeModal()">Cancelar</button>
+                <button onclick="confirmDerivar()">🔄 Derivar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SUCCESS OVERLAY -->
     <div class="success-overlay" id="successOverlay" style="display: none;">
         <div class="success-message">
@@ -2145,6 +2188,12 @@
                         <button class="btn btn-info" onclick="handleAction('transferir', '${incident.id}')">
                             🔄 Transferir
                         </button>
+                         <button class="btn btn-primary" onclick="handleAction('solicitar_materiales', '${incident.id}')">
+                            📦 Materiales
+                        </button>
+                        <button class="btn btn-secondary" onclick="handleAction('derivar_departamento', '${incident.id}')">
+                            🔄 Derivar
+                        </button>
                     </div>
                 `;
             } else if (['seguimiento', 'expired'].includes(state)) {
@@ -2358,6 +2407,78 @@
             if (!pendingAction || !currentIncident) {
                 console.error('No hay acción pendiente o incidencia seleccionada');
                 return;
+            }
+
+            function confirmMateriales() {
+                const materials = [];
+                document.querySelectorAll('.material-item').forEach(item => {
+                    const name = item.querySelector('.material-name').value;
+                    const qty = item.querySelector('.material-qty').value;
+                    const urgency = item.querySelector('.material-urgency').value;
+                    const reason = item.querySelector('.material-reason').value;
+                    
+                    if (name && qty && reason) {
+                        materials.push({
+                            material: name,
+                            quantity: parseInt(qty),
+                            urgency: urgency,
+                            justification: reason
+                        });
+                    }
+                });
+            
+                if (materials.length === 0) {
+                    alert('Añade al menos un material');
+                    return;
+                }
+            
+                executeAction('solicitar_materiales', { materials_requested: materials });
+            }
+            
+            function confirmDerivar() {
+                const target = document.getElementById('targetDepartment').value;
+                const reason = document.getElementById('derivationReason').value;
+                const notes = document.getElementById('technicalNotes').value;
+                
+                if (!reason) {
+                    alert('Indica el motivo de la derivación');
+                    return;
+                }
+                
+                executeAction('derivar_departamento', {
+                    target_department: target,
+                    derivation_reason: reason,
+                    technical_notes: notes
+                });
+            }
+            
+            function addMaterial() {
+                const container = document.getElementById('materialesList');
+                const newItem = document.querySelector('.material-item').cloneNode(true);
+                newItem.querySelectorAll('input, textarea, select').forEach(el => el.value = '');
+                container.appendChild(newItem);
+            }
+            
+            function executeAction(action, extraData = {}) {
+                fetch('/api/webhook-respuesta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        incident_id: currentIncident.id,
+                        technician_email: currentTechnician.email,
+                        ...extraData
+                    })
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.status === 'success') {
+                          showSuccessOverlay(`${action} procesado correctamente`);
+                          closeModal();
+                          loadDashboard();
+                      } else {
+                          alert('Error: ' + data.message);
+                      }
+                  });
             }
 
             const reasonText = selectedReason ? 
