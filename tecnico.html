@@ -1815,24 +1815,41 @@
             renderIncidents(filtered);
         }
         
-        function renderIncidents() {
-            const filteredIncidents = filterIncidents();
-
-            if (filteredIncidents.length === 0) {
-                showNoIncidentsMessage();
-                return;
+        function renderIncidents(incidentsToRender = null) {
+            // Si se pasan incidencias específicas, usarlas
+            if (incidentsToRender) {
+                const filteredIncidents = incidentsToRender;
+            } else {
+                // Filtrar según el estado actual seleccionado
+                const filteredIncidents = allIncidents.filter(incident => {
+                    const state = getIncidentRealState(incident, currentTechnician.email);
+                    
+                    switch(currentStatusFilter) {
+                        case 'pending': return state === 'pending';
+                        case 'working': return state === 'working';
+                        case 'expired': return state === 'expired';
+                        case 'seguimiento': return state === 'seguimiento';
+                        case 'all': return ['pending', 'working', 'expired', 'seguimiento'].includes(state);
+                        default: return true;
+                    }
+                });
             }
-
-            const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
-            
-            document.getElementById('incidentsContainer').innerHTML = `
-                <div class="incidents-grid">
-                    ${incidentsHTML}
-                </div>
-            `;
-
-            startSLATimers();
-        }
+        
+                    if (filteredIncidents.length === 0) {
+                        showNoIncidentsMessage();
+                        return;
+                    }
+        
+                    const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
+                    
+                    document.getElementById('incidentsContainer').innerHTML = `
+                        <div class="incidents-grid">
+                            ${incidentsHTML}
+                        </div>
+                    `;
+        
+                    startSLATimers();
+                }
 
                function renderIncidentCard(incident) {
             const technicianEmail = currentTechnician?.email || '';
