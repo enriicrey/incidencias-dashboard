@@ -1807,62 +1807,73 @@
                 }
             }
             
-            // Actualizar botones activos
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            buttonElement.classList.add('active');
-            
-            // Filtrar incidencias por estado real
-            const filtered = allIncidents.filter(incident => {
-                const state = getIncidentRealState(incident, currentTechnician.email);
-                
-                switch(filter) {
-                    case 'pending': return state === 'pending';
-                    case 'working': return state === 'working';
-                    case 'expired': return state === 'expired';
-                    case 'seguimiento': return state === 'seguimiento';
-                    case 'all': return ['pending', 'working', 'expired', 'seguimiento'].includes(state);
-                    default: return true;
-                }
-            });
-            
-            renderIncidents(filtered);
-        }
         
-        function renderIncidents(incidentsToRender = null) {
-            let filteredIncidents; // ✅ DECLARAR FUERA
+    function renderIncidents(incidentsToRender = null) {
+            let filteredIncidents;
             
             if (incidentsToRender) {
-                filteredIncidents = incidentsToRender; // ✅ ASIGNAR (sin const)
+                // Si se pasan incidencias específicas, usarlas
+                filteredIncidents = incidentsToRender;
             } else {
-                filteredIncidents = allIncidents.filter(incident => { // ✅ ASIGNAR (sin const)
-                    const state = getIncidentRealState(incident, currentTechnician.email);
-                    
-                    switch(currentStatusFilter || 'all') {
-                        case 'pending': return state === 'pending';
-                        case 'working': return state === 'working';
-                        case 'expired': return state === 'expired';
-                        case 'seguimiento': return state === 'seguimiento';
-                        case 'all': return ['pending', 'working', 'expired', 'seguimiento'].includes(state);
-                        default: return true;
-                    }
-                });
-            }
-        
-                    if (filteredIncidents.length === 0) {
-                        showNoIncidentsMessage();
-                        return;
-                    }
-        
-                    const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
-                    
-                    document.getElementById('incidentsContainer').innerHTML = `
-                        <div class="incidents-grid">
-                            ${incidentsHTML}
-                        </div>
-                    `;
-        
-                    startSLATimers();
+                // Empezar con todas las incidencias
+                filteredIncidents = allIncidents;
+                
+                // 🎯 APLICAR FILTRO POR ESTADO
+                if (currentStatusFilter && currentStatusFilter !== 'all') {
+                    filteredIncidents = filteredIncidents.filter(incident => {
+                        const state = getIncidentRealState(incident, currentTechnician.email);
+                        
+                        switch(currentStatusFilter) {
+                            case 'pending': return state === 'pending';
+                            case 'working': return state === 'working';
+                            case 'expired': return state === 'expired';
+                            case 'seguimiento': return state === 'seguimiento';
+                            default: return true;
+                        }
+                    });
                 }
+                
+                // 🔧 APLICAR FILTRO POR PRIORIDAD
+                if (currentPriorityFilter && currentPriorityFilter !== 'all') {
+                    filteredIncidents = filteredIncidents.filter(incident => {
+                        // Extraer prioridad sin emojis
+                        const incidentPriority = incident.priority 
+                            ? incident.priority.replace(/🔴|🟠|🟡|🟢|⚪/g, '').trim().toUpperCase()
+                            : 'MEDIA';
+                        
+                        return incidentPriority === currentPriorityFilter.toUpperCase();
+                    });
+                }
+            }
+            
+            // Mostrar mensaje si no hay incidencias
+            if (filteredIncidents.length === 0) {
+                showNoIncidentsMessage();
+                return;
+            }
+            
+            // Renderizar las incidencias filtradas
+            const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
+            
+            document.getElementById('incidentsContainer').innerHTML = `
+                <div class="incidents-grid">
+                    ${incidentsHTML}
+                </div>
+            `;
+            
+            startSLATimers();
+        }
+        
+        // 🎯 FUNCIÓN AUXILIAR para mostrar mensaje cuando no hay incidencias
+        function showNoIncidentsMessage() {
+            document.getElementById('incidentsContainer').innerHTML = `
+                <div class="no-incidents">
+                    <div class="no-incidents-icon">📋</div>
+                    <h3>No hay incidencias que mostrar</h3>
+                    <p>Todas las incidencias están filtradas o no hay incidencias asignadas.</p>
+                </div>
+            `;
+        }
 
                function renderIncidentCard(incident) {
             const technicianEmail = currentTechnician?.email || '';
@@ -2613,8 +2624,7 @@
 
         function filterByPriority(priority, element) {
             currentPriorityFilter = priority;
-            
-            document.querySelectorAll('.filter-btn').forEach(btn => {
+            document.querySelectorAll('.filter-btn, .stat-card').forEach(btn => {
                 btn.classList.remove('active');
             });
             element.classList.add('active');
