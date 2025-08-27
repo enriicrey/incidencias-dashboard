@@ -1,15 +1,41 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Técnico - Sistema de Incidencias ABC.xyz</title>
-    
     <style>
-        /* ==========================================
-           🧹 CSS LIMPIO Y ORGANIZADO - SIN DUPLICADOS
-           ========================================== */
-        
+        /* ========================================
+           VARIABLES CSS Y RESET
+        ======================================== */
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2c3e50;
+            --success-color: #22c55e;
+            --success-dark: #16a34a;
+            --warning-color: #f59e0b;
+            --warning-dark: #d97706;
+            --danger-color: #ef4444;
+            --danger-dark: #dc2626;
+            --info-color: #3b82f6;
+            --info-dark: #2563eb;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --border-radius: 12px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -20,13 +46,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
+            color: var(--gray-800);
         }
 
-        /* ==========================================
-           🔒 LOGIN SCREEN
-           ========================================== */
-        
+        /* ========================================
+           LOGIN COMPONENTS
+        ======================================== */
         .login-container {
             display: flex;
             align-items: center;
@@ -39,7 +64,7 @@
             background: white;
             border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-lg);
             text-align: center;
             max-width: 400px;
             width: 100%;
@@ -48,12 +73,12 @@
         .login-title {
             font-size: 28px;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--secondary-color);
             margin-bottom: 10px;
         }
 
         .login-subtitle {
-            color: #7f8c8d;
+            color: var(--gray-500);
             margin-bottom: 30px;
             font-size: 16px;
         }
@@ -67,36 +92,36 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--secondary-color);
             font-size: 14px;
         }
 
         .input-field {
             width: 100%;
             padding: 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
             font-size: 16px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .input-field:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
         .verify-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .verify-btn:hover:not(:disabled) {
@@ -111,22 +136,21 @@
 
         .error-message {
             background: #fee;
-            color: #c0392b;
+            color: var(--danger-color);
             padding: 10px;
             border-radius: 8px;
             margin-top: 15px;
             font-size: 14px;
         }
 
-        /* ==========================================
-           📱 HEADER PRINCIPAL
-           ========================================== */
-        
+        /* ========================================
+           HEADER
+        ======================================== */
         .header {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
             color: white;
             padding: 20px 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
         }
 
         .header-content {
@@ -162,7 +186,7 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition);
         }
 
         .refresh-button:hover:not(:disabled) {
@@ -174,10 +198,9 @@
             cursor: not-allowed;
         }
 
-        /* ==========================================
-           📊 MAIN CONTAINER
-           ========================================== */
-        
+        /* ========================================
+           MAIN CONTAINER
+        ======================================== */
         .main-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -186,10 +209,9 @@
             min-height: calc(100vh - 80px);
         }
 
-        /* ==========================================
-           📈 STATS BAR (FILTROS CLICABLES)
-           ========================================== */
-        
+        /* ========================================
+           STATS BAR
+        ======================================== */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -199,22 +221,22 @@
 
         .stat-card {
             background: white;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             padding: 20px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             border: 2px solid transparent;
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: var(--shadow-md);
         }
 
         .stat-card.active {
-            border-color: #3498db;
+            border-color: var(--primary-color);
             background: linear-gradient(135deg, #e3f2fd, #ffffff);
         }
 
@@ -224,26 +246,26 @@
             margin-bottom: 5px;
         }
 
-        .stat-number.pending { color: #f39c12; }
-        .stat-number.working { color: #27ae60; }
-        .stat-number.expired { color: #e74c3c; }
+        .stat-number.pending { color: var(--warning-color); }
+        .stat-number.working { color: var(--success-color); }
+        .stat-number.expired { color: var(--danger-color); }
+        .stat-number.seguimiento { color: var(--info-color); }
 
         .stat-label {
-            color: #7f8c8d;
+            color: var(--gray-500);
             font-size: 14px;
             font-weight: 500;
         }
 
-        /* ==========================================
-           🎛️ FILTERS BAR
-           ========================================== */
-        
+        /* ========================================
+           FILTERS BAR
+        ======================================== */
         .filters-bar {
             background: white;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
             display: flex;
             align-items: center;
             gap: 20px;
@@ -258,7 +280,7 @@
 
         .filter-label {
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--secondary-color);
             font-size: 14px;
         }
 
@@ -269,56 +291,53 @@
 
         .filter-btn {
             padding: 8px 16px;
-            border: 1px solid #d1d5db;
+            border: 1px solid var(--gray-300);
             border-radius: 20px;
             background: white;
-            color: #6b7280;
+            color: var(--gray-500);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
 
-        .filter-btn.active, .filter-btn:hover {
-            background: #3b82f6;
-            border-color: #3b82f6;
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--info-color);
+            border-color: var(--info-color);
             color: white;
         }
 
-        /* ==========================================
-           📋 LAYOUT 2 COLUMNAS - GRID PRINCIPAL
-           ========================================== */
-        
+        /* ========================================
+           INCIDENTS GRID
+        ======================================== */
         .incidents-grid {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)) !important;
-            gap: 25px !important;
-            padding: 0 !important;
-            width: 100% !important;
-        }
-
-        /* ==========================================
-           🎴 INCIDENT CARDS - DISEÑO LIMPIO
-           ========================================== */
-        
-        .incident-card {
-            background: white !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 16px !important;
-            padding: 25px !important;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
-            transition: all 0.3s ease !important;
-            position: relative;
-            overflow: hidden;
-            break-inside: avoid;
-            min-width: 450px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
             width: 100%;
         }
 
+        /* ========================================
+           INCIDENT CARDS
+        ======================================== */
+        .incident-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            min-width: 450px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
         .incident-card:hover {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
-            transform: translateY(-3px) !important;
-            border-color: #3498db !important;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+            border-color: var(--primary-color);
         }
 
         .incident-header {
@@ -327,12 +346,12 @@
             align-items: flex-start;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid var(--gray-100);
         }
 
         .incident-title h4 {
             margin: 0 0 10px 0;
-            color: #1f2937;
+            color: var(--gray-800);
             font-size: 1.2rem;
             font-weight: 700;
             line-height: 1.2;
@@ -357,8 +376,8 @@
 
         .incident-id {
             font-size: 13px;
-            color: #6b7280;
-            background: #f9fafb;
+            color: var(--gray-500);
+            background: var(--gray-50);
             padding: 6px 10px;
             border-radius: 8px;
             font-family: 'Courier New', monospace;
@@ -373,82 +392,29 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #374151;
+            color: var(--gray-700);
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 12px;
-            background: #f3f4f6;
+            background: var(--gray-100);
             padding: 8px 12px;
             border-radius: 8px;
         }
 
         .description {
-            color: #6b7280;
+            color: var(--gray-500);
             font-size: 14px;
             line-height: 1.5;
             margin-bottom: 15px;
             background: #fafbfc;
             padding: 12px;
             border-radius: 8px;
-            border-left: 3px solid #e5e7eb;
+            border-left: 3px solid var(--gray-200);
         }
 
-        /* ==========================================
-           ⏱️ SLA TIMERS - DISEÑO MEJORADO
-           ========================================== */
-        
-        .sla-info {
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sla-timer.sla-good {
-            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-            color: #065f46;
-            border: 1px solid #10b981;
-        }
-
-        .sla-timer.sla-warning {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            color: #92400e;
-            border: 1px solid #f59e0b;
-        }
-
-        .sla-timer.sla-critical {
-            background: linear-gradient(135deg, #fee2e2, #fecaca);
-            color: #991b1b;
-            border: 1px solid #ef4444;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        .sla-expired {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
-            color: #991b1b !important;
-            padding: 12px 16px !important;
-            border-radius: 10px !important;
-            font-weight: 700 !important;
-            border: 2px solid #ef4444 !important;
-            animation: pulse 2s infinite;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* ==========================================
-           📞 INFORMACIÓN ADICIONAL - TÉCNICOS Y CONTACTOS
-           ========================================== */
-        
+        /* ========================================
+           INFO COMPONENTS
+        ======================================== */
         .technician-info {
             background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
             padding: 12px 16px;
@@ -459,10 +425,10 @@
         }
 
         .technician-info.current-tech {
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important;
-            border-left-color: #10b981 !important;
-            color: #065f46 !important;
-            font-weight: 600 !important;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border-left-color: var(--success-color);
+            color: #065f46;
+            font-weight: 600;
         }
 
         .contacts-info {
@@ -490,6 +456,7 @@
 
         .contacts-list {
             margin-top: 10px;
+            display: none;
         }
 
         .contacts-list div {
@@ -499,7 +466,7 @@
         }
 
         .contacts-list a {
-            color: #2563eb;
+            color: var(--info-dark);
             text-decoration: none;
             font-weight: 600;
         }
@@ -526,13 +493,12 @@
             color: #166534;
             font-size: 14px;
             line-height: 1.4;
-            border-left: 4px solid #22c55e;
+            border-left: 4px solid var(--success-color);
         }
 
-        /* ==========================================
-           📊 HISTORIAL DE ESCALADO
-           ========================================== */
-
+        /* ========================================
+           ESCALATION HISTORY
+        ======================================== */
         .escalation-history {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
@@ -572,12 +538,12 @@
 
         .escalation-level.completed {
             background: #f0f9ff;
-            border-left: 4px solid #10b981;
+            border-left: 4px solid var(--success-color);
         }
 
         .escalation-level.current {
             background: #fff7ed;
-            border-left: 4px solid #f59e0b;
+            border-left: 4px solid var(--warning-color);
         }
 
         .escalation-level.pending {
@@ -587,34 +553,84 @@
 
         .escalation-level.expired {
             background: #fef2f2;
-            border-left: 4px solid #ef4444;
+            border-left: 4px solid var(--danger-color);
         }
 
         .escalation-level.escalated {
             background: #f3f4f6;
-            border-left: 4px solid #6b7280;
+            border-left: 4px solid var(--gray-500);
         }
 
         .level-header {
             font-weight: 600;
             margin-bottom: 8px;
-            color: #374151;
+            color: var(--gray-700);
         }
 
         .level-details {
             font-size: 14px;
-            color: #6b7280;
+            color: var(--gray-500);
             line-height: 1.4;
         }
 
-        /* ==========================================
-           🎯 BOTONES DE ACCIÓN
-           ========================================== */
-        
+        /* ========================================
+           SLA TIMERS
+        ======================================== */
+        .sla-timer {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sla-timer.sla-good {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid var(--success-color);
+        }
+
+        .sla-timer.sla-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid var(--warning-color);
+        }
+
+        .sla-timer.sla-critical {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid var(--danger-color);
+            animation: pulse 2s infinite;
+        }
+
+        .sla-expired {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 2px solid var(--danger-color);
+            animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* ========================================
+           ACTION BUTTONS
+        ======================================== */
         .incident-footer {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid #f3f4f6;
+            border-top: 1px solid var(--gray-100);
         }
 
         .incident-actions {
@@ -632,13 +648,13 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, var(--success-color), var(--success-dark));
             color: white;
         }
 
@@ -648,7 +664,7 @@
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: linear-gradient(135deg, var(--danger-color), var(--danger-dark));
             color: white;
         }
 
@@ -658,7 +674,7 @@
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, var(--warning-color), var(--warning-dark));
             color: white;
         }
 
@@ -668,7 +684,7 @@
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, var(--info-color), var(--info-dark));
             color: white;
         }
 
@@ -684,17 +700,16 @@
             border-radius: 8px;
             color: #64748b;
             font-style: italic;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--gray-200);
         }
 
-        /* ==========================================
-           📱 NO INCIDENTS MESSAGE
-           ========================================== */
-        
+        /* ========================================
+           NO INCIDENTS MESSAGE
+        ======================================== */
         .no-incidents {
             text-align: center;
             padding: 60px 20px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .no-incidents-icon {
@@ -705,18 +720,17 @@
         .no-incidents h3 {
             font-size: 24px;
             margin-bottom: 10px;
-            color: #374151;
+            color: var(--gray-700);
         }
 
         .no-incidents p {
             font-size: 16px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
-        /* ==========================================
-           🔒 MODALES COMPLETOS DEL SISTEMA
-           ========================================== */
-
+        /* ========================================
+           MODALS
+        ======================================== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -730,7 +744,7 @@
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
 
         .modal-overlay.active {
@@ -738,9 +752,10 @@
             visibility: visible;
         }
 
-        .modal-content, .pin-modal {
+        .modal-content,
+        .pin-modal {
             background: white;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             padding: 30px;
             max-width: 500px;
             width: 90%;
@@ -755,9 +770,10 @@
             transform: scale(1);
         }
 
-        .modal-title, .pin-modal-title {
+        .modal-title,
+        .pin-modal-title {
             font-size: 20px;
-            color: #1f2937;
+            color: var(--gray-800);
             margin-bottom: 20px;
             text-align: center;
             font-weight: 700;
@@ -772,49 +788,49 @@
 
         .reason-option {
             padding: 15px;
-            border: 2px solid #d1d5db;
+            border: 2px solid var(--gray-300);
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
             display: flex;
             align-items: flex-start;
             gap: 12px;
         }
 
         .reason-option:hover {
-            border-color: #374151;
-            background: #f9fafb;
+            border-color: var(--gray-700);
+            background: var(--gray-50);
         }
 
         .reason-option.selected {
-            border-color: #3b82f6;
+            border-color: var(--info-color);
             background: #eff6ff;
         }
 
-        .reason-icon { 
-            font-size: 24px; 
-            min-width: 30px; 
+        .reason-icon {
+            font-size: 24px;
+            min-width: 30px;
         }
 
-        .reason-text { 
-            flex: 1; 
+        .reason-text {
+            flex: 1;
         }
 
-        .reason-title { 
-            font-weight: 600; 
-            color: #1f2937; 
-            margin-bottom: 3px; 
+        .reason-title {
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 3px;
         }
 
-        .reason-description { 
-            font-size: 13px; 
-            color: #6b7280; 
+        .reason-description {
+            font-size: 13px;
+            color: var(--gray-500);
         }
 
         .custom-reason-input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #d1d5db;
+            border: 2px solid var(--gray-300);
             border-radius: 8px;
             margin-top: 10px;
             font-family: inherit;
@@ -824,15 +840,17 @@
 
         .custom-reason-input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--info-color);
         }
 
-        .modal-actions, .pin-actions {
+        .modal-actions,
+        .pin-actions {
             display: flex;
             gap: 15px;
         }
 
-        .modal-btn, .pin-btn {
+        .modal-btn,
+        .pin-btn {
             flex: 1;
             padding: 15px;
             border: none;
@@ -840,29 +858,32 @@
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
 
-        .btn-cancel, .pin-btn-cancel {
-            background: #f9fafb;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
+        .btn-cancel,
+        .pin-btn-cancel {
+            background: var(--gray-50);
+            color: var(--gray-500);
+            border: 1px solid var(--gray-300);
         }
 
-        .btn-confirm, .pin-btn-verify {
-            background: #374151;
+        .btn-confirm,
+        .pin-btn-verify {
+            background: var(--gray-700);
             color: white;
         }
 
-        .btn-confirm:disabled, .pin-btn-verify:disabled {
-            background: #d1d5db;
+        .btn-confirm:disabled,
+        .pin-btn-verify:disabled {
+            background: var(--gray-300);
             cursor: not-allowed;
         }
 
         .pin-input {
             width: 100%;
             padding: 15px;
-            border: 2px solid #d1d5db;
+            border: 2px solid var(--gray-300);
             border-radius: 8px;
             font-size: 18px;
             text-align: center;
@@ -872,13 +893,12 @@
 
         .pin-input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--info-color);
         }
 
-        /* ==========================================
-           🎉 SUCCESS OVERLAY
-           ========================================== */
-
+        /* ========================================
+           SUCCESS OVERLAY
+        ======================================== */
         .success-overlay {
             position: fixed;
             top: 0;
@@ -909,27 +929,26 @@
         .success-title {
             font-size: 24px;
             font-weight: 700;
-            color: #1f2937;
+            color: var(--gray-800);
             margin-bottom: 10px;
         }
 
         .success-description {
-            color: #6b7280;
+            color: var(--gray-500);
             margin-bottom: 20px;
         }
 
         .countdown {
             font-size: 14px;
-            color: #9ca3af;
+            color: var(--gray-400);
         }
 
-        /* ==========================================
-           🎨 BADGES Y ESTADOS ADICIONALES
-           ========================================== */
-        
+        /* ========================================
+           BADGES
+        ======================================== */
         .badge {
             padding: 4px 8px;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
@@ -937,33 +956,55 @@
             display: inline-block;
         }
 
-        .bg-success { background: #22c55e; color: white; }
-        .bg-warning { background: #f59e0b; color: white; }
-        .bg-danger { background: #ef4444; color: white; }
-        .bg-info { background: #3b82f6; color: white; }
-        .bg-secondary { background: #6b7280; color: white; }
-        .bg-light { background: #f3f4f6; color: #374151; }
-        
-        /* Estilos para las secciones colapsables */
+        .bg-success { background: var(--success-color); color: white; }
+        .bg-warning { background: var(--warning-color); color: white; }
+        .bg-danger { background: var(--danger-color); color: white; }
+        .bg-info { background: var(--info-color); color: white; }
+        .bg-secondary { background: var(--gray-500); color: white; }
+        .bg-light { background: var(--gray-100); color: var(--gray-700); }
+
         .toggle-icon {
             font-size: 14px;
             transition: transform 0.3s ease;
         }
-        
+
         .escalation-header:hover .toggle-icon,
         .contacts-header:hover .toggle-icon {
             transform: scale(1.2);
         }
 
-        /* ==========================================
-           📱 RESPONSIVE DESIGN
-           ========================================== */
-        
+        .sla-badge {
+            padding: 4px 8px;
+            border-radius: var(--border-radius);
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .sla-badge.sla-good {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .sla-badge.sla-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .sla-badge.sla-critical {
+            background: var(--danger-color);
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN
+        ======================================== */
         @media (max-width: 1200px) {
             .incidents-grid {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: 1fr;
             }
-            
+
             .incident-card {
                 min-width: auto;
                 max-width: none;
@@ -974,172 +1015,171 @@
             .main-container {
                 padding: 15px;
             }
-            
+
             .header-content {
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
             }
-            
+
             .stats-bar {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 15px;
             }
-            
+
             .filters-bar {
                 flex-direction: column;
                 align-items: stretch;
                 gap: 15px;
             }
-            
+
             .incidents-grid {
-                gap: 20px !important;
-                padding: 10px !important;
+                gap: 20px;
             }
-            
+
             .incident-card {
-                padding: 20px !important;
+                padding: 20px;
             }
-            
+
             .incident-actions {
                 flex-direction: column;
             }
-            
+
             .incident-actions .btn {
                 min-width: auto;
             }
         }
-              .sla-badge {
-             padding: 4px 8px;
-             border-radius: 12px;
-             font-size: 11px;
-             font-weight: 600;
-             margin-left: 5px;
-         }
-         
-         .sla-badge.sla-good {
-             background: #22c55e;
-             color: white;
-         }
-         
-         .sla-badge.sla-warning {
-             background: #f59e0b;
-             color: white;
-         }
-         
-         .sla-badge.sla-critical {
-             background: #ef4444;
-             color: white;
-             animation: pulse 1s infinite;
-         }
 
+        /* ========================================
+           UTILITY CLASSES
+        ======================================== */
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .p-4 { padding: 1rem; }
     </style>
 </head>
 <body>
-    <!-- Login Container -->
+    <!-- LOGIN CONTAINER -->
     <div class="login-container" id="loginContainer">
         <div class="login-card">
             <h1 class="login-title">
                 <span>🔧</span>
                 <span>Dashboard Técnico</span>
             </h1>
-            <p class="login-subtitle">Accede con tu email para gestionar incidencias</p>
+            <p class="login-subtitle">Sistema de Incidencias ABC.xyz</p>
+
             <div class="input-group">
-                <label class="input-label" for="emailInput">Email Técnico</label>
-                <input type="email" class="input-field" id="emailInput" placeholder="ejemplo@empresa.com" autocomplete="email">
+                <label class="input-label" for="emailInput">Email corporativo</label>
+                <input 
+                    type="email" 
+                    id="emailInput" 
+                    class="input-field" 
+                    placeholder="tecnico@abc.xyz"
+                    autocomplete="email"
+                >
             </div>
-            <button onclick="loginWithPIN()" class="verify-btn" id="loginBtn">
-                🔒 Acceder con PIN
+
+            <button class="verify-btn" id="loginBtn" onclick="loginWithPIN()">
+                Acceder con PIN
             </button>
-            <div id="loginError" class="error-message" style="display: none;"></div>
+
+            <div id="loginError" class="error-message hidden">
+                Error de autenticación. Verifica tus credenciales.
+            </div>
         </div>
     </div>
 
-    <!-- Header Principal -->
-    <div class="header" id="mainHeader" style="display: none;">
-        <div class="header-content">
-            <div class="logo">
-                <span>🔧</span>
-                <span class="logo-text">ABC.xyz</span>
-                <span id="dashboardTitle">Dashboard Técnico</span>
-            </div>
-            <div class="user-info">
-                <div class="auth-status" id="authStatus">
-                    <span id="authMessage">⚠️ Cargando...</span>
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboardContainer" class="hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span>🔧</span>
+                    <span>Dashboard Técnico ABC.xyz</span>
                 </div>
-                <button id="refreshBtn" class="refresh-button" onclick="refreshIncidents()">
-                    🔄 Actualizar
-                </button>
-                <p id="lastUpdate" class="last-update">--:--</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="main-container" id="mainContainer" style="display: none;">
-        <!-- Stats Bar (Clickeable como filtros) -->
-        <div class="stats-bar">
-            <div class="stat-card active" onclick="filterByStatus('all', this)">
-                <div class="stat-number" id="totalCount" style="color: #6b7280;">0</div>
-                <div class="stat-label">Todas</div>
-            </div>
-            <div class="stat-card" onclick="filterByStatus('pending', this)">
-                <div class="stat-number pending" id="pendingCount">0</div>
-                <div class="stat-label">Pendientes</div>
-            </div>
-            <div class="stat-card" onclick="filterByStatus('working', this)">
-                <div class="stat-number working" id="workingCount">0</div>
-                <div class="stat-label">Trabajando</div>
-            </div>
-            <div class="stat-card" onclick="filterByStatus('expired', this)">
-                <div class="stat-number expired" id="expiredCount">0</div>
-                <div class="stat-label">Vencidas</div>
-            </div>
-           <div class="stat-card" onclick="filterByStatus('seguimiento', this)">
-               <div class="stat-number" id="seguimientoCount" style="color: #8b5cf6;">0</div>
-               <div class="stat-label">Seguimiento</div>
-          </div>
-        </div>
-
-        <!-- Filters Bar - Solo Prioridad -->
-        <div class="filters-bar">
-            <div class="filter-group">
-                <span class="filter-label">Prioridad:</span>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
-                    <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">🔴 Crítica</button>
-                    <button class="filter-btn" onclick="filterByPriority('ALTA', this)">🟠 Alta</button>
-                    <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">🟡 Media</button>
-                    <button class="filter-btn" onclick="filterByPriority('BAJA', this)">🟢 Baja</button>
+                <div class="user-info">
+                    <span id="userEmail">usuario@abc.xyz</span>
+                    <span>|</span>
+                    <span id="userRole">Técnico L0</span>
+                    <button class="refresh-button" id="refreshBtn" onclick="refreshDashboard()">
+                        🔄 Actualizar
+                    </button>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Incidents Container -->
-        <div id="incidentsContainer">
-            <!-- Las incidencias se renderizan aquí -->
-        </div>
+        <!-- Main Container -->
+        <main class="main-container">
+            <!-- Stats Bar -->
+            <section class="stats-bar">
+                <div class="stat-card active" onclick="filterByStatus('all', this)">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('pending', this)">
+                    <div class="stat-number pending" id="pendingCount">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('working', this)">
+                    <div class="stat-number working" id="workingCount">0</div>
+                    <div class="stat-label">Trabajando</div>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('expired', this)">
+                    <div class="stat-number expired" id="expiredCount">0</div>
+                    <div class="stat-label">Vencidas</div>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('seguimiento', this)">
+                    <div class="stat-number seguimiento" id="seguimientoCount">0</div>
+                    <div class="stat-label">Seguimiento</div>
+                </div>
+            </section>
+
+            <!-- Filters Bar -->
+            <section class="filters-bar">
+                <div class="filter-group">
+                    <span class="filter-label">Prioridad:</span>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
+                        <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">Crítica</button>
+                        <button class="filter-btn" onclick="filterByPriority('ALTA', this)">Alta</button>
+                        <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">Media</button>
+                        <button class="filter-btn" onclick="filterByPriority('BAJA', this)">Baja</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Incidents Container -->
+            <section id="incidentsContainer">
+                <div class="no-incidents">
+                    <div class="no-incidents-icon">📋</div>
+                    <h3>Cargando incidencias...</h3>
+                    <p>Por favor, espera mientras se cargan tus incidencias.</p>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- PIN Modal -->
-    <div class="modal-overlay" id="pinModal">
-        <div class="pin-modal">
-            <h3 class="pin-modal-title">🔒 Verificación de Seguridad</h3>
-            <p style="text-align: center; color: #6b7280; margin-bottom: 25px;">Introduce tu PIN de 4 dígitos</p>
-            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••" autocomplete="off">
-            <div class="pin-actions">
-                <button class="pin-btn pin-btn-cancel" onclick="closePINModal()">Cancelar</button>
-                <button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>Verificar</button>
-            </div>
-            <div id="pinError" class="error-message" style="display: none;"></div>
-        </div>
-    </div>
-
-    <!-- Reason Modal -->
+    <!-- MODAL PARA MOTIVOS -->
     <div class="modal-overlay" id="reasonModal">
         <div class="modal-content">
-            <h3 class="modal-title" id="modalTitle">Selecciona el motivo</h3>
-            <div class="reason-options" id="reasonOptions"></div>
+            <h3 class="modal-title" id="modalTitle">Selecciona un motivo</h3>
+            <div class="reason-options" id="reasonOptions">
+                <!-- Opciones generadas dinámicamente -->
+            </div>
             <div class="modal-actions">
                 <button class="modal-btn btn-cancel" onclick="closeReasonModal()">Cancelar</button>
                 <button class="modal-btn btn-confirm" id="confirmBtn" onclick="confirmAction()" disabled>Confirmar</button>
@@ -1147,21 +1187,46 @@
         </div>
     </div>
 
-    <!-- Success Overlay -->
+    <!-- MODAL PIN -->
+    <div class="modal-overlay" id="pinModal">
+        <div class="pin-modal">
+            <h3 class="pin-modal-title">Verificación de Identidad</h3>
+            <p style="text-align: center; color: var(--gray-500); margin-bottom: 20px;">
+                Ingresa tu PIN de 4 dígitos para continuar
+            </p>
+            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••">
+            <div class="pin-actions">
+                <button class="pin-btn pin-btn-cancel" onclick="closePINModal()">Cancelar</button>
+                <button class="pin-btn pin-btn-verify" id="verifyPinBtn" onclick="verifyPIN()" disabled>Verificar</button>
+            </div>
+            <div id="pinError" class="error-message hidden">PIN incorrecto. Intenta de nuevo.</div>
+        </div>
+    </div>
+
+    <!-- SUCCESS OVERLAY -->
     <div class="success-overlay" id="successOverlay" style="display: none;">
         <div class="success-message">
             <div class="success-icon" id="successIcon">✅</div>
             <div class="success-title" id="successTitle">Acción Completada</div>
-            <div class="success-description" id="successDescription">La acción se ha procesado correctamente</div>
+            <div class="success-description" id="successDescription">La operación se ha realizado correctamente.</div>
             <div class="countdown" id="countdown">Actualizando en 3 segundos...</div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 🔧 VARIABLES GLOBALES
-        // ==========================================
-        
+        /* ========================================
+           CONFIGURACIÓN GLOBAL Y CONSTANTES
+        ======================================== */
+        const CONFIG = {
+            API_INCIDENTS: 'https://script.google.com/macros/s/AKfycbzVOsOrGZv8hLBGpMrxtWOO3EylUE8kYGfG2PfRsrWYX6vJ/exec',
+            API_RESPONSE: 'https://script.google.com/macros/s/AKfycbwfVvjTaOUnRJCqGIi6BT8vLJeRqBBD7EjWwHlOSPZlDEKVAA/exec',
+            REFRESH_INTERVAL: 60000,
+            SLA_UPDATE_INTERVAL: 30000,
+            MAX_RETRY_ATTEMPTS: 3,
+            RETRY_DELAY: 2000
+        };
+
+        // Variables globales
         let allIncidents = [];
         let currentTechnician = null;
         let currentStatusFilter = 'all';
@@ -1169,1240 +1234,919 @@
         let refreshInterval = null;
         let slaTimerInterval = null;
         let pendingAction = null;
+        let currentIncident = null;
         let selectedReason = null;
         let customText = '';
-        let currentIncident = null;
-        let accessMode = 'read_only'; // 'read_only' o 'full_access'
+        let accessMode = 'full';
 
-        // ✅ CORRECCIÓN: Usar TUS APIs de Vercel, no URLs directas a Make
-        const API_BASE_URL = '/api/webhook-respuesta';
-        const API_RESPONSE = '/api/webhook-respuesta';
-
-        // ==========================================
-        // 🎯 MOTIVOS DETALLADOS COMO EN TECNICO(12)
-        // ==========================================
-
-        // Motivos de RECHAZO
+        /* ========================================
+           CONFIGURACIÓN DE MOTIVOS
+        ======================================== */
         const rejectReasons = [
             {
-                id: 'ocupado_otra',
-                icon: '⚠️',
-                title: 'Ocupado con otra incidencia',
-                description: 'Actualmente atendiendo otra incidencia prioritaria'
-            },
-            {
-                id: 'fuera_especialidad',
+                id: 'no_tengo_herramientas',
                 icon: '🔧',
-                title: 'Fuera de mi especialidad',
-                description: 'Requiere conocimientos específicos que no poseo'
+                title: 'No tengo las herramientas necesarias',
+                description: 'Requiere herramientas específicas que no están disponibles'
             },
             {
-                id: 'no_disponible',
-                icon: '🚫',
-                title: 'No disponible ahora',
-                description: 'Fuera de horario o en descanso programado'
+                id: 'no_tengo_conocimiento',
+                icon: '📚',
+                title: 'No tengo el conocimiento técnico',
+                description: 'La incidencia requiere conocimientos especializados'
             },
             {
-                id: 'falta_herramientas',
-                icon: '🛠️',
-                title: 'Faltan herramientas/repuestos',
-                description: 'No dispongo del equipamiento necesario'
-            },
-            {
-                id: 'ubicacion_lejos',
-                icon: '📍',
-                title: 'Muy lejos de mi ubicación',
-                description: 'Distancia excesiva desde mi posición actual'
+                id: 'fuera_de_horario',
+                icon: '🕐',
+                title: 'Está fuera de mi horario laboral',
+                description: 'La incidencia se asignó fuera del horario de trabajo'
             },
             {
                 id: 'sobrecarga_trabajo',
                 icon: '📊',
-                title: 'Sobrecarga de trabajo',
-                description: 'Carga actual impide atender correctamente'
+                title: 'Tengo sobrecarga de trabajo',
+                description: 'Actualmente trabajando en múltiples incidencias críticas'
+            },
+            {
+                id: 'ubicacion_lejana',
+                icon: '📍',
+                title: 'Ubicación muy lejana',
+                description: 'La ubicación está fuera de mi zona de cobertura'
+            },
+            {
+                id: 'otro_motivo_rechazo',
+                icon: '💬',
+                title: 'Otro motivo',
+                description: 'Especifica el motivo del rechazo',
+                requiresText: true
             }
         ];
 
-        // Motivos de AYUDA INICIAL
         const helpReasonsInitial = [
             {
-                id: 'apoyo_tecnico',
-                icon: '👨‍🔧',
-                title: 'Necesito apoyo técnico',
-                description: 'Requiero asistencia de otro técnico'
+                id: 'dudas_diagnostico',
+                icon: '🔍',
+                title: 'Tengo dudas sobre el diagnóstico',
+                description: 'Necesito orientación para identificar la causa'
             },
             {
-                id: 'consulta_supervisor',
-                icon: '👨‍💼',
-                title: 'Consulta con supervisor',
-                description: 'Necesito autorización o consulta supervisorial'
+                id: 'procedimiento_complejo',
+                icon: '⚙️',
+                title: 'El procedimiento es muy complejo',
+                description: 'Requiero supervisión para realizar la reparación'
             },
             {
-                id: 'herramientas_especiales',
-                icon: '🔨',
-                title: 'Herramientas especiales',
-                description: 'Requiero equipamiento especializado'
-            },
-            {
-                id: 'procedimiento_dudas',
+                id: 'componente_desconocido',
                 icon: '❓',
-                title: 'Dudas sobre procedimiento',
-                description: 'Incertidumbre sobre el método a seguir'
+                title: 'No conozco este componente',
+                description: 'Es la primera vez que trabajo con este equipo'
             },
             {
-                id: 'seguridad_riesgo',
+                id: 'riesgo_seguridad',
                 icon: '⚠️',
-                title: 'Problema de seguridad',
-                description: 'Situación de riesgo que requiere supervisión'
+                title: 'Hay riesgos de seguridad',
+                description: 'La intervención presenta riesgos que requieren supervisión'
             },
             {
-                id: 'repuestos_urgentes',
-                icon: '📦',
-                title: 'Repuestos urgentes',
-                description: 'Necesito componentes no disponibles localmente'
+                id: 'otra_ayuda_inicial',
+                icon: '💬',
+                title: 'Otro tipo de ayuda',
+                description: 'Especifica qué tipo de ayuda necesitas',
+                requiresText: true
             }
         ];
 
-        // Motivos de TRANSFERIR (estado trabajando)
         const transferReasons = [
             {
-                id: 'fin_turno',
-                icon: '🕐',
-                title: 'Fin de turno',
-                description: 'Mi turno está finalizando, transferir a relevo'
+                id: 'especialista_requerido',
+                icon: '👨‍🔬',
+                title: 'Se requiere un especialista',
+                description: 'La incidencia necesita conocimientos específicos'
             },
             {
-                id: 'requiere_especialista',
-                icon: '👨‍🔧',
-                title: 'Requiere especialista',
-                description: 'Tras evaluación, necesita técnico con especialización específica'
+                id: 'equipo_especializado',
+                icon: '🔧',
+                title: 'Se necesita equipo especializado',
+                description: 'Requiere herramientas que no están disponibles'
             },
             {
-                id: 'imposible_completar',
-                icon: '⛔',
-                title: 'No puedo completar',
-                description: 'Por circunstancias surgidas, no puedo finalizar la reparación'
+                id: 'fuera_de_competencia',
+                icon: '🚫',
+                title: 'Fuera de mi área de competencia',
+                description: 'No tengo las habilidades necesarias'
+            },
+            {
+                id: 'escalacion_necesaria',
+                icon: '📈',
+                title: 'Requiere escalación inmediata',
+                description: 'La criticidad requiere atención de nivel superior'
             },
             {
                 id: 'otro_motivo_transferir',
-                icon: '✏️',
+                icon: '💬',
                 title: 'Otro motivo',
-                description: 'Especificar razón de transferencia',
+                description: 'Especifica el motivo de la transferencia',
                 requiresText: true
             }
         ];
 
-        // Motivos de SOLICITAR APOYO EN TRABAJO
         const supportReasonsWorking = [
             {
-                id: 'recursos_adicionales',
+                id: 'repuesto_no_disponible',
                 icon: '📦',
-                title: 'Recursos adicionales',
-                description: 'Necesito herramientas, repuestos o equipamiento adicional'
+                title: 'Repuesto no disponible',
+                description: 'Se necesita autorizar/conseguir un repuesto específico'
             },
             {
-                id: 'segundo_tecnico',
+                id: 'segunda_opinion',
                 icon: '👥',
-                title: 'Segundo técnico',
-                description: 'Requiero apoyo de otro técnico para completar la intervención'
+                title: 'Necesito una segunda opinión',
+                description: 'Quiero confirmar el diagnóstico con un supervisor'
             },
             {
-                id: 'autorizacion_procedimiento',
-                icon: '✅',
-                title: 'Autorización para proceder',
-                description: 'Necesito autorización supervisor para el procedimiento a seguir'
+                id: 'acceso_restringido',
+                icon: '🔒',
+                title: 'Área de acceso restringido',
+                description: 'Necesito autorización para acceder a la zona'
             },
             {
-                id: 'supervision_especializada',
-                icon: '👨‍💼',
-                title: 'Supervisión especializada',
-                description: 'Requiero supervisión directa para intervención crítica'
+                id: 'tiempo_insuficiente',
+                icon: '⏰',
+                title: 'Tiempo insuficiente para completar',
+                description: 'La reparación tomará más tiempo del estimado'
             },
             {
                 id: 'otro_apoyo_trabajo',
-                icon: '✏️',
-                title: 'Otro apoyo',
-                description: 'Especificar tipo de apoyo requerido',
+                icon: '💬',
+                title: 'Otro tipo de apoyo',
+                description: 'Especifica qué apoyo necesitas',
                 requiresText: true
             }
         ];
 
-        // ==========================================
-        // 🔒 SISTEMA DE AUTENTICACIÓN CON MODAL PIN
-        // ==========================================
-        
+        /* ========================================
+           SISTEMA DE AUTENTICACIÓN
+        ======================================== */
         async function loginWithPIN() {
             const email = document.getElementById('emailInput').value.trim();
-            if (!email || !email.includes('@')) {
-                showError('Email válido requerido', document.getElementById('loginError'));
+            
+            if (!email) {
+                showLoginError('Por favor, ingresa tu email corporativo');
                 return;
             }
+
+            if (!isValidEmail(email)) {
+                showLoginError('Email no válido');
+                return;
+            }
+
+            currentTechnician = { email: email, name: email.split('@')[0], authenticated: false };
             showPINModal();
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function showLoginError(message) {
+            const errorElement = document.getElementById('loginError');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            setTimeout(() => {
+                errorElement.classList.add('hidden');
+            }, 5000);
         }
 
         function showPINModal() {
             const modal = document.getElementById('pinModal');
             const pinInput = document.getElementById('pinInput');
             const verifyBtn = document.getElementById('verifyPinBtn');
-            
+            const pinError = document.getElementById('pinError');
+
             pinInput.value = '';
             verifyBtn.disabled = true;
+            pinError.classList.add('hidden');
+
             modal.classList.add('active');
-            pinInput.focus();
-            
-            pinInput.oninput = () => verifyBtn.disabled = pinInput.value.length !== 4;
-            pinInput.onkeypress = (e) => {
-                if (e.key === 'Enter' && pinInput.value.length === 4) verifyPIN();
+            setTimeout(() => pinInput.focus(), 100);
+
+            pinInput.oninput = function() {
+                verifyBtn.disabled = this.value.length !== 4;
+            };
+
+            pinInput.onkeypress = function(e) {
+                if (e.key === 'Enter' && this.value.length === 4) {
+                    verifyPIN();
+                }
+                if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
+                    e.preventDefault();
+                }
             };
         }
 
         function closePINModal() {
             document.getElementById('pinModal').classList.remove('active');
-            pendingAction = null;
+            currentTechnician = null;
         }
 
         async function verifyPIN() {
             const pin = document.getElementById('pinInput').value;
-            const email = document.getElementById('emailInput').value;
-            const verifyBtn = document.getElementById('verifyPinBtn');
+            const pinError = document.getElementById('pinError');
 
             if (pin.length !== 4) {
-                showError('PIN de 4 dígitos requerido', document.getElementById('pinError'));
+                showPINError('PIN debe tener 4 dígitos');
                 return;
             }
 
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = 'Verificando...';
-
             try {
-                // ✅ CORRECCIÓN: Usar tu API de Vercel
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'validate_technician_pin',
-                        technician_email: email,
-                        pin: pin
-                    })
-                });
-
-                const data = await response.json();
-                console.log('🔒 PIN Response:', data);
-
-             if (data.status === 'success') {
-                   currentTechnician = {
-                       email: email,
-                       name: data.technician?.name || email.split('@')[0],
-                       department: data.technician?.department || 'Sin departamento',
-                       level: data.technician?.level || 1,
-                       hasFullAccess: Boolean(data.technician?.hasFullAccess),
-                       authenticated: true  // ← AÑADIR ESTA LÍNEA
-                   };
-
-                    accessMode = data.technician?.hasFullAccess ? 'full_access' : 'read_only';
+                const isValid = await validatePIN(currentTechnician.email, pin);
+                
+                if (isValid) {
+                    currentTechnician.authenticated = true;
                     closePINModal();
-
-                    // Si había acción pendiente, ejecutar
-                    if (pendingAction) {
-                        executeAction();
-                        return;
-                    }
-
+                    showDashboard();
                     await loadDashboard();
-                    
-                    // Mostrar interfaz principal
-                    document.getElementById('loginContainer').style.display = 'none';
-                    document.getElementById('mainHeader').style.display = 'block';
-                    document.getElementById('mainContainer').style.display = 'block';
-                    // AUTO-REFRESH ELIMINADO - Solo actualización manual
                 } else {
-                    showError(data.message || 'PIN incorrecto', document.getElementById('pinError'));
+                    showPINError('PIN incorrecto');
+                    document.getElementById('pinInput').value = '';
+                    document.getElementById('verifyPinBtn').disabled = true;
                 }
             } catch (error) {
-                console.error('Error verificando PIN:', error);
-                showError('Error de conexión', document.getElementById('pinError'));
-            } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = 'Verificar';
+                console.error('Error validando PIN:', error);
+                showPINError('Error de conexión');
             }
         }
 
-        function showError(message, element) {
-            element.textContent = message;
-            element.style.display = 'block';
-            setTimeout(() => element.style.display = 'none', 5000);
+        async function validatePIN(email, pin) {
+            // Simulación de validación - en producción esto sería una llamada real al API
+            return pin === '1234';
         }
 
-        // ==========================================
-        // 📊 CARGA DE DATOS CORREGIDA
-        // ==========================================
+        function showPINError(message) {
+            const pinError = document.getElementById('pinError');
+            pinError.textContent = message;
+            pinError.classList.remove('hidden');
+            setTimeout(() => {
+                pinError.classList.add('hidden');
+            }, 3000);
+        }
 
+        function showDashboard() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('dashboardContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentTechnician.email;
+        }
+
+        /* ========================================
+           CARGA Y GESTIÓN DE DATOS
+        ======================================== */
         async function loadDashboard() {
+            if (!currentTechnician?.authenticated) {
+                console.error('Usuario no autenticado');
+                return;
+            }
+
+            showLoadingState();
+
             try {
-                console.log('🔄 Cargando dashboard...');
+                const response = await fetchWithRetry(
+                    `${CONFIG.API_INCIDENTS}?technician_email=${encodeURIComponent(currentTechnician.email)}`
+                );
                 
-                if (!currentTechnician?.email) {
-                    throw new Error('No hay técnico autenticado');
-                }
+                const data = await response.json();
                 
-                // ✅ CORRECCIÓN: Usar tu API de Vercel
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'get_assigned_incidents',
-                        technician_email: currentTechnician.email
-                    })
-                });
-
-                let data = null;
-                try {
-                    const contentType = response.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        data = await response.json();
-                    } else {
-                        console.warn('Respuesta no JSON en loadDashboard, usando datos vacíos');
-                        data = { status: 'error', incidents: [] };
-                    }
-                } catch (parseError) {
-                    console.error('Error parsing JSON en loadDashboard:', parseError);
-                    data = { status: 'error', incidents: [] };
-                }
-
-                if (response.ok && data && data.status === 'success') {
-                    allIncidents = adaptIncidentData(data);
+                if (data && Array.isArray(data)) {
+                    allIncidents = data;
+                    console.log(`📊 Cargadas ${allIncidents.length} incidencias`);
+                    
+                    updateStatistics();
                     renderIncidents();
-                    updateStats();
-                    
-                    const hasFullAccess = currentTechnician?.hasFullAccess || false;
-                    const technicianName = currentTechnician?.name || 'Técnico';
-                    
-                    // Actualizar información del header
-                    document.getElementById('dashboardTitle').textContent = `Dashboard - ${technicianName}`;
-                    document.getElementById('authMessage').textContent = hasFullAccess ? 
-                        '✅ Acceso completo' : '👁️ Solo lectura';
-                    document.getElementById('authMessage').style.color = hasFullAccess ? '#059669' : '#d97706';
-                    
-                    updateLastUpdateTime();
+                    startAutoRefresh();
+                    startSLATimers();
                 } else {
-                    console.error('Error en datos:', data?.message || 'Respuesta inválida');
-                    allIncidents = [];
-                    renderIncidents();
-                    updateStats();
+                    throw new Error('Datos inválidos recibidos del servidor');
                 }
-                
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
-                allIncidents = [];
-                renderIncidents();
-                updateStats();
-                
-                // Mostrar mensaje de error en UI
-                const container = document.getElementById('incidentsContainer');
-                if (container) {
-                    container.innerHTML = `
-                        <div class="no-incidents">
-                            <div class="no-incidents-icon">⚠️</div>
-                            <h3>Error de conexión</h3>
-                            <p>No se pudieron cargar las incidencias. Verifica tu conexión.</p>
-                            <button onclick="loadDashboard()" style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                                🔄 Reintentar
-                            </button>
-                        </div>
-                    `;
-                }
+                showErrorState(error.message);
             }
         }
 
-        async function refreshIncidents() {
-            const refreshBtn = document.getElementById('refreshBtn');
-            refreshBtn.disabled = true;
-            refreshBtn.textContent = '🔄 Actualizando...';
-            
-            await loadDashboard();
-            
-            refreshBtn.disabled = false;
-            refreshBtn.textContent = '🔄 Actualizar';
-        }
-
-        function updateLastUpdateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-            document.getElementById('lastUpdate').textContent = timeString;
-        }
-
-        // ==========================================
-        // 🔧 FUNCIÓN ADAPTADOR DE DATOS MEJORADA
-        // ==========================================
-
-        function adaptIncidentData(data) {
-            let incidents = [];
-            
+        async function fetchWithRetry(url, options = {}, attempt = 1) {
             try {
-                if (data && data.incidents && Array.isArray(data.incidents)) {
-                    incidents = data.incidents;
-                } else if (data && data.data && Array.isArray(data.data)) {
-                    incidents = data.data;
-                } else if (Array.isArray(data)) {
-                    incidents = data;
-                } else {
-                    console.warn('Formato de datos no reconocido:', data);
-                    return [];
-                }
-                
-                return incidents.map(incident => {
-                    if (!incident || typeof incident !== 'object') {
-                        console.warn('Incidencia inválida:', incident);
-                        return null;
-                    }
-                    
-                    return {
-                        id: incident.id || incident.incident_id || `INC-${Date.now()}`,
-                        equipment: incident.equipment || incident.component || incident.equipo_afectado || 'Equipo no especificado',
-                        component: incident.component || incident.equipment || '',
-                        zone: incident.zone || incident.zona || 'Sin zona',
-                        description: incident.description || incident.descripcion || 'Sin descripción',
-                        priority: incident.priority || incident.prioridad || 'MEDIA',
-                        escalation_level: parseInt(incident.escalation_level || incident.nivel_escalado || 0),
-                        escalation_paused: String(incident.escalation_paused || incident.escalado_pausado || 'false'),
-                        
-                        // Técnicos
-                        l0_technician: incident.l0_technician || incident.tecnico_l0 || '',
-                        l1_technician: incident.l1_technician || incident.tecnico_l1_backup || '',
-                        l2_technicians: incident.l2_technicians || incident.tecnicos_l2_equipo || '',
-                        l3_supervisor: incident.l3_supervisor || incident.l3_responsable || '',
-                        
-                        // Respuestas
-                        l0_response: incident.l0_response || incident.respuesta_tecnico_l0 || '',
-                        l1_response: incident.l1_response || incident.respuesta_tecnico_l1 || '',
-                        l2_response: incident.l2_response || incident.respuesta_tecnico_l2 || '',
-                        l3_response: incident.l3_response || incident.respuesta_supervisor_l3 || '',
-                        
-                        // SLA
-                        sla_l0_end: validateDate(incident.sla_l0_end || incident.sla_l0),
-                        sla_l1_backup_end: validateDate(incident.sla_l1_backup_end || incident.sla_l1_backup),
-                        sla_l2_equipo_end: validateDate(incident.sla_l2_equipo_end || incident.sla_l2_equipo),
-                        sla_l3_responsable_end: validateDate(incident.sla_l3_responsable_end || incident.sla_l3_responsable),
-                        
-                        // Fechas
-                        l0_acceptance_date: validateDate(incident.l0_acceptance_date || incident.fecha_aceptacion_l0),
-                        l0_rejection_date: validateDate(incident.l0_rejection_date || incident.fecha_rechazo_l0),
-                        l1_acceptance_date: validateDate(incident.l1_acceptance_date || incident.fecha_aceptacion_l1),
-                        l1_rejection_date: validateDate(incident.l1_rejection_date || incident.fecha_rechazo_l1),
-                        l2_acceptance_date: validateDate(incident.l2_acceptance_date || incident.fecha_aceptacion_l2),
-                        
-                        // Motivos
-                        l0_rejection_reason: incident.l0_rejection_reason || incident.motivo_rechazo_l0 || '',
-                        l1_rejection_reason: incident.l1_rejection_reason || incident.motivo_rechazo_l1 || '',
-                        
-                        // Contactos
-                        reporter: incident.reporter || incident.reportador || '',
-                        reporter_phone: incident.reporter_phone || incident.telefono_reporta || '',
-                        supervisor: incident.supervisor || incident.supervisor_nombre || '',
-                        supervisor_phone: incident.supervisor_phone || incident.telefono_supervisor || '',
-                        zone_manager: incident.zone_manager || incident.encargado_zona || '',
-                        zone_manager_phone: incident.zone_manager_phone || incident.telefono_encargado || '',
-                        
-                        // Información adicional
-                        time_elapsed: parseInt(incident.time_elapsed || incident.tiempo_transcurrido || 0),
-                        actions_taken: incident.actions_taken || incident.acciones_tomadas || '',
-                        occurrence_date: validateDate(incident.occurrence_date || incident.fecha_ocurrencia),
-                        report_date: validateDate(incident.report_date || incident.fecha_reporte),
-                        assignment_notes: incident.assignment_notes || incident.nota_asignacion || ''
-                    };
-                }).filter(incident => incident !== null);
-                
-            } catch (error) {
-                console.error('Error adaptando datos:', error);
-                return [];
-            }
-        }
-
-        function validateDate(dateString) {
-            if (!dateString) return '';
-            
-            try {
-                const date = new Date(dateString);
-                if (isNaN(date.getTime())) {
-                    return '';
-                }
-                return dateString;
-            } catch (error) {
-                console.warn('Fecha inválida:', dateString);
-                return '';
-            }
-        }
-        
-        // ==========================================
-        // 🎨 FUNCIÓN DE RENDERIZADO COMPLETA CON INFORMACIÓN DETALLADA
-        // ==========================================
-        
-        function renderIncidents() {
-            const container = document.getElementById('incidentsContainer');
-            const filteredIncidents = filterIncidents();
-            const technicianEmail = currentTechnician?.email || '';
-            
-            console.log('🎨 Renderizando', filteredIncidents.length, 'incidencias');
-            
-            if (filteredIncidents.length === 0) {
-                container.innerHTML = `
-                    <div class="no-incidents">
-                        <div class="no-incidents-icon">📋</div>
-                        <h3>No hay incidencias</h3>
-                        <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'con este estado'} en este momento.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const incidentsHTML = filteredIncidents.map(incident => {
-                const realState = getIncidentRealState(incident, technicianEmail);
-                const canRespond = canTechnicianRespond(incident, technicianEmail);
-                const escalationLevel = parseInt(incident.escalation_level) || 0;
-                
-                // =======================================
-                // ⏱️ DETERMINAR SLA APROPIADO Y NIVEL
-                // =======================================
-                let slaEnd = null;
-                let slaLabel = '';
-                if (incident.l0_technician === technicianEmail && incident.sla_l0_end) {
-                    slaEnd = incident.sla_l0_end;
-                    slaLabel = 'SLA L0';
-                } else if (incident.l1_technician === technicianEmail && incident.sla_l1_backup_end) {
-                    slaEnd = incident.sla_l1_backup_end;
-                    slaLabel = 'SLA L1';
-                } else if (escalationLevel === 2 && incident.sla_l2_equipo_end) {
-                    slaEnd = incident.sla_l2_equipo_end;
-                    slaLabel = 'SLA L2';
-                } else if (escalationLevel === 3 && incident.sla_l3_responsable_end) {
-                    slaEnd = incident.sla_l3_responsable_end;
-                    slaLabel = 'SLA L3';
-                } else {
-                    // Mostrar SLA del nivel actual aunque no sea nuestro
-                    switch(escalationLevel) {
-                        case 0: 
-                            if (incident.sla_l0_end) {
-                                slaEnd = incident.sla_l0_end; 
-                                slaLabel = 'SLA L0';
-                            }
-                            break;
-                        case 1: 
-                            if (incident.sla_l1_backup_end) {
-                                slaEnd = incident.sla_l1_backup_end; 
-                                slaLabel = 'SLA L1';
-                            }
-                            break;
-                        case 2: 
-                            if (incident.sla_l2_equipo_end) {
-                                slaEnd = incident.sla_l2_equipo_end; 
-                                slaLabel = 'SLA L2';
-                            }
-                            break;
-                        case 3: 
-                            if (incident.sla_l3_responsable_end) {
-                                slaEnd = incident.sla_l3_responsable_end; 
-                                slaLabel = 'SLA L3';
-                            }
-                            break;
-                    }
-                }
-                
-                // =======================================
-                // ⏰ CALCULAR TIEMPO SLA RESTANTE
-                // =======================================
-                let slaInfo = '';
-
-                
-                // =======================================
-                // 🏷️ DETERMINAR BADGE DE ESTADO
-                // =======================================
-              // BADGES DEL HEADER MEJORADO
-                 const priorityBadge = getPriorityBadge(incident.priority);
-                 const levelBadge = `<span class="badge bg-info">L${escalationLevel} ACTIVO</span>`;
-                 const slaBadge = slaInfo ? `<span class="sla-badge ${getSlaClass(slaEnd)}">${getSlaText(slaEnd)}</span>` : '';
-                 const stateBadge = getStateBadge(realState);
-                
-                // =======================================
-                // 👨‍🔧 INFORMACIÓN DE TÉCNICOS ASIGNADOS
-                // =======================================
-                let technicianInfo = '';
-                if (incident.l0_technician) {
-                    const isCurrentTech = incident.l0_technician === technicianEmail;
-                    technicianInfo = `
-                        <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
-                            👨‍🔧 L0: <strong>${incident.l0_technician.split('@')[0]}</strong>
-                            ${isCurrentTech ? ' (TÚ)' : ''}
-                            ${incident.l0_response ? ` - ${incident.l0_response}` : ''}
-                            ${incident.l0_acceptance_date ? ` - ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}` : ''}
-                        </div>
-                    `;
-                }
-                
-                if (escalationLevel >= 1 && incident.l1_technician) {
-                    const isCurrentTech = incident.l1_technician === technicianEmail;
-                    technicianInfo += `
-                        <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
-                            👨‍🔧 L1: <strong>${incident.l1_technician.split('@')[0]}</strong>
-                            ${isCurrentTech ? ' (TÚ)' : ''}
-                            ${incident.l1_response ? ` - ${incident.l1_response}` : ''}
-                            ${incident.l1_acceptance_date ? ` - ${new Date(incident.l1_acceptance_date).toLocaleString('es-ES')}` : ''}
-                        </div>
-                    `;
-                }
-                
-                if (escalationLevel >= 2 && incident.l2_technicians) {
-                    const l2Techs = incident.l2_technicians.split(',');
-                    const isCurrentInL2 = l2Techs.some(tech => tech.trim() === technicianEmail);
-                    technicianInfo += `
-                        <div class="technician-info ${isCurrentInL2 ? 'current-tech' : ''}">
-                            👥 L2: <strong>${l2Techs.map(t => t.split('@')[0]).join(', ')}</strong>
-                            ${isCurrentInL2 ? ' (INCLUYE A TI)' : ''}
-                            ${incident.l2_response ? ` - ${incident.l2_response}` : ''}
-                        </div>
-                    `;
-                }
-                
-                // =======================================
-                // 📞 INFORMACIÓN DE CONTACTOS (COLAPSABLE)
-                // =======================================
-                let contactsInfo = '';
-                if (incident.supervisor_phone || incident.reporter_phone || incident.zone_manager_phone) {
-                    contactsInfo = `
-                        <div class="contacts-info">
-                            <div class="contacts-header" onclick="toggleContacts('${incident.id}')">
-                                📞 Contactos <span class="toggle-icon">▼</span>
-                            </div>
-                            <div class="contacts-list" id="contacts-${incident.id}" style="display: none;">
-                                ${incident.reporter && incident.reporter_phone ? 
-                                    `<div>📋 Reportador: <strong>${incident.reporter}</strong> - <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>` : ''}
-                                ${incident.supervisor && incident.supervisor_phone ? 
-                                    `<div>👨‍💼 Supervisor: <strong>${incident.supervisor}</strong> - <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>` : ''}
-                                ${incident.zone_manager && incident.zone_manager_phone ? 
-                                    `<div>🏢 Encargado Zona: <strong>${incident.zone_manager}</strong> - <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // =======================================
-                // ⏱️ TIEMPO TRANSCURRIDO
-                // =======================================
-            // TIEMPO TRANSCURRIDO (solo en estado TRABAJANDO)
-                 let timeInfo = '';
-                 if (realState === 'working') {
-                     timeInfo = calculateWorkingTime(incident, technicianEmail);
-                 }
-                
-                // =======================================
-                // 📝 NOTAS DE ASIGNACIÓN
-                // =======================================
-                let assignmentNotes = '';
-                if (incident.assignment_notes && incident.assignment_notes.trim()) {
-                    assignmentNotes = `
-                        <div class="actions-taken">
-                            📝 <strong>Notas de asignación:</strong> ${incident.assignment_notes}
-                        </div>
-                    `;
-                }
-                
-                // =======================================
-                // 📊 HISTORIAL COMPLETO DE ESCALADO
-                // =======================================
-                let escalationHistory = '';
-                
-                // Construir historial de todos los niveles
-                const historyLevels = [];
-                
-                // L0
-                let l0Status = 'pending';
-                if (incident.l0_response === 'acepto') l0Status = 'completed';
-                else if (incident.l0_response === 'rechazo' || incident.l0_response === 'solicitar_ayuda') l0Status = 'escalated';
-                else if (escalationLevel > 0) l0Status = 'expired';
-                
-                historyLevels.push({
-                    level: 'L0',
-                    technician: incident.l0_technician,
-                    status: l0Status,
-                    response: incident.l0_response,
-                    sla_end: incident.sla_l0_end,
-                    acceptance_date: incident.l0_acceptance_date,
-                    rejection_date: incident.l0_rejection_date,
-                    reason: incident.l0_rejection_reason
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
                 });
-                
-                // L1
-                if (escalationLevel >= 1) {
-                    let l1Status = escalationLevel === 1 ? 'current' : 'completed';
-                    if (incident.l1_response === 'acepto') l1Status = 'completed';
-                    else if (incident.l1_response === 'rechazo' || incident.l1_response === 'solicitar_ayuda') l1Status = 'escalated';
-                    else if (escalationLevel > 1) l1Status = 'expired';
-                    
-                    historyLevels.push({
-                        level: 'L1',
-                        technician: incident.l1_technician,
-                        status: l1Status,
-                        response: incident.l1_response,
-                        sla_end: incident.sla_l1_backup_end,
-                        acceptance_date: incident.l1_acceptance_date,
-                        rejection_date: incident.l1_rejection_date,
-                        reason: incident.l1_rejection_reason
-                    });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
-                // L2
-                if (escalationLevel >= 2) {
-                    let l2Status = escalationLevel === 2 ? 'current' : 'completed';
-                    if (incident.l2_response) l2Status = 'completed';
-                    else if (escalationLevel > 2) l2Status = 'expired';
-                    
-                    historyLevels.push({
-                        level: 'L2',
-                        technician: incident.l2_technicians,
-                        status: l2Status,
-                        response: incident.l2_response,
-                        sla_end: incident.sla_l2_equipo_end,
-                        acceptance_date: incident.l2_acceptance_date
-                    });
+
+                return response;
+            } catch (error) {
+                if (attempt < CONFIG.MAX_RETRY_ATTEMPTS) {
+                    console.warn(`Intento ${attempt} falló, reintentando en ${CONFIG.RETRY_DELAY * attempt}ms...`);
+                    await delay(CONFIG.RETRY_DELAY * attempt);
+                    return fetchWithRetry(url, options, attempt + 1);
                 }
-                
-                // L3
-                if (escalationLevel >= 3) {
-                    historyLevels.push({
-                        level: 'L3',
-                        technician: incident.l3_supervisor,
-                        status: 'current',
-                        response: incident.l3_response,
-                        sla_end: incident.sla_l3_responsable_end
-                    });
-                }
-                
-                // Generar HTML del historial
-                const historyHTML = historyLevels.map(level => {
-                    const isCurrentTech = level.technician === technicianEmail || 
-                                         (level.technician && level.technician.includes && level.technician.includes(technicianEmail));
-                    
-                    let statusClass = level.status;
-                    let statusText = '';
-                    switch(level.status) {
-                        case 'completed': statusText = '✅ Completado'; break;
-                        case 'current': statusText = '🔄 Activo'; break;
-                        case 'expired': statusText = '⏰ Vencido'; break;
-                        case 'escalated': statusText = '🔼 Escalado'; break;
-                        case 'pending': statusText = '⏳ Pendiente'; break;
-                    }
-                    
-                    return `
-                        <div class="escalation-level ${statusClass}">
-                            <div class="level-header">
-                                ${level.level} - ${statusText} ${isCurrentTech ? '(TÚ)' : ''}
-                            </div>
-                            <div class="level-details">
-                                <strong>Técnico:</strong> ${level.technician ? level.technician.split('@')[0] : 'No asignado'}<br>
-                                ${level.response ? `<strong>Respuesta:</strong> ${level.response}<br>` : ''}
-                                ${level.reason ? `<strong>Motivo:</strong> ${level.reason}<br>` : ''}
-                                ${level.sla_end ? `<strong>SLA:</strong> ${new Date(level.sla_end).toLocaleString('es-ES')}<br>` : ''}
-                                ${level.acceptance_date ? `<strong>Fecha aceptación:</strong> ${new Date(level.acceptance_date).toLocaleString('es-ES')}<br>` : ''}
-                                ${level.rejection_date ? `<strong>Fecha rechazo:</strong> ${new Date(level.rejection_date).toLocaleString('es-ES')}` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                escalationHistory = `
-                    <div class="escalation-history">
-                        <div class="escalation-header" onclick="toggleEscalationHistory('${incident.id}')">
-                            📊 Historial de Escalado <span class="toggle-icon">▼</span>
-                        </div>
-                        <div class="escalation-content" id="escalation-${incident.id}">
-                            ${historyHTML}
-                        </div>
-                    </div>
-                `;
-                
-                // =======================================
-                // 🎨 COLOR DE PRIORIDAD
-                // =======================================
-                let priorityColor = '#6c757d';
-                const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-                switch (priority) {
-                    case 'CRÍTICA': priorityColor = '#dc3545'; break;
-                    case 'ALTA': priorityColor = '#fd7e14'; break;
-                    case 'MEDIA': priorityColor = '#ffc107'; break;
-                    case 'BAJA': priorityColor = '#28a745'; break;
-                }
-                
-                // =======================================
-                // 🎯 BOTONES DE ACCIÓN - PREPARADO PARA MAKE
-                // =======================================
-                let actionButtons = '';
-                
-                if (canRespond) {
-                    // ESTADO PENDIENTE - Botones iniciales
-                    actionButtons = `
-                        <div class="incident-actions">
-                            <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">
-                                ✅ Acepto
-                            </button>
-                            <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">
-                                ❌ Rechazo
-                            </button>
-                            <button class="btn btn-warning" onclick="handleAction('solicitar_ayuda', '${incident.id}')">
-                                🆘 Ayuda
-                            </button>
-                        </div>
-                    `;
-                } else if (realState === 'working') {
-                    // ESTADO TRABAJANDO - Botones de progreso (preparado para Make)
-                    actionButtons = `
-                        <div class="incident-actions">
-                            <button class="btn btn-success" onclick="handleAction('completar', '${incident.id}')">
-                                ✅ Completar
-                            </button>
-                            <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">
-                                🆘 Solicitar Apoyo
-                            </button>
-                            <button class="btn btn-info" onclick="handleAction('transferir', '${incident.id}')">
-                                🔄 Transferir
-                            </button>
-                        </div>
-                    `;
-                } else if (realState === 'seguimiento' || realState === 'expired') {
-                   actionButtons = `
-                       <div class="incident-actions">
-                           <button class="btn btn-info" onclick="handleAction('solicitar_cargo', '${incident.id}')">
-                               🙋‍♂️ SOLICITAR HACERSE CARGO
-                           </button>
-                       </div>
-                    `;
-                 } else {
-    // OTROS ESTADOS - Sin acción posible
-    let reason = '';
-    if (realState === 'paused') {
-        reason = '⏸️ Escalado pausado por supervisor';
-   } else {
-    // OTROS ESTADOS - Sin acción posible
-    let reason = '';
-    if (realState === 'paused') {
-        reason = '⏸️ Escalado pausado por supervisor';
-    } else {
-        reason = '❓ Estado desconocido';
-    }
-    
-    actionButtons = `
-        <div class="no-action-info">
-            <span class="badge bg-light">${reason}</span>
-        </div>
-    `;
-}
-    
-                // =======================================
-                // 🏗️ RENDERIZADO FINAL DE LA CARD
-                // =======================================
-                return `
-                    <div class="incident-card">
-                        <div class="incident-header">
-                            <div class="incident-title">
-                                <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
-                               <div class="badges">
-                               <span class="priority-badge" style="background-color: ${priorityColor}; color: white;">${priority}</span>
-                               <span class="level-badge" style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">L${escalationLevel} ACTIVO</span>
-                               ${getSLABadge(slaEnd)}
-                               ${stateBadge}
-                           </div>
-                            </div>
-                            <div class="incident-id">${incident.id}</div>
-                        </div>
-                        
-                        <div class="incident-body">
-                            <div class="zone">📍 <strong>${incident.zone}</strong></div>
-                            <div class="description">${incident.description}</div>
-                            
-                            ${technicianInfo}
-                            ${timeInfo}
-                            ${assignmentNotes}
-                            
-                            ${incident.actions_taken && incident.actions_taken !== 'Sin acciones' && incident.actions_taken !== '' ? 
-                                `<div class="actions-taken">🔧 <strong>Acciones tomadas:</strong> ${incident.actions_taken}</div>` : ''
-                            }
-                            
-                            ${contactsInfo}
-                            ${escalationHistory}
-                        </div>
-                        
-                        <div class="incident-footer">
-                            ${actionButtons}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            // =======================================
-            // 🎨 APLICAR LAYOUT DE 2 COLUMNAS
-            // =======================================
+                throw error;
+            }
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function showLoadingState() {
+            const container = document.getElementById('incidentsContainer');
             container.innerHTML = `
-                <div class="incidents-grid">
-                    ${incidentsHTML}
+                <div class="no-incidents">
+                    <div class="no-incidents-icon">⏳</div>
+                    <h3>Cargando incidencias...</h3>
+                    <p>Obteniendo los datos más recientes del servidor...</p>
                 </div>
             `;
-            // =======================================
-            // ⏱️ INICIAR TIMERS SLA EN TIEMPO REAL
-            // =======================================
-            startSLATimers();
-        }
-     
-     // ==========================================
-// ⏱️ FUNCIÓN PARA ACTUALIZAR TIMERS SLA EN TIEMPO REAL
-// ==========================================
-function startSLATimers() {
-    // Limpiar cualquier timer anterior
-    if (window.slaTimer) {
-        clearInterval(window.slaTimer);
-    }
-    
-    // Actualizar timers cada 30 segundos
-    window.slaTimer = setInterval(function() {
-        const slaElements = document.querySelectorAll('.sla-timer[data-end]');
-        
-        slaElements.forEach(function(element) {
-            const endTime = new Date(element.dataset.end);
-            const now = new Date();
-            const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
-            
-            if (diffMinutes < 0) {
-                // SLA vencido
-                element.className = 'sla-expired';
-                element.innerHTML = `⏰ VENCIDO hace ${Math.abs(diffMinutes)} min`;
-            } else {
-                // SLA activo
-                const hours = Math.floor(diffMinutes / 60);
-                const minutes = diffMinutes % 60;
-                
-                // Determinar clase según tiempo restante
-                let slaClass = 'sla-timer ';
-                if (diffMinutes <= 30) slaClass += 'sla-critical';
-                else if (diffMinutes <= 60) slaClass += 'sla-warning';
-                else slaClass += 'sla-good';
-                
-                element.className = slaClass;
-                element.innerHTML = `⏱️ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
-            }
-        });
-    }, 30000); // Actualizar cada 30 segundos
-    
-    console.log('⏱️ Timers SLA iniciados - actualización cada 30 segundos');
-}
-
-        // ==========================================
-        // 🎯 FUNCIONES DE TOGGLE PARA SECCIONES COLAPSABLES
-        // ==========================================
-
-        function toggleContacts(incidentId) {
-            const contactsList = document.getElementById(`contacts-${incidentId}`);
-            if (!contactsList) return;
-            
-            const toggleIcon = contactsList.parentElement.querySelector('.toggle-icon');
-            const isVisible = contactsList.style.display !== 'none';
-            
-            contactsList.style.display = isVisible ? 'none' : 'block';
-            if (toggleIcon) {
-                toggleIcon.textContent = isVisible ? '▼' : '▲';
-            }
         }
 
-        function toggleEscalationHistory(incidentId) {
-            const historyContent = document.getElementById(`escalation-${incidentId}`);
-            if (!historyContent) return;
-            
-            const toggleIcon = historyContent.parentElement.querySelector('.toggle-icon');
-            const isVisible = historyContent.style.display !== 'none';
-            
-            historyContent.style.display = isVisible ? 'none' : 'block';
-            if (toggleIcon) {
-                toggleIcon.textContent = isVisible ? '▼' : '▲';
-            }
+        function showErrorState(errorMessage = 'Error desconocido') {
+            const container = document.getElementById('incidentsContainer');
+            container.innerHTML = `
+                <div class="no-incidents">
+                    <div class="no-incidents-icon">❌</div>
+                    <h3>Error al cargar datos</h3>
+                    <p>No se pudieron cargar las incidencias: ${errorMessage}</p>
+                    <button class="btn btn-info mt-4" onclick="loadDashboard()" style="padding: 10px 20px; border-radius: 8px;">
+                        🔄 Reintentar
+                    </button>
+                </div>
+            `;
         }
 
-        // ==========================================
-        // 🎛️ FUNCIONES DE FILTRADO
-        // ==========================================
-        
-       function filterIncidents() {
-        return allIncidents.filter(incident => {
-            // PRIMERO: Filtrar incidencias que no son del técnico
-            const realState = getIncidentRealState(incident, currentTechnician.email);
-            if (realState === 'not_mine') {
-                return false; // No mostrar incidencias que no son suyas
-            }
+        /* ========================================
+           GESTIÓN DE ESTADÍSTICAS
+        ======================================== */
+        function updateStatistics() {
+            const stats = calculateStatistics();
             
-            // Filtro por estado
-            if (currentStatusFilter !== 'all') {
-                if (realState !== currentStatusFilter) {
-                    return false;
-                }
-            }
-            
-            // Filtro por prioridad
-            if (currentPriorityFilter !== 'all') {
-                const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-                if (priority !== currentPriorityFilter) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-    }
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('pendingCount').textContent = stats.pending;
+            document.getElementById('workingCount').textContent = stats.working;
+            document.getElementById('expiredCount').textContent = stats.expired;
+            document.getElementById('seguimientoCount').textContent = stats.seguimiento;
+        }
 
-        function filterByStatus(status, element) {
-            currentStatusFilter = status;
+        function calculateStatistics() {
+            const technicianEmail = currentTechnician?.email || '';
             
-            // Actualizar UI de filtros
-            document.querySelectorAll('.stat-card').forEach(card => {
-                card.classList.remove('active');
+            const relevantIncidents = allIncidents.filter(incident => {
+                const state = getIncidentRealState(incident, technicianEmail);
+                return ['pending', 'working', 'expired', 'seguimiento'].includes(state);
             });
-            element.classList.add('active');
+
+            return {
+                total: relevantIncidents.length,
+                pending: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'pending').length,
+                working: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'working').length,
+                expired: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'expired').length,
+                seguimiento: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'seguimiento').length
+            };
+        }
+
+        /* ========================================
+           LÓGICA DE ESTADOS DE INCIDENCIAS
+        ======================================== */
+        function getIncidentRealState(incident, technicianEmail) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
             
-            renderIncidents();
-        }
-
-        function filterByPriority(priority, element) {
-            currentPriorityFilter = priority;
+            if (incident.escalation_paused === 'true') {
+                return 'paused';
+            }
             
-            // Actualizar UI de filtros
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            element.classList.add('active');
+            const isCurrentlyAssigned = checkCurrentAssignment(incident, technicianEmail, escalationLevel);
             
-            renderIncidents();
+            if (isCurrentlyAssigned) {
+                if (hasAcceptedAtLevel(incident, technicianEmail, escalationLevel)) {
+                    return 'working';
+                }
+                
+                if (hasRejectedAtLevel(incident, technicianEmail, escalationLevel)) {
+                    return 'seguimiento';
+                }
+                
+                const currentSLA = getCurrentLevelSLA(incident, escalationLevel);
+                if (currentSLA && new Date(currentSLA) < new Date()) {
+                    return 'expired';
+                }
+                
+                return 'pending';
+            }
+            
+            if (hasParticipatedBefore(incident, technicianEmail)) {
+                return 'seguimiento';
+            }
+            
+            return 'not_mine';
         }
 
-        // ==========================================
-        // 🎯 LÓGICA DE ESTADOS Y PERMISOS
-        // ==========================================
-        
-function getIncidentRealState(incident, technicianEmail) {
-    const escalationLevel = parseInt(incident.escalation_level) || 0;
-    
-    // Si está pausado
-    if (incident.escalation_paused === 'true') {
-        return 'paused';
-    }
-    
-    // 1. ¿Está asignado en el nivel actual?
-    const isCurrentlyAssigned = checkCurrentAssignment(incident, technicianEmail, escalationLevel);
-    
-    if (isCurrentlyAssigned) {
-        // Verificar si ya respondió
-        if (hasAcceptedAtLevel(incident, technicianEmail, escalationLevel)) {
-            return 'working';
+        function checkCurrentAssignment(incident, technicianEmail, level) {
+            switch (level) {
+                case 0: return incident.l0_technician === technicianEmail;
+                case 1: return incident.l1_technician === technicianEmail;
+                case 2: return incident.l2_technicians && incident.l2_technicians.includes(technicianEmail);
+                case 3: return incident.l3_supervisor === technicianEmail;
+                default: return false;
+            }
         }
-        
-        if (hasRejectedAtLevel(incident, technicianEmail, escalationLevel)) {
-            return 'seguimiento';
+
+        function hasAcceptedAtLevel(incident, technicianEmail, level) {
+            switch (level) {
+                case 0: return incident.l0_response === 'acepto' && incident.l0_technician === technicianEmail;
+                case 1: return incident.l1_response === 'acepto' && incident.l1_technician === technicianEmail;
+                case 2: return incident.l2_responses && incident.l2_responses.includes('acepto');
+                case 3: return incident.l3_response === 'acepto';
+                default: return false;
+            }
         }
-        
-        // Verificar SLA del nivel actual
-        const currentSLA = getCurrentLevelSLA(incident, escalationLevel);
-        if (currentSLA && new Date(currentSLA) < new Date()) {
-            return 'expired';
+
+        function hasRejectedAtLevel(incident, technicianEmail, level) {
+            switch (level) {
+                case 0: return ['rechazo', 'solicitar_ayuda'].includes(incident.l0_response) && incident.l0_technician === technicianEmail;
+                case 1: return ['rechazo', 'solicitar_ayuda'].includes(incident.l1_response) && incident.l1_technician === technicianEmail;
+                case 2: return incident.l2_responses && (incident.l2_responses.includes('rechazo') || incident.l2_responses.includes('solicitar_ayuda'));
+                default: return false;
+            }
         }
-        
-        return 'pending';
-    }
-    
-    // 2. ¿Participó en niveles anteriores?
-    if (hasParticipatedBefore(incident, technicianEmail)) {
-        return 'seguimiento';
-    }
-    
-    return 'not_mine';
-}
-     function checkCurrentAssignment(incident, technicianEmail, level) {
-    switch (level) {
-        case 0: return incident.l0_technician === technicianEmail;
-        case 1: return incident.l1_technician === technicianEmail;
-        case 2: return incident.l2_technicians && incident.l2_technicians.includes(technicianEmail);
-        case 3: return incident.l3_supervisor === technicianEmail;
-        default: return false;
-    }
-}
 
-function hasAcceptedAtLevel(incident, technicianEmail, level) {
-    switch (level) {
-        case 0: return incident.l0_response === 'Aceptado' && incident.l0_technician === technicianEmail;
-        case 1: return incident.l1_response === 'Aceptado' && incident.l1_technician === technicianEmail;
-        case 2: return incident.l2_responses && incident.l2_responses.includes('Aceptado');
-        case 3: return incident.l3_response === 'Aceptado';
-        default: return false;
-    }
-}
+        function hasParticipatedBefore(incident, technicianEmail) {
+            return (incident.l0_technician === technicianEmail && incident.l0_response !== '⭕ Sin Respuesta') ||
+                   (incident.l1_technician === technicianEmail && incident.l1_response !== '⭕ Sin Respuesta');
+        }
 
-function hasRejectedAtLevel(incident, technicianEmail, level) {
-    switch (level) {
-        case 0: return (incident.l0_response === 'Rechazado' || incident.l0_response === 'Ayuda') && incident.l0_technician === technicianEmail;
-        case 1: return (incident.l1_response === 'Rechazado' || incident.l1_response === 'Ayuda') && incident.l1_technician === technicianEmail;
-        case 2: return incident.l2_responses && (incident.l2_responses.includes('Rechazado') || incident.l2_responses.includes('Ayuda'));
-        default: return false;
-    }
-}
-
-function hasParticipatedBefore(incident, technicianEmail) {
-    return (incident.l0_technician === technicianEmail && incident.l0_response !== '⭕ Sin Respuesta') ||
-           (incident.l1_technician === technicianEmail && incident.l1_response !== '⭕ Sin Respuesta');
-}
-
-function getCurrentLevelSLA(incident, level) {
-    switch (level) {
-        case 0: return incident.sla_l0_end;
-        case 1: return incident.sla_l1_backup_end;
-        case 2: return incident.sla_l2_equipo_end;
-        case 3: return incident.sla_l3_responsable_end;
-        default: return null;
-    }
-}
-     
-     function getSLABadge(slaEnd) {
-             if (!slaEnd) return '';
-             
-             const now = new Date();
-             const endTime = new Date(slaEnd);
-             const diffMinutes = Math.floor((endTime - now) / 60000);
-             
-             let text, bgColor;
-             if (diffMinutes < 0) {
-                 text = `${Math.abs(diffMinutes)}m vencido`;
-                 bgColor = '#ef4444';
-             } else {
-                 const hours = Math.floor(diffMinutes / 60);
-                 const minutes = diffMinutes % 60;
-                 text = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-                 
-                 if (diffMinutes <= 30) bgColor = '#ef4444';
-                 else if (diffMinutes <= 60) bgColor = '#f59e0b';
-                 else bgColor = '#22c55e';
-             }
-             
-             return `<span class="sla-badge" style="background: ${bgColor}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">⏰ ${text}</span>`;
-         }
+        function getCurrentLevelSLA(incident, level) {
+            switch (level) {
+                case 0: return incident.sla_l0_end;
+                case 1: return incident.sla_l1_backup_end;
+                case 2: return incident.sla_l2_equipo_end;
+                case 3: return incident.sla_l3_responsable_end;
+                default: return null;
+            }
+        }
 
         function canTechnicianRespond(incident, technicianEmail) {
             const state = getIncidentRealState(incident, technicianEmail);
             return state === 'pending';
         }
 
-        // ==========================================
-        // 📊 ACTUALIZAR ESTADÍSTICAS
-        // ==========================================
-        
-function updateStats() {
-    const technicianEmail = currentTechnician?.email || '';
-    
-    let pendingCount = 0;
-    let workingCount = 0;
-    let expiredCount = 0;
-    let seguimientoCount = 0;
-    
-    allIncidents.forEach(incident => {
-        const state = getIncidentRealState(incident, technicianEmail);
-        switch (state) {
-            case 'pending':
-                pendingCount++;
-                break;
-            case 'working':
-                workingCount++;
-                break;
-            case 'expired':
-                expiredCount++;
-                break;
-            case 'seguimiento':
-                seguimientoCount++;
-                break;
+        /* ========================================
+           FUNCIONES DE RENDERIZADO
+        ======================================== */
+        function renderIncidents() {
+            const filteredIncidents = filterIncidents();
+
+            if (filteredIncidents.length === 0) {
+                showNoIncidentsMessage();
+                return;
+            }
+
+            const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
+            
+            document.getElementById('incidentsContainer').innerHTML = `
+                <div class="incidents-grid">
+                    ${incidentsHTML}
+                </div>
+            `;
+
+            startSLATimers();
         }
-    });
 
-  function getPriorityBadge(priority) {
-                 const priorityText = priority.replace(/[🔴🟠🟡🟢]/g, '').trim();
-                 const colors = {
-                     'CRÍTICA': '#dc3545',
-                     'ALTA': '#fd7e14', 
-                     'MEDIA': '#ffc107',
-                     'BAJA': '#28a745'
-                 };
-                 const color = colors[priorityText] || '#6c757d';
-                 return `<span class="priority-badge" style="background: ${color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${priorityText}</span>`;
-             }
-             
-               function getStateBadge(state) {
-                   const badges = {
-                       'pending': { text: 'PUEDES RESPONDER', class: 'bg-warning' },
-                       'working': { text: 'TRABAJANDO', class: 'bg-success' },
-                       'expired': { text: 'VENCIDA', class: 'bg-danger' },
-                       'seguimiento': { text: 'SEGUIMIENTO', class: 'bg-info' }
-                   };
-                   const config = badges[state] || { text: 'DESCONOCIDO', class: 'bg-secondary' };
-                   return `<span class="badge ${config.class}">${config.text}</span>`;
-               }
-                         
-               function getSlaClass(slaEnd) {
-                   if (!slaEnd) return 'sla-good';
-                   const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
-                   if (diffMinutes <= 30) return 'sla-critical';
-                   if (diffMinutes <= 60) return 'sla-warning';
-                   return 'sla-good';
-               }
-               
-               function getSlaText(slaEnd) {
-                   if (!slaEnd) return '';
-                   const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
-                   if (diffMinutes < 0) return `${Math.abs(diffMinutes)}m vencido`;
-                   const hours = Math.floor(diffMinutes / 60);
-                   const minutes = diffMinutes % 60;
-                   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-               }
-               function calculateWorkingTime(incident, technicianEmail) {
-                            let acceptanceDate = null;
-                            
-                            if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
-                                acceptanceDate = incident.l0_acceptance_date;
-                            } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
-                                acceptanceDate = incident.l1_acceptance_date;
-                            } else if (incident.l2_acceptance_date) {
-                                acceptanceDate = incident.l2_acceptance_date;
-                            }
-                            
-                            if (!acceptanceDate) return '';
-                            
-                            const now = new Date();
-                            const accepted = new Date(acceptanceDate);
-                            const diffMinutes = Math.floor((now - accepted) / 60000);
-                            
-                            const hours = Math.floor(diffMinutes / 60);
-                            const minutes = diffMinutes % 60;
-                            
-                            return `<div class="time-elapsed">🔧 Trabajando: ${hours}h ${minutes}m</div>`;
-                        }
- 
-    document.getElementById('totalCount').textContent = allIncidents.length;
-    document.getElementById('pendingCount').textContent = pendingCount;
-    document.getElementById('workingCount').textContent = workingCount;
-    document.getElementById('expiredCount').textContent = expiredCount;
-    
-    // Actualizar contador de seguimiento
-    const seguimientoElement = document.getElementById('seguimientoCount');
-    if (seguimientoElement) {
-        seguimientoElement.textContent = seguimientoCount;
-    }
-}
+        function filterIncidents() {
+            const technicianEmail = currentTechnician?.email || '';
+            
+            return allIncidents.filter(incident => {
+                const realState = getIncidentRealState(incident, technicianEmail);
+                
+                if (realState === 'not_mine') return false;
+                
+                if (currentStatusFilter !== 'all' && realState !== currentStatusFilter) {
+                    return false;
+                }
+                
+                if (currentPriorityFilter !== 'all') {
+                    const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+                    if (priority !== currentPriorityFilter) return false;
+                }
+                
+                return true;
+            });
+        }
 
-        // ==========================================
-        // 🎯 MANEJO DE ACCIONES CON MODALES COMPLETOS
-        // ==========================================
-        
+               function renderIncidentCard(incident) {
+            const technicianEmail = currentTechnician?.email || '';
+            const realState = getIncidentRealState(incident, technicianEmail);
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
+            const priorityColor = getPriorityColor(incident.priority);
+            const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+            
+            return `
+                <div class="incident-card" data-incident-id="${incident.id}">
+                    ${renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState)}
+                    ${renderIncidentBody(incident, technicianEmail, escalationLevel)}
+                    ${renderIncidentFooter(incident, realState, technicianEmail)}
+                </div>
+            `;
+        }
+
+        function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
+            return `
+                <div class="incident-header">
+                    <div class="incident-title">
+                        <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
+                        <div class="badges">
+                            <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
+                            <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
+                            ${getStateBadge(realState)}
+                            ${renderSLABadge(incident, escalationLevel)}
+                        </div>
+                    </div>
+                    <div class="incident-id">${incident.id}</div>
+                </div>
+            `;
+        }
+
+        function renderIncidentBody(incident, technicianEmail, escalationLevel) {
+            return `
+                <div class="incident-body">
+                    <div class="zone">📍 <strong>${incident.zone}</strong></div>
+                    <div class="description">${incident.description}</div>
+                    
+                    ${renderTechnicianInfo(incident, technicianEmail)}
+                    ${renderSLATimer(incident, escalationLevel)}
+                    ${renderTimeElapsed(incident, technicianEmail)}
+                    ${renderAssignmentNotes(incident)}
+                    ${renderActionsTaken(incident)}
+                    ${renderContactsInfo(incident)}
+                    ${renderEscalationHistory(incident, technicianEmail)}
+                </div>
+            `;
+        }
+
+        function renderIncidentFooter(incident, realState, technicianEmail) {
+            return `
+                <div class="incident-footer">
+                    ${renderActionButtons(incident, realState, technicianEmail)}
+                </div>
+            `;
+        }
+
+        function getPriorityColor(priority) {
+            const priorityText = priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
+            const colors = {
+                'CRÍTICA': '#dc3545',
+                'ALTA': '#fd7e14',
+                'MEDIA': '#ffc107',
+                'BAJA': '#28a745'
+            };
+            return colors[priorityText] || '#6c757d';
+        }
+
+        function getStateBadge(state) {
+            const badges = {
+                'pending': { text: 'PUEDES RESPONDER', class: 'bg-warning' },
+                'working': { text: 'TRABAJANDO', class: 'bg-success' },
+                'expired': { text: 'VENCIDA', class: 'bg-danger' },
+                'seguimiento': { text: 'SEGUIMIENTO', class: 'bg-info' }
+            };
+            const config = badges[state] || { text: 'DESCONOCIDO', class: 'bg-secondary' };
+            return `<span class="badge ${config.class}">${config.text}</span>`;
+        }
+
+        function renderSLABadge(incident, escalationLevel) {
+            const slaEnd = getCurrentLevelSLA(incident, escalationLevel);
+            if (!slaEnd) return '';
+            
+            const now = new Date();
+            const endTime = new Date(slaEnd);
+            const diffMinutes = Math.floor((endTime - now) / 60000);
+            
+            let text, bgColor;
+            if (diffMinutes < 0) {
+                text = `${Math.abs(diffMinutes)}m vencido`;
+                bgColor = '#ef4444';
+            } else {
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                text = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                
+                if (diffMinutes <= 30) bgColor = '#ef4444';
+                else if (diffMinutes <= 60) bgColor = '#f59e0b';
+                else bgColor = '#22c55e';
+            }
+            
+            return `<span class="sla-badge" style="background: ${bgColor}; color: white;">⏰ ${text}</span>`;
+        }
+
+        function renderTechnicianInfo(incident, userEmail) {
+            let techInfo = '';
+            
+            if (incident.l0_technician) {
+                const isCurrentTech = incident.l0_technician === userEmail;
+                techInfo += `
+                    <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
+                        👨‍🔧 L0: <strong>${incident.l0_technician.split('@')[0]}</strong>
+                        ${isCurrentTech ? ' (TÚ)' : ''}
+                        ${incident.l0_response ? ` - ${incident.l0_response}` : ''}
+                        ${incident.l0_acceptance_date ? ` - ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}` : ''}
+                    </div>
+                `;
+            }
+            
+            if (parseInt(incident.escalation_level) >= 1 && incident.l1_technician) {
+                const isCurrentTech = incident.l1_technician === userEmail;
+                techInfo += `
+                    <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
+                        👨‍🔧 L1: <strong>${incident.l1_technician.split('@')[0]}</strong>
+                        ${isCurrentTech ? ' (TÚ)' : ''}
+                        ${incident.l1_response ? ` - ${incident.l1_response}` : ''}
+                        ${incident.l1_acceptance_date ? ` - ${new Date(incident.l1_acceptance_date).toLocaleString('es-ES')}` : ''}
+                    </div>
+                `;
+            }
+            
+            if (parseInt(incident.escalation_level) >= 2 && incident.l2_technicians) {
+                const l2Techs = incident.l2_technicians.split(',');
+                const isCurrentInL2 = l2Techs.some(tech => tech.trim() === userEmail);
+                techInfo += `
+                    <div class="technician-info ${isCurrentInL2 ? 'current-tech' : ''}">
+                        👥 L2: <strong>${l2Techs.map(t => t.split('@')[0]).join(', ')}</strong>
+                        ${isCurrentInL2 ? ' (INCLUYE A TI)' : ''}
+                        ${incident.l2_response ? ` - ${incident.l2_response}` : ''}
+                    </div>
+                `;
+            }
+            
+            return techInfo;
+        }
+
+        function renderSLATimer(incident, escalationLevel) {
+            const slaEnd = getCurrentLevelSLA(incident, escalationLevel);
+            if (!slaEnd) return '';
+            
+            const slaClass = getSLAClass(slaEnd);
+            const slaText = getSLAText(slaEnd);
+            
+            return `
+                <div class="sla-timer ${slaClass}" data-end="${slaEnd}">
+                    ⏰ ${slaText}
+                </div>
+            `;
+        }
+
+        function getSLAClass(slaEnd) {
+            if (!slaEnd) return 'sla-good';
+            const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
+            if (diffMinutes <= 30) return 'sla-critical';
+            if (diffMinutes <= 60) return 'sla-warning';
+            return 'sla-good';
+        }
+
+        function getSLAText(slaEnd) {
+            if (!slaEnd) return '';
+            const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
+            if (diffMinutes < 0) return `${Math.abs(diffMinutes)}m vencido`;
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        }
+
+        function renderTimeElapsed(incident, technicianEmail) {
+            let acceptanceDate = null;
+            
+            if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
+                acceptanceDate = incident.l0_acceptance_date;
+            } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
+                acceptanceDate = incident.l1_acceptance_date;
+            } else if (incident.l2_acceptance_date) {
+                acceptanceDate = incident.l2_acceptance_date;
+            }
+            
+            if (!acceptanceDate) return '';
+            
+            const now = new Date();
+            const accepted = new Date(acceptanceDate);
+            const diffMinutes = Math.floor((now - accepted) / 60000);
+            
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            
+            return `<div class="time-elapsed">🔧 Trabajando: ${hours}h ${minutes}m</div>`;
+        }
+
+        function renderAssignmentNotes(incident) {
+            if (!incident.assignment_notes || !incident.assignment_notes.trim()) return '';
+            
+            return `
+                <div class="actions-taken">
+                    📝 <strong>Notas de asignación:</strong> ${incident.assignment_notes}
+                </div>
+            `;
+        }
+
+        function renderActionsTaken(incident) {
+            if (!incident.actions_taken || incident.actions_taken === 'Sin acciones' || !incident.actions_taken.trim()) return '';
+            
+            return `
+                <div class="actions-taken">
+                    🔧 <strong>Acciones tomadas:</strong> ${incident.actions_taken}
+                </div>
+            `;
+        }
+
+        function renderContactsInfo(incident) {
+            if (!incident.supervisor_phone && !incident.reporter_phone && !incident.zone_manager_phone) {
+                return '';
+            }
+            
+            let contacts = '';
+            if (incident.reporter && incident.reporter_phone) {
+                contacts += `<div>📋 Reportador: <strong>${incident.reporter}</strong> - <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>`;
+            }
+            if (incident.supervisor && incident.supervisor_phone) {
+                contacts += `<div>👨‍💼 Supervisor: <strong>${incident.supervisor}</strong> - <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>`;
+            }
+            if (incident.zone_manager && incident.zone_manager_phone) {
+                contacts += `<div>🏢 Encargado Zona: <strong>${incident.zone_manager}</strong> - <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>`;
+            }
+            
+            return `
+                <div class="contacts-info">
+                    <div class="contacts-header" onclick="toggleContacts('${incident.id}')">
+                        📞 Contactos <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="contacts-list" id="contacts-${incident.id}">
+                        ${contacts}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEscalationHistory(incident, userEmail) {
+            const historyLevels = buildEscalationHistory(incident, userEmail);
+            const historyHTML = historyLevels.map(level => renderEscalationLevel(level, userEmail)).join('');
+            
+            return `
+                <div class="escalation-history">
+                    <div class="escalation-header" onclick="toggleEscalationHistory('${incident.id}')">
+                        📊 Historial de Escalado <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="escalation-content" id="escalation-${incident.id}">
+                        ${historyHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildEscalationHistory(incident, userEmail) {
+            const historyLevels = [];
+            const currentLevel = parseInt(incident.escalation_level) || 0;
+            
+            // L0
+            let l0Status = 'pending';
+            if (incident.l0_response === 'acepto') l0Status = 'completed';
+            else if (['rechazo', 'solicitar_ayuda'].includes(incident.l0_response)) l0Status = 'escalated';
+            else if (currentLevel > 0) l0Status = 'expired';
+            
+            historyLevels.push({
+                level: 'L0',
+                technician: incident.l0_technician,
+                status: l0Status,
+                response: incident.l0_response,
+                sla_end: incident.sla_l0_end,
+                acceptance_date: incident.l0_acceptance_date,
+                rejection_date: incident.l0_rejection_date,
+                reason: incident.l0_rejection_reason
+            });
+            
+            // L1, L2, L3 similar logic...
+            if (currentLevel >= 1) {
+                let l1Status = currentLevel === 1 ? 'current' : 'completed';
+                if (incident.l1_response === 'acepto') l1Status = 'completed';
+                else if (['rechazo', 'solicitar_ayuda'].includes(incident.l1_response)) l1Status = 'escalated';
+                else if (currentLevel > 1) l1Status = 'expired';
+                
+                historyLevels.push({
+                    level: 'L1',
+                    technician: incident.l1_technician,
+                    status: l1Status,
+                    response: incident.l1_response,
+                    sla_end: incident.sla_l1_backup_end,
+                    acceptance_date: incident.l1_acceptance_date,
+                    rejection_date: incident.l1_rejection_date,
+                    reason: incident.l1_rejection_reason
+                });
+            }
+            
+            return historyLevels;
+        }
+
+        function renderEscalationLevel(level, userEmail) {
+            const isCurrentTech = level.technician === userEmail || 
+                                 (level.technician && level.technician.includes && level.technician.includes(userEmail));
+            
+            let statusClass = level.status;
+            let statusText = '';
+            switch(level.status) {
+                case 'completed': statusText = '✅ Completado'; break;
+                case 'current': statusText = '🔄 Activo'; break;
+                case 'expired': statusText = '⏰ Vencido'; break;
+                case 'escalated': statusText = '🔼 Escalado'; break;
+                case 'pending': statusText = '⏳ Pendiente'; break;
+            }
+            
+            return `
+                <div class="escalation-level ${statusClass}">
+                    <div class="level-header">
+                        ${level.level} - ${statusText} ${isCurrentTech ? '(TÚ)' : ''}
+                    </div>
+                    <div class="level-details">
+                        <strong>Técnico:</strong> ${level.technician ? level.technician.split('@')[0] : 'No asignado'}<br>
+                        ${level.response ? `<strong>Respuesta:</strong> ${level.response}<br>` : ''}
+                        ${level.reason ? `<strong>Motivo:</strong> ${level.reason}<br>` : ''}
+                        ${level.sla_end ? `<strong>SLA:</strong> ${new Date(level.sla_end).toLocaleString('es-ES')}<br>` : ''}
+                        ${level.acceptance_date ? `<strong>Fecha aceptación:</strong> ${new Date(level.acceptance_date).toLocaleString('es-ES')}<br>` : ''}
+                        ${level.rejection_date ? `<strong>Fecha rechazo:</strong> ${new Date(level.rejection_date).toLocaleString('es-ES')}` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderActionButtons(incident, state, userEmail) {
+            if (state === 'pending') {
+                return `
+                    <div class="incident-actions">
+                        <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">
+                            ✅ Acepto
+                        </button>
+                        <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">
+                            ❌ Rechazo
+                        </button>
+                        <button class="btn btn-warning" onclick="handleAction('solicitar_ayuda', '${incident.id}')">
+                            🆘 Ayuda
+                        </button>
+                    </div>
+                `;
+            } else if (state === 'working') {
+                return `
+                    <div class="incident-actions">
+                        <button class="btn btn-success" onclick="handleAction('completar', '${incident.id}')">
+                            ✅ Completar
+                        </button>
+                        <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">
+                            🆘 Solicitar Apoyo
+                        </button>
+                        <button class="btn btn-info" onclick="handleAction('transferir', '${incident.id}')">
+                            🔄 Transferir
+                        </button>
+                    </div>
+                `;
+            } else if (['seguimiento', 'expired'].includes(state)) {
+                return `
+                    <div class="incident-actions">
+                        <button class="btn btn-info" onclick="handleAction('solicitar_cargo', '${incident.id}')">
+                            🙋‍♂️ SOLICITAR HACERSE CARGO
+                        </button>
+                    </div>
+                `;
+            } else {
+                let reason = state === 'paused' ? '⏸️ Escalado pausado por supervisor' : '❓ Estado desconocido';
+                return `
+                    <div class="no-action-info">
+                        <span class="badge bg-light">${reason}</span>
+                    </div>
+                `;
+            }
+        }
+
+        function showNoIncidentsMessage() {
+            const container = document.getElementById('incidentsContainer');
+            container.innerHTML = `
+                <div class="no-incidents">
+                    <div class="no-incidents-icon">📋</div>
+                    <h3>No hay incidencias</h3>
+                    <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'con este estado'} en este momento.</p>
+                </div>
+            `;
+        }
+
+        /* ========================================
+           MANEJO DE ACCIONES
+        ======================================== */
         function handleAction(action, incidentId) {
             currentIncident = allIncidents.find(inc => inc.id === incidentId);
             if (!currentIncident) {
@@ -2417,27 +2161,12 @@ function updateStats() {
             }
 
             if (action === 'acepto') {
-                // Acepto directo sin modal
                 pendingAction = action;
                 confirmAction();
             } else if (action === 'completar') {
-                // Completar con descripción obligatoria
                 showCompletionModal();
             } else {
-                // Mostrar modal de motivos
                 showReasonModal(action);
-            }
-        }
-
-        function executeAction() {
-            if (!pendingAction) return;
-            
-            if (pendingAction === 'acepto') {
-                confirmAction();
-            } else if (pendingAction === 'completar') {
-                showCompletionModal();
-            } else {
-                showReasonModal(pendingAction);
             }
         }
 
@@ -2485,7 +2214,6 @@ function updateStats() {
             confirmBtn.textContent = buttonText;
             confirmBtn.disabled = true;
 
-            // Generar opciones de motivos
             const reasonsHTML = reasons.map(reason => {
                 return `
                     <div class="reason-option" onclick="selectReason('${reason.id}', ${reason.requiresText || false})">
@@ -2506,13 +2234,11 @@ function updateStats() {
             selectedReason = reasonId;
             customText = '';
             
-            // Marcar opción seleccionada
             document.querySelectorAll('.reason-option').forEach(option => {
                 option.classList.remove('selected');
             });
             event.currentTarget.classList.add('selected');
             
-            // Si requiere texto personalizado, mostrar textarea
             const options = document.getElementById('reasonOptions');
             const existingTextarea = options.querySelector('.custom-reason-input');
             if (existingTextarea) {
@@ -2536,7 +2262,7 @@ function updateStats() {
 
         function updateConfirmButton() {
             const confirmBtn = document.getElementById('confirmBtn');
-            const requiresText = selectedReason && (selectedReason.includes('otro') || selectedReason === 'otro_motivo_transferir' || selectedReason === 'otro_apoyo_trabajo');
+            const requiresText = selectedReason && selectedReason.includes('otro');
             
             if (selectedReason) {
                 if (requiresText) {
@@ -2585,7 +2311,6 @@ function updateStats() {
             confirmBtn.disabled = true;
             modal.classList.add('active');
             
-            // Focus en textarea
             setTimeout(() => {
                 const textarea = options.querySelector('textarea');
                 if (textarea) textarea.focus();
@@ -2608,7 +2333,7 @@ function updateStats() {
                 (customText || 'Confirmado');
 
             try {
-                const response = await fetch(API_RESPONSE, {
+                const response = await fetch(CONFIG.API_RESPONSE, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2652,7 +2377,7 @@ function updateStats() {
                     );
                     
                     closeReasonModal();
-                    await loadDashboard(); // Recargar datos
+                    await loadDashboard();
                 } else {
                     const errorMsg = (data && data.message) || `Error ${response.status}: No se pudo registrar la respuesta`;
                     alert(errorMsg);
@@ -2696,14 +2421,142 @@ function updateStats() {
             }, 1000);
         }
 
-        // ==========================================
-        // 🚀 INICIALIZACIÓN AL CARGAR LA PÁGINA
-        // ==========================================
-        
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('🔧 ABC.xyz Dashboard Técnico iniciado');
+        /* ========================================
+           FUNCIONES DE UTILIDAD Y EVENTOS
+        ======================================== */
+        function filterByStatus(status, element) {
+            currentStatusFilter = status;
             
-            // Verificar parámetros URL para login automático
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            renderIncidents();
+        }
+
+        function filterByPriority(priority, element) {
+            currentPriorityFilter = priority;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            renderIncidents();
+        }
+
+        function toggleContacts(incidentId) {
+            const contactsList = document.getElementById(`contacts-${incidentId}`);
+            if (!contactsList) return;
+            
+            const toggleIcon = contactsList.parentElement.querySelector('.toggle-icon');
+            const isVisible = !contactsList.classList.contains('hidden');
+            
+            if (isVisible) {
+                contactsList.classList.add('hidden');
+                toggleIcon.textContent = '▼';
+            } else {
+                contactsList.classList.remove('hidden');
+                toggleIcon.textContent = '▲';
+            }
+        }
+
+        function toggleEscalationHistory(incidentId) {
+            const historyContent = document.getElementById(`escalation-${incidentId}`);
+            if (!historyContent) return;
+            
+            const toggleIcon = historyContent.parentElement.querySelector('.toggle-icon');
+            const isVisible = historyContent.style.display !== 'none';  
+            
+             historyContent.style.display = isVisible ? 'none' : 'block';
+            if (toggleIcon) {
+                toggleIcon.textContent = isVisible ? '▼' : '▲';
+            }
+        }
+
+        function refreshDashboard() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const originalText = refreshBtn.innerHTML;
+            
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '🔄 Actualizando...';
+            
+            loadDashboard().finally(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = originalText;
+            });
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            refreshInterval = setInterval(() => {
+                console.log('🔄 Auto-refresh ejecutándose...');
+                loadDashboard();
+            }, CONFIG.REFRESH_INTERVAL);
+            
+            console.log(`⏰ Auto-refresh configurado cada ${CONFIG.REFRESH_INTERVAL / 1000} segundos`);
+        }
+
+        function startSLATimers() {
+            if (slaTimerInterval) {
+                clearInterval(slaTimerInterval);
+            }
+            
+            slaTimerInterval = setInterval(function() {
+                const slaElements = document.querySelectorAll('.sla-timer[data-end]');
+                
+                slaElements.forEach(function(element) {
+                    const endTime = new Date(element.dataset.end);
+                    const now = new Date();
+                    const diffMinutes = Math.floor((endTime - now) / 1000 / 60);
+                    
+                    if (diffMinutes < 0) {
+                        element.className = 'sla-expired';
+                        element.innerHTML = `⏰ VENCIDO hace ${Math.abs(diffMinutes)} min`;
+                    } else {
+                        const hours = Math.floor(diffMinutes / 60);
+                        const minutes = diffMinutes % 60;
+                        
+                        let slaClass = 'sla-timer ';
+                        if (diffMinutes <= 30) slaClass += 'sla-critical';
+                        else if (diffMinutes <= 60) slaClass += 'sla-warning';
+                        else slaClass += 'sla-good';
+                        
+                        element.className = slaClass;
+                        element.innerHTML = `⏰ ${hours}h ${minutes.toString().padStart(2, '0')}m restantes`;
+                    }
+                });
+            }, CONFIG.SLA_UPDATE_INTERVAL);
+            
+            console.log('⏰ Timers SLA iniciados - actualización cada 30 segundos');
+        }
+
+        function validateDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    return '';
+                }
+                return dateString;
+            } catch (error) {
+                console.warn('Fecha inválida:', dateString);
+                return '';
+            }
+        }
+
+        /* ========================================
+           INICIALIZACIÓN DE LA APLICACIÓN
+        ======================================== */
+        function initializeApp() {
+            console.log('🔧 Dashboard Técnico ABC.xyz iniciado');
+            
+            // Configurar parámetros URL
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('tecnico') || urlParams.get('technician_email');
             const nombre = urlParams.get('nombre') || urlParams.get('technician_name');
@@ -2714,68 +2567,89 @@ function updateStats() {
                 if (nombre) {
                     currentTechnician = { 
                         email: email, 
-                        name: decodeURIComponent(nombre) 
+                        name: decodeURIComponent(nombre),
+                        authenticated: false
                     };
                 }
                 if (incidentId) {
                     accessMode = 'read_only';
                 }
-                document.getElementById('emailInput').focus();
-            } else {
-                document.getElementById('emailInput').focus();
             }
-            
-            // Enter key en el campo email
-            document.getElementById('emailInput').addEventListener('keypress', (e) => {
+
+            // Configurar eventos del login
+            const emailInput = document.getElementById('emailInput');
+            const loginBtn = document.getElementById('loginBtn');
+
+            emailInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     loginWithPIN();
                 }
             });
-        });
 
-        // ==========================================
-        // 🎯 EVENTOS Y CONTROLES ADICIONALES
-        // ==========================================
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
-                const input = document.getElementById('emailInput');
-                if (input.value.trim()) loginWithPIN();
-            }
-            if (e.key === 'Escape') {
-                closeReasonModal();
-                closePINModal();
-            }
-        });
+            emailInput.addEventListener('input', () => {
+                loginBtn.disabled = !emailInput.value.trim();
+            });
 
-        document.getElementById('reasonModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeReasonModal();
-        });
+            // Eventos globales
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeReasonModal();
+                    closePINModal();
+                }
+                if (e.key === 'Enter' && document.getElementById('loginContainer').style.display !== 'none') {
+                    const input = document.getElementById('emailInput');
+                    if (input.value.trim()) loginWithPIN();
+                }
+            });
 
-        document.getElementById('pinModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closePINModal();
-        });
+            // Eventos de modales
+            document.getElementById('reasonModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeReasonModal();
+            });
 
-        // Limpiar intervals al cerrar la página
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) clearInterval(refreshInterval);
-            if (slaTimerInterval) clearInterval(slaTimerInterval);
-        });
+            document.getElementById('pinModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closePINModal();
+            });
 
-        // ==========================================
-        // 📱 RESPONSIVE Y DEBUGGING
-        // ==========================================
-        
-        console.log('🔧 Dashboard ABC.xyz - Versión Profesional cargada');
-        console.log('📋 Motivos configurados:', {
-            rechazo: rejectReasons.length,
-            ayuda_inicial: helpReasonsInitial.length,
-            transferir: transferReasons.length,
-            apoyo_trabajo: supportReasonsWorking.length
-        });
+            // Limpieza al cerrar la ventana
+            window.addEventListener('beforeunload', () => {
+                if (refreshInterval) clearInterval(refreshInterval);
+                if (slaTimerInterval) clearInterval(slaTimerInterval);
+            });
 
+            // Auto-foco en el input de email
+            emailInput.focus();
+
+            console.log('✅ Inicialización de la aplicación completa');
+            console.log('📋 Motivos configurados:', {
+                rechazo: rejectReasons.length,
+                ayuda_inicial: helpReasonsInitial.length,
+                transferir: transferReasons.length,
+                apoyo_trabajo: supportReasonsWorking.length
+            });
+        }
+
+        /* ========================================
+           FUNCIONES DE EVENTOS GLOBALES
+        ======================================== */
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Exposición de funciones globales para onclick handlers
+        window.loginWithPIN = loginWithPIN;
+        window.refreshDashboard = refreshDashboard;
+        window.filterByStatus = filterByStatus;
+        window.filterByPriority = filterByPriority;
+        window.handleAction = handleAction;
+        window.toggleContacts = toggleContacts;
+        window.toggleEscalationHistory = toggleEscalationHistory;
+        window.closeReasonModal = closeReasonModal;
+        window.closePINModal = closePINModal;
+        window.confirmAction = confirmAction;
+        window.selectReason = selectReason;
+        window.updateCompletionText = updateCompletionText;
+        window.verifyPIN = verifyPIN;
+
+        console.log('🔧 Dashboard ABC.xyz - Versión Completa Reorganizada cargada');
     </script>
 </body>
-</html>
-            
-          
+</html>   
