@@ -1680,41 +1680,51 @@
                 seguimiento: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'seguimiento').length
             };
         }
+               function getIncidentRealState(incident, technicianEmail) {
+                    const now = new Date();
+                    
+                    // Si está asignado y aceptado por este técnico
+                    if (incident.tecnico_asignado === technicianEmail && 
+                        incident.estado === "En Proceso") {
+                        return 'working';
+                    }
+                    
+                    // Si está asignado a este técnico en su nivel actual y dentro de SLA
+                    const currentLevel = `tecnico_l${incident.nivel_actual || 0}`;
+                    if (incident[currentLevel] === technicianEmail && 
+                        incident.escalado === true &&
+                        new Date(incident.sla_vencimiento) > now) {
+                        return 'pending';
+                    }
+                    
+                    // Si venció el SLA del técnico
+                    const technicianLevel = getUserLevel(technicianEmail, incident);
+                    if (technicianLevel && 
+                        incident.nivel_actual > technicianLevel &&
+                        new Date(incident.sla_vencimiento) < now) {
+                        return 'expired';
+                    }
+                    
+                    // Si fue rechazado por este técnico o escalado más allá
+                    if (incident[`respuesta_l${technicianLevel}`] === 'rechazado' ||
+                        incident.nivel_actual > technicianLevel) {
+                        return 'seguimiento';
+                    }
+                    
+                    return 'other';
+                }
 
         /* ========================================
            LÓGICA DE ESTADOS DE INCIDENCIAS
         ======================================== */
-        function getIncidentRealState(incident, technicianEmail) {
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            
-            if (incident.escalation_paused === 'true') {
-                return 'paused';
-            }
-            
-            const isCurrentlyAssigned = checkCurrentAssignment(incident, technicianEmail, escalationLevel);
-            
-            if (isCurrentlyAssigned) {
-                if (hasAcceptedAtLevel(incident, technicianEmail, escalationLevel)) {
-                    return 'working';
-                }
-                
-                if (hasRejectedAtLevel(incident, technicianEmail, escalationLevel)) {
-                    return 'seguimiento';
-                }
-                
-                const currentSLA = getCurrentLevelSLA(incident, escalationLevel);
-                if (currentSLA && new Date(currentSLA) < new Date()) {
-                    return 'expired';
-                }
-                
-                return 'pending';
-            }
-            
-            if (hasParticipatedBefore(incident, technicianEmail)) {
-                return 'seguimiento';
-            }
-            
-            return 'not_mine';
+        
+        
+        function getUserLevel(technicianEmail, incident) {
+            // Determinar en qué nivel está este técnico para esta incidencia
+            if (incident.tecnico_l0 === technicianEmail) return 0;
+            if (incident.tecnico_l1 === technicianEmail) return 1;
+            if (incident.tecnico_l2?.includes(technicianEmail)) return 2;
+            return null;
         }
 
         function checkCurrentAssignment(incident, technicianEmail, level) {
@@ -1781,25 +1791,28 @@
                 }
             }
         
-          function filterIncidents() {
-            const technicianEmail = currentTechnician?.email || '';
+          function filterIncidents(filter, buttonElement) {
+            currentStatusFilter = filter;
             
-            return allIncidents.filter(incident => {
-                const realState = getIncidentRealState(incident, technicianEmail);
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            
+            // Filtrar incidencias por estado real
+            const filtered = allIncidents.filter(incident => {
+                const state = getIncidentRealState(incident, currentTechnician.email);
                 
-                if (realState === 'not_mine') return false;
-                
-                if (currentStatusFilter !== 'all' && realState !== currentStatusFilter) {
-                    return false;
+                switch(filter) {
+                    case 'pending': return state === 'pending';
+                    case 'working': return state === 'working';
+                    case 'expired': return state === 'expired';
+                    case 'seguimiento': return state === 'seguimiento';
+                    case 'all': return ['pending', 'working', 'expired', 'seguimiento'].includes(state);
+                    default: return true;
                 }
-                
-                if (currentPriorityFilter !== 'all') {
-                    const priority = incident.priority.replace(/🔴|🟠|🟡|🟢/g, '').trim();
-                    if (priority !== currentPriorityFilter) return false;
-                }
-                
-                return true;
             });
+            
+            renderIncidents(filtered);
         }
         
         function renderIncidents() {
@@ -2162,55 +2175,33 @@
         }
 
         function renderActionButtons(incident, state, userEmail) {
-            if (state === 'pending') {
+            const realState = getIncidentRealState(incident, userEmail);
+            
+            if (realState === 'pending') {
                 return `
                     <div class="incident-actions">
-                        <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">
-                            ✅ Acepto
-                        </button>
-                        <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">
-                            ❌ Rechazo
-                        </button>
-                        <button class="btn btn-warning" onclick="handleAction('solicitar_ayuda', '${incident.id}')">
-                            🆘 Ayuda
-                        </button>
+                        <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">✅ Acepto</button>
+                        <button class="btn btn-danger" onclick="handleAction('rechazo', '${incident.id}')">❌ Rechazo</button>
+                        <button class="btn btn-warning" onclick="handleAction('solicitar_ayuda', '${incident.id}')">🆘 Ayuda</button>
                     </div>
                 `;
-            } else if (state === 'working') {
+            } else if (realState === 'working') {
                 return `
                     <div class="incident-actions">
-                        <button class="btn btn-success" onclick="handleAction('completar', '${incident.id}')">
-                            ✅ Completar
-                        </button>
-                        <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">
-                            🆘 Solicitar Apoyo
-                        </button>
-                        <button class="btn btn-info" onclick="handleAction('transferir', '${incident.id}')">
-                            🔄 Transferir
-                        </button>
-                         <button class="btn btn-primary" onclick="handleAction('solicitar_materiales', '${incident.id}')">
-                            📦 Materiales
-                        </button>
-                        <button class="btn btn-secondary" onclick="handleAction('derivar_departamento', '${incident.id}')">
-                            🔄 Derivar
-                        </button>
+                        <button class="btn btn-success" onclick="handleAction('completar', '${incident.id}')">✅ Completar</button>
+                        <button class="btn btn-primary" onclick="handleAction('solicitar_materiales', '${incident.id}')">📦 Materiales</button>
+                        <button class="btn btn-secondary" onclick="handleAction('derivar_departamento', '${incident.id}')">🔄 Derivar</button>
+                        <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">🆘 Solicitar Apoyo</button>
                     </div>
                 `;
-            } else if (['seguimiento', 'expired'].includes(state)) {
+            } else if (realState === 'seguimiento' || realState === 'expired') {
                 return `
                     <div class="incident-actions">
-                        <button class="btn btn-info" onclick="handleAction('solicitar_cargo', '${incident.id}')">
-                            🙋‍♂️ SOLICITAR HACERSE CARGO
-                        </button>
+                        <button class="btn btn-info" onclick="handleAction('solicitar_cargo', '${incident.id}')">🙋‍♂️ SOLICITAR HACERSE CARGO</button>
                     </div>
                 `;
             } else {
-                let reason = state === 'paused' ? '⏸️ Escalado pausado por supervisor' : '❓ Estado desconocido';
-                return `
-                    <div class="no-action-info">
-                        <span class="badge bg-light">${reason}</span>
-                    </div>
-                `;
+                return '<div class="no-action-info"><span class="badge bg-light">Sin acciones disponibles</span></div>';
             }
         }
 
@@ -2234,18 +2225,20 @@
                 console.error('Incidencia no encontrada:', incidentId);
                 return;
             }
-
             if (!currentTechnician?.authenticated) {
                 pendingAction = action;
                 showPINModal();
                 return;
             }
-
             if (action === 'acepto') {
                 pendingAction = action;
                 confirmAction();
             } else if (action === 'completar') {
                 showCompletionModal();
+            } else if (action === 'solicitar_materiales') {
+                document.getElementById('materialesModal').classList.add('active');
+            } else if (action === 'derivar_departamento') {
+                document.getElementById('derivarModal').classList.add('active');
             } else {
                 showReasonModal(action);
             }
