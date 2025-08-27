@@ -1536,8 +1536,8 @@
                 
                 const data = await response.json();
                 
-                if (data && Array.isArray(data)) {
-                    allIncidents = data;
+               if (data && data.incidents && Array.isArray(data.incidents)) {
+                    allIncidents = data.incidents;
                     console.log(`📊 Cargadas ${allIncidents.length} incidencias`);
                     
                     updateStatistics();
