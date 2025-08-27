@@ -1719,12 +1719,28 @@
         ======================================== */
         
         
-        function getUserLevel(technicianEmail, incident) {
+         function getUserLevel(technicianEmail, incident) {
             // Determinar en qué nivel está este técnico para esta incidencia
             if (incident.tecnico_l0 === technicianEmail) return 0;
             if (incident.tecnico_l1 === technicianEmail) return 1;
-            if (incident.tecnico_l2?.includes(technicianEmail)) return 2;
+            if (incident.tecnico_l2?.includes && incident.tecnico_l2.includes(technicianEmail)) return 2;
             return null;
+        }
+        
+         // Función closeModal que falta
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+        function filterIncidents(filter, buttonElement = null) {
+                currentStatusFilter = filter;
+                if (buttonElement) {
+                document.querySelectorAll('.filter-btn, .stat-card').forEach(btn => btn.classList.remove('active'));
+                buttonElement.classList.add('active');
+            }
+            
+            renderIncidents(); // Llamar sin parámetros
         }
 
         function checkCurrentAssignment(incident, technicianEmail, level) {
@@ -1790,9 +1806,6 @@
                     showReasonModal(pendingAction);
                 }
             }
-        
-          function filterIncidents(filter, buttonElement) {
-            currentStatusFilter = filter;
             
             // Actualizar botones activos
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
