@@ -1447,7 +1447,6 @@
 
         function closePINModal() {
             document.getElementById('pinModal').classList.remove('active');
-            currentTechnician = null;
         }
 
         async function verifyPIN() {
@@ -1458,13 +1457,17 @@
                 showPINError('PIN debe tener 4 dígitos');
                 return;
             }
+            if (!currentTechnician) {
+                    showPINError('Error de sesión. Intenta nuevamente.');
+                    return;
+                }
 
             try {
                 const isValid = await validatePIN(currentTechnician.email, pin);
                 
                 if (isValid) {
                     currentTechnician.authenticated = true;
-                    closePINModal();
+                    document.getElementById('pinModal').classList.remove('active');
                     showDashboard();
                     await loadDashboard();
                 } else {
@@ -1706,26 +1709,19 @@
         /* ========================================
            FUNCIONES DE RENDERIZADO
         ======================================== */
-        function renderIncidents() {
-            const filteredIncidents = filterIncidents();
-
-            if (filteredIncidents.length === 0) {
-                showNoIncidentsMessage();
-                return;
+        function executeAction() {
+                if (!pendingAction) return;
+                
+                if (pendingAction === 'acepto') {
+                    confirmAction();
+                } else if (pendingAction === 'completar') {
+                    showCompletionModal();
+                } else {
+                    showReasonModal(pendingAction);
+                }
             }
-
-            const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
-            
-            document.getElementById('incidentsContainer').innerHTML = `
-                <div class="incidents-grid">
-                    ${incidentsHTML}
-                </div>
-            `;
-
-            startSLATimers();
-        }
-
-        function filterIncidents() {
+        
+          function filterIncidents() {
             const technicianEmail = currentTechnician?.email || '';
             
             return allIncidents.filter(incident => {
@@ -1744,6 +1740,25 @@
                 
                 return true;
             });
+        }
+        
+        function renderIncidents() {
+            const filteredIncidents = filterIncidents();
+
+            if (filteredIncidents.length === 0) {
+                showNoIncidentsMessage();
+                return;
+            }
+
+            const incidentsHTML = filteredIncidents.map(incident => renderIncidentCard(incident)).join('');
+            
+            document.getElementById('incidentsContainer').innerHTML = `
+                <div class="incidents-grid">
+                    ${incidentsHTML}
+                </div>
+            `;
+
+            startSLATimers();
         }
 
                function renderIncidentCard(incident) {
