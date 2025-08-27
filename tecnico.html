@@ -1531,8 +1531,8 @@
 
             try {
                const response = await fetchWithRetry(
-                    `${CONFIG.API_INCIDENTS}?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`
-                );
+                        `/api/webhook-respuesta?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`
+                    );
                 
                 const data = await response.json();
                 
@@ -2365,13 +2365,13 @@
                 (customText || 'Confirmado');
 
             try {
-                const response = await fetch(CONFIG.API_RESPONSE, {
+               const response = await fetch('/api/webhook-respuesta', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        incident_id: currentIncident.id,
+                        incident_id: pendingAction,
                         technician_email: currentTechnician.email,
                         technician_name: currentTechnician.name,
                         action: pendingAction,
