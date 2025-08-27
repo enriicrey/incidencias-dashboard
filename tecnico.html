@@ -1816,15 +1816,15 @@
         }
         
         function renderIncidents(incidentsToRender = null) {
-            // Si se pasan incidencias específicas, usarlas
+            let filteredIncidents; // ✅ DECLARAR FUERA
+            
             if (incidentsToRender) {
-                const filteredIncidents = incidentsToRender;
+                filteredIncidents = incidentsToRender; // ✅ ASIGNAR (sin const)
             } else {
-                // Filtrar según el estado actual seleccionado
-                const filteredIncidents = allIncidents.filter(incident => {
+                filteredIncidents = allIncidents.filter(incident => { // ✅ ASIGNAR (sin const)
                     const state = getIncidentRealState(incident, currentTechnician.email);
                     
-                    switch(currentStatusFilter) {
+                    switch(currentStatusFilter || 'all') {
                         case 'pending': return state === 'pending';
                         case 'working': return state === 'working';
                         case 'expired': return state === 'expired';
