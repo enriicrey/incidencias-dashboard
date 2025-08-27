@@ -145,7 +145,7 @@ export default async function handler(req, res) {
             status: 'error',
             message: 'Error interno del servidor',
             error: error.message,
-            action: data?.action || 'unknown'
+           action: req.body?.action || req.query?.action || 'unknown' 
         });
     }
 }
