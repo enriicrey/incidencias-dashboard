@@ -2288,15 +2288,26 @@
                    (incident.l1_technician === technicianEmail && incident.l1_response !== '⭕ Sin Respuesta');
         }
 
-        function getCurrentLevelSLA(incident, level) {
-            switch (level) {
-                case 0: return incident.sla_l0_end;
-                case 1: return incident.sla_l1_backup_end;
-                case 2: return incident.sla_l2_equipo_end;
-                case 3: return incident.sla_l3_responsable_end;
-                default: return null;
+            function getCurrentLevelSLA(incident, escalationLevel) {
+                const technicianEmail = currentTechnician.email;
+                const state = getIncidentRealState(incident, technicianEmail);
+                
+                // Si está trabajando, NO mostrar SLA
+                if (state === 'working') return null;
+                
+                // Solo mostrar SLA si está pendiente
+                if (state === 'pending') {
+                    if (incident.l0_technician === technicianEmail) {
+                        return incident.sla_l0_end;
+                    } else if (incident.l1_technician === technicianEmail) {
+                        return incident.sla_l1_backup_end;
+                    } else if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+                        return incident.sla_l2_equipo_end;
+                    }
+                }
+                
+                return null;
             }
-        }
 
         function canTechnicianRespond(incident, technicianEmail) {
             const state = getIncidentRealState(incident, technicianEmail);
@@ -2374,6 +2385,31 @@
             
             startSLATimers();
         }
+        function renderWorkingTimer(incident) {
+            const technicianEmail = currentTechnician.email;
+            const state = getIncidentRealState(incident, technicianEmail);
+            
+            if (state !== 'working') return '';
+            
+            let acceptanceDate = null;
+            
+            if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
+                acceptanceDate = new Date(incident.l0_acceptance_date);
+            } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
+                acceptanceDate = new Date(incident.l1_acceptance_date);
+            } else if (incident.l2_acceptance_date) {
+                acceptanceDate = new Date(incident.l2_acceptance_date);
+            }
+            
+            if (!acceptanceDate) return '';
+            
+            const now = new Date();
+            const workingMinutes = Math.floor((now - acceptanceDate) / 1000 / 60);
+            const hours = Math.floor(workingMinutes / 60);
+            const minutes = workingMinutes % 60;
+            
+            return `<div class="working-timer">⚙️ Trabajando: ${hours}h ${minutes}m</div>`;
+        }
         
         // 🎯 FUNCIÓN AUXILIAR para mostrar mensaje cuando no hay incidencias
         function showNoIncidentsMessage() {
@@ -2403,22 +2439,27 @@
             `;
         }
 
-        function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
-            return `
-                <div class="incident-header">
-                    <div class="incident-title">
-                        <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
-                        <div class="badges">
-                            <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
-                            <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
-                            ${getStateBadge(realState)}
-                            ${renderSLABadge(incident, escalationLevel)}
+            function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
+                  const slaTimer = renderSLATimer(incident, escalationLevel);
+                  const workingTimer = renderWorkingTimer(incident);
+                  const timerBadge = workingTimer || slaTimer;
+                
+                return `
+                    <div class="incident-header">
+                        <div class="incident-title">
+                            <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
+                            <div class="badges">
+                                <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
+                                <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
+                                ${getStateBadge(realState)}
+                            </div>
+                            <!-- TIMER ÚNICO AQUÍ -->
+                            ${timerBadge ? `<div class="timer-container">${timerBadge}</div>` : ''}
                         </div>
+                        <div class="incident-id">${incident.id}</div>
                     </div>
-                    <div class="incident-id">${incident.id}</div>
-                </div>
-            `;
-        }
+                `;
+            }
 
         function renderIncidentBody(incident, technicianEmail, escalationLevel) {
             return `
@@ -2427,7 +2468,6 @@
                     <div class="description">${incident.description}</div>
                     
                     ${renderTechnicianInfo(incident, technicianEmail)}
-                    ${renderSLATimer(incident, escalationLevel)}
                     ${renderTimeElapsed(incident, technicianEmail)}
                     ${renderAssignmentNotes(incident)}
                     ${renderActionsTaken(incident)}
@@ -2468,28 +2508,74 @@
         }
 
         function renderSLABadge(incident, escalationLevel) {
-            const slaEnd = getCurrentLevelSLA(incident, escalationLevel);
-            if (!slaEnd) return '';
-            
             const now = new Date();
-            const endTime = new Date(slaEnd);
-            const diffMinutes = Math.floor((endTime - now) / 60000);
+            const technicianEmail = currentTechnician.email;
+            const state = getIncidentRealState(incident, technicianEmail);
             
-            let text, bgColor;
-            if (diffMinutes < 0) {
-                text = `${Math.abs(diffMinutes)}m vencido`;
-                bgColor = '#ef4444';
-            } else {
-                const hours = Math.floor(diffMinutes / 60);
-                const minutes = diffMinutes % 60;
-                text = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            // Si está TRABAJANDO - mostrar tiempo trabajando, NO SLA
+            if (state === 'working') {
+                let acceptanceDate = null;
                 
-                if (diffMinutes <= 30) bgColor = '#ef4444';
-                else if (diffMinutes <= 60) bgColor = '#f59e0b';
-                else bgColor = '#22c55e';
+                // Buscar fecha de aceptación según el nivel
+                if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
+                    acceptanceDate = new Date(incident.l0_acceptance_date);
+                } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
+                    acceptanceDate = new Date(incident.l1_acceptance_date);
+                } else if (incident.l2_acceptance_date) {
+                    acceptanceDate = new Date(incident.l2_acceptance_date);
+                }
+                
+                if (acceptanceDate) {
+                    const workingMinutes = Math.floor((now - acceptanceDate) / 1000 / 60);
+                    const hours = Math.floor(workingMinutes / 60);
+                    const minutes = workingMinutes % 60;
+                    
+                    return `<span class="badge working-time">⚙️ Trabajando: ${hours}h ${minutes}m</span>`;
+                }
             }
             
-            return `<span class="sla-badge" style="background: ${bgColor}; color: white;">⏰ ${text}</span>`;
+            // Si está PENDIENTE - mostrar SLA restante
+            if (state === 'pending') {
+                let slaDeadline = null;
+                
+                // Buscar SLA según el nivel asignado
+                if (incident.l0_technician === technicianEmail && incident.sla_l0_end) {
+                    slaDeadline = new Date(incident.sla_l0_end);
+                } else if (incident.l1_technician === technicianEmail && incident.sla_l1_backup_end) {
+                    slaDeadline = new Date(incident.sla_l1_backup_end);
+                } else if (incident.sla_l2_equipo_end) {
+                    slaDeadline = new Date(incident.sla_l2_equipo_end);
+                }
+                
+                if (slaDeadline) {
+                    const remainingMinutes = Math.floor((slaDeadline - now) / 1000 / 60);
+                    
+                    if (remainingMinutes > 0) {
+                        const hours = Math.floor(remainingMinutes / 60);
+                        const minutes = remainingMinutes % 60;
+                        
+                        if (remainingMinutes < 30) {
+                            return `<span class="badge sla-critical">⏰ ${hours > 0 ? hours + 'h ' : ''}${minutes}m restantes</span>`;
+                        } else {
+                            return `<span class="badge sla-normal">⏰ ${hours > 0 ? hours + 'h ' : ''}${minutes}m restantes</span>`;
+                        }
+                    } else {
+                        return `<span class="badge sla-expired">⏰ VENCIDO</span>`;
+                    }
+                }
+            }
+            
+            // Si está VENCIDO
+            if (state === 'expired') {
+                return `<span class="badge sla-expired">⏰ SLA VENCIDO</span>`;
+            }
+            
+            // Si está en SEGUIMIENTO
+            if (state === 'seguimiento') {
+                return `<span class="badge seguimiento">👁️ SEGUIMIENTO</span>`;
+            }
+            
+            return '';
         }
 
         function renderTechnicianInfo(incident, userEmail) {
@@ -3144,20 +3230,21 @@
         }
 
         function toggleContacts(incidentId) {
-            const contactsList = document.getElementById(`contacts-${incidentId}`);
-            if (!contactsList) return;
-            
-            const toggleIcon = contactsList.parentElement.querySelector('.toggle-icon');
-            const isVisible = !contactsList.classList.contains('hidden');
-            
-            if (isVisible) {
-                contactsList.classList.add('hidden');
-                toggleIcon.textContent = '▼';
-            } else {
-                contactsList.classList.remove('hidden');
-                toggleIcon.textContent = '▲';
+                const contactsContent = document.getElementById(`contacts-${incidentId}`);
+                const toggleIcon = document.getElementById(`contacts-toggle-${incidentId}`);
+                
+                if (contactsContent && toggleIcon) {
+                    const isVisible = contactsContent.style.display !== 'none';
+                    
+                    if (isVisible) {
+                        contactsContent.style.display = 'none';
+                        toggleIcon.textContent = '▶';
+                    } else {
+                        contactsContent.style.display = 'block';
+                        toggleIcon.textContent = '▼';
+                    }
+                }
             }
-        }
 
         function toggleEscalationHistory(incidentId) {
             const historyContent = document.getElementById(`escalation-${incidentId}`);
@@ -3317,33 +3404,6 @@
                 transferir: transferReasons.length,
                 apoyo_trabajo: supportReasonsWorking.length
             });
-        }
-
-        /* ========================================
-           FUNCIONES DE EVENTOS GLOBALES
-        ======================================== */
-        document.addEventListener('DOMContentLoaded', initializeApp);
-
-        // Exposición de funciones globales para onclick handlers
-        window.loginWithPIN = loginWithPIN;
-        window.refreshDashboard = refreshDashboard;
-        window.filterByStatus = filterByStatus;
-        window.filterByPriority = filterByPriority;
-        window.handleAction = handleAction;
-        window.toggleContacts = toggleContacts;
-        window.toggleEscalationHistory = toggleEscalationHistory;
-        window.closeReasonModal = closeReasonModal;
-        window.closePINModal = closePINModal;
-        window.confirmAction = confirmAction;
-        window.selectReason = selectReason;
-        window.updateCompletionText = updateCompletionText;
-        window.verifyPIN = verifyPIN;
-
-        console.log('🔧 Dashboard ABC.xyz - Versión Completa Reorganizada cargada');
-       
-        if (typeof refreshInterval !== 'undefined' && refreshInterval) {
-            clearInterval(refreshInterval);
-            console.log('🧹 Interval de auto-refresh limpiado');
         }
        
         /* ========================================
@@ -3834,8 +3894,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadAvailableMaterials();
         });
-        
-        // Exponer funciones globalmente
+
+                /* ========================================
+           FUNCIONES DE EVENTOS GLOBALES
+        ======================================== */
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        // Exposición de funciones globalmente
+        window.loginWithPIN = loginWithPIN;
+        window.refreshDashboard = refreshDashboard;
+        window.filterByStatus = filterByStatus;
+        window.filterByPriority = filterByPriority;
+        window.handleAction = handleAction;
+        window.toggleEscalationHistory = toggleEscalationHistory;
+        window.closeReasonModal = closeReasonModal;
+        window.closePINModal = closePINModal;
+        window.confirmAction = confirmAction;
+        window.selectReason = selectReason;
+        window.updateCompletionText = updateCompletionText;
+        window.verifyPIN = verifyPIN;
         window.addMaterial = addMaterial;
         window.confirmMateriales = confirmMateriales;
         window.removeMaterial = removeMaterial;
@@ -3852,6 +3928,16 @@
         window.confirmSolicitarAyuda = confirmSolicitarAyuda;
         window.showSolicitarAsignacionModal = showSolicitarAsignacionModal;
         window.confirmSolicitarAsignacion = confirmSolicitarAsignacion;
+        window.toggleContacts = toggleContacts;
+
+        console.log('🔧 Dashboard ABC.xyz - Versión Completa Reorganizada cargada');
+       
+        if (typeof refreshInterval !== 'undefined' && refreshInterval) {
+            clearInterval(refreshInterval);
+            console.log('🧹 Interval de auto-refresh limpiado');
+        }
+        
+      
     </script>
 </body>
 </html>   
