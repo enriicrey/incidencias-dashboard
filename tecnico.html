@@ -1203,29 +1203,132 @@
         </div>
     </div>
 
-    <!-- MODAL SOLICITAR MATERIALES -->
-    <div id="materialesModal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>📦 Solicitar Materiales</h2>
-            <div id="materialesList">
-                <div class="material-item">
-                    <input type="text" placeholder="Material/Componente" class="material-name">
-                    <input type="number" placeholder="Cantidad" class="material-qty">
-                    <select class="material-urgency">
-                        <option value="media">Media</option>
-                        <option value="alta">Alta</option>
-                        <option value="critica">Crítica</option>
-                    </select>
-                    <textarea placeholder="Justificación" class="material-reason"></textarea>
+    
+            <!-- MODAL RESOLVER INCIDENCIA (Extendido con materiales) -->
+            <div class="modal-overlay" id="resolverModal">
+                <div class="modal-content large-modal">
+                    <h3 class="modal-title">🔧 Resolver Incidencia</h3>
+                    
+                    <!-- Descripción de la solución -->
+                    <div class="form-group">
+                        <label for="solutionDescription">Descripción de la solución *</label>
+                        <textarea id="solutionDescription" class="form-control" rows="4" 
+                            placeholder="Describe detalladamente cómo se resolvió la incidencia..." required></textarea>
+                    </div>
+                    
+                    <!-- Tiempo invertido -->
+                    <div class="form-group">
+                        <label for="timeInvested">Tiempo invertido *</label>
+                        <input type="text" id="timeInvested" class="form-control" 
+                            placeholder="ej: 2h 30min" required>
+                    </div>
+                    
+                    <!-- Materiales utilizados -->
+                    <div class="form-group">
+                        <label>Materiales utilizados (opcional)</label>
+                        <div class="materials-section">
+                            <div class="add-material-form">
+                                <div class="material-inputs">
+                                    <select id="materialSelect" class="form-control">
+                                        <option value="">Seleccionar material...</option>
+                                    </select>
+                                    <input type="number" id="materialQuantity" class="form-control" 
+                                        placeholder="Cantidad" min="0.1" step="0.1">
+                                    <select id="materialReason" class="form-control">
+                                        <option value="">Motivo...</option>
+                                        <option value="reparacion_correctiva">Reparación correctiva</option>
+                                        <option value="reparacion_preventiva">Reparación preventiva</option>
+                                        <option value="sustitucion_componente">Sustitución de componente</option>
+                                        <option value="mejora_sistema">Mejora del sistema</option>
+                                    </select>
+                                    <button type="button" class="btn btn-secondary" onclick="addMaterial()">
+                                        ➕ Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="selectedMaterials" class="selected-materials">
+                                <p class="no-materials">No hay materiales seleccionados</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones preventivas -->
+                    <div class="form-group">
+                        <label for="preventiveActions">Acciones preventivas recomendadas</label>
+                        <textarea id="preventiveActions" class="form-control" rows="3" 
+                            placeholder="Recomendaciones para evitar que se repita la incidencia..."></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="modal-btn btn-cancel" onclick="closeResolverModal()">Cancelar</button>
+                        <button class="modal-btn btn-confirm" onclick="confirmMateriales()">🔧 Resolver Incidencia</button>
+                    </div>
                 </div>
             </div>
-            <button onclick="addMaterial()">+ Añadir Material</button>
-            <div class="modal-actions">
-                <button onclick="closeModal()">Cancelar</button>
-                <button onclick="confirmMateriales()">📦 Solicitar</button>
+            
+            <!-- MODAL SOLICITAR MATERIALES -->
+            <div class="modal-overlay" id="solicitudMaterialesModal">
+                <div class="modal-content large-modal">
+                    <h3 class="modal-title">📦 Solicitar Materiales</h3>
+                    
+                    <!-- Agregar material a solicitud -->
+                    <div class="form-group">
+                        <label>Agregar material a la solicitud</label>
+                        <div class="request-material-form">
+                            <div class="material-request-inputs">
+                                <input type="text" id="requestMaterialName" class="form-control" 
+                                    placeholder="Nombre del material o componente">
+                                <input type="text" id="requestQuantity" class="form-control" 
+                                    placeholder="Cantidad (ej: 2 unidades, 5L)">
+                                <select id="requestUrgency" class="form-control">
+                                    <option value="">Urgencia...</option>
+                                    <option value="baja">🟢 Baja - No crítico</option>
+                                    <option value="media">🟡 Media - Planificable</option>
+                                    <option value="alta">🟠 Alta - Prioritario</option>
+                                    <option value="critica">🔴 Crítica - Inmediato</option>
+                                </select>
+                            </div>
+                            <textarea id="requestJustification" class="form-control" rows="2" 
+                                placeholder="Justificación: ¿por qué necesitas este material?"></textarea>
+                            <button type="button" class="btn btn-primary" onclick="addMaterialRequest()">
+                                ➕ Agregar a Solicitud
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de materiales solicitados -->
+                    <div class="form-group">
+                        <label>Materiales en la solicitud</label>
+                        <div id="requestedMaterialsList" class="requested-materials-list">
+                            <p class="no-materials">No hay materiales en la solicitud</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="workCanContinue" checked>
+                                <span class="checkmark"></span>
+                                Puedo continuar trabajando mientras llegan los materiales
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="impactDescription">Impacto si se retrasa la entrega</label>
+                        <textarea id="impactDescription" class="form-control" rows="2" 
+                            placeholder="Describe el impacto en la producción o seguridad si no llegan los materiales..."></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="modal-btn btn-cancel" onclick="closeSolicitarMaterialesModal()">Cancelar</button>
+                        <button class="modal-btn btn-confirm" id="sendMaterialRequestBtn" 
+                            onclick="confirmSolicitudMateriales()" disabled>📦 Enviar Solicitud</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
     
     <!-- MODAL DERIVAR DEPARTAMENTO -->
     <div id="derivarModal" class="modal-overlay">
@@ -2951,6 +3054,311 @@
             clearInterval(refreshInterval);
             console.log('🧹 Interval de auto-refresh limpiado');
         }
+       
+        /* ========================================
+           GESTIÓN DE MATERIALES
+        ======================================== */
+        
+        let selectedMaterials = []; // Array global para materiales seleccionados
+        
+        // Agregar material al modal resolver
+        function addMaterial() {
+            const materialSelect = document.getElementById('materialSelect');
+            const quantityInput = document.getElementById('materialQuantity');
+            const reasonSelect = document.getElementById('materialReason');
+            
+            const materialId = materialSelect.value;
+            const materialName = materialSelect.options[materialSelect.selectedIndex].text;
+            const quantity = parseFloat(quantityInput.value);
+            const reason = reasonSelect.value;
+            const reasonText = reasonSelect.options[reasonSelect.selectedIndex].text;
+            
+            // Validaciones
+            if (!materialId) {
+                alert('Selecciona un material');
+                return;
+            }
+            
+            if (!quantity || quantity <= 0) {
+                alert('Ingresa una cantidad válida');
+                return;
+            }
+            
+            if (!reason) {
+                alert('Selecciona un motivo de consumo');
+                return;
+            }
+            
+            // Verificar si el material ya existe
+            const existingIndex = selectedMaterials.findIndex(m => m.materialId === materialId);
+            if (existingIndex !== -1) {
+                // Actualizar cantidad si ya existe
+                selectedMaterials[existingIndex].quantity += quantity;
+            } else {
+                // Agregar nuevo material
+                selectedMaterials.push({
+                    materialId: materialId,
+                    materialName: materialName,
+                    quantity: quantity,
+                    reason: reason,
+                    reasonText: reasonText
+                });
+            }
+            
+            // Limpiar inputs
+            materialSelect.value = '';
+            quantityInput.value = '';
+            reasonSelect.value = '';
+            
+            // Actualizar vista
+            updateMaterialsList();
+        }
+        
+        // Actualizar lista de materiales seleccionados
+        function updateMaterialsList() {
+            const container = document.getElementById('selectedMaterials');
+            
+            if (selectedMaterials.length === 0) {
+                container.innerHTML = '<p class="no-materials">No hay materiales seleccionados</p>';
+                return;
+            }
+            
+            const materialsHTML = selectedMaterials.map((material, index) => `
+                <div class="material-item">
+                    <div class="material-info">
+                        <strong>${material.materialName}</strong>
+                        <span class="material-details">
+                            Cantidad: ${material.quantity} | Motivo: ${material.reasonText}
+                        </span>
+                    </div>
+                    <button type="button" class="btn-remove-material" onclick="removeMaterial(${index})">
+                        ❌ Quitar
+                    </button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = materialsHTML;
+        }
+        
+        // Remover material de la lista
+        function removeMaterial(index) {
+            selectedMaterials.splice(index, 1);
+            updateMaterialsList();
+        }
+        
+        // Confirmar materiales en modal resolver
+        function confirmMateriales() {
+            const solutionDescription = document.getElementById('solutionDescription').value.trim();
+            const timeInvested = document.getElementById('timeInvested').value.trim();
+            const preventiveActions = document.getElementById('preventiveActions').value.trim();
+            
+            // Validaciones
+            if (!solutionDescription || solutionDescription.length < 10) {
+                alert('La descripción de la solución debe tener al menos 10 caracteres');
+                return;
+            }
+            
+            if (!timeInvested) {
+                alert('Ingresa el tiempo invertido');
+                return;
+            }
+            
+            // Preparar payload
+            const payload = {
+                action: 'resolver',
+                incident_id: currentIncidentId,
+                technician_email: currentTechnician.email,
+                level: getCurrentTechnicianLevel(),
+                solution_description: solutionDescription,
+                time_invested: timeInvested,
+                preventive_actions: preventiveActions,
+                materials_used: selectedMaterials
+            };
+            
+            console.log('🔧 Enviando resolución:', payload);
+            
+            // Enviar a webhook
+            sendActionToWebhook(payload);
+        }
+        
+        /* ========================================
+           MODAL SOLICITAR MATERIALES
+        ======================================== */
+        
+        let requestedMaterials = []; // Array para materiales solicitados
+        
+        // Mostrar modal solicitar materiales
+        function showSolicitarMaterialesModal() {
+            requestedMaterials = []; // Limpiar array
+            document.getElementById('solicitudMaterialesModal').classList.add('active');
+            updateRequestedMaterialsList();
+        }
+        
+        // Cerrar modal solicitar materiales  
+        function closeSolicitarMaterialesModal() {
+            document.getElementById('solicitudMaterialesModal').classList.remove('active');
+            requestedMaterials = [];
+        }
+        
+        // Agregar material a solicitud
+        function addMaterialRequest() {
+            const materialName = document.getElementById('requestMaterialName').value.trim();
+            const quantity = document.getElementById('requestQuantity').value.trim();
+            const urgency = document.getElementById('requestUrgency').value;
+            const justification = document.getElementById('requestJustification').value.trim();
+            
+            // Validaciones
+            if (!materialName) {
+                alert('Ingresa el nombre del material');
+                return;
+            }
+            
+            if (!quantity) {
+                alert('Ingresa la cantidad');
+                return;
+            }
+            
+            if (!urgency) {
+                alert('Selecciona la urgencia');
+                return;
+            }
+            
+            if (!justification || justification.length < 10) {
+                alert('La justificación debe tener al menos 10 caracteres');
+                return;
+            }
+            
+            // Agregar a array
+            requestedMaterials.push({
+                material: materialName,
+                quantity: quantity,
+                urgency: urgency,
+                justification: justification
+            });
+            
+            // Limpiar inputs
+            document.getElementById('requestMaterialName').value = '';
+            document.getElementById('requestQuantity').value = '';
+            document.getElementById('requestUrgency').value = '';
+            document.getElementById('requestJustification').value = '';
+            
+            updateRequestedMaterialsList();
+        }
+        
+        // Actualizar lista de materiales solicitados
+        function updateRequestedMaterialsList() {
+            const container = document.getElementById('requestedMaterialsList');
+            
+            if (requestedMaterials.length === 0) {
+                container.innerHTML = '<p class="no-materials">No hay materiales en la solicitud</p>';
+                return;
+            }
+            
+            const materialsHTML = requestedMaterials.map((material, index) => `
+                <div class="material-request-item">
+                    <div class="request-info">
+                        <strong>${material.material}</strong>
+                        <div class="request-details">
+                            <span class="quantity">Cantidad: ${material.quantity}</span>
+                            <span class="urgency urgency-${material.urgency}">Urgencia: ${material.urgency.toUpperCase()}</span>
+                        </div>
+                        <div class="justification">${material.justification}</div>
+                    </div>
+                    <button type="button" class="btn-remove-material" onclick="removeRequestedMaterial(${index})">
+                        ❌ Quitar
+                    </button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = materialsHTML;
+            
+            // Habilitar/deshabilitar botón enviar
+            const sendButton = document.getElementById('sendMaterialRequestBtn');
+            sendButton.disabled = requestedMaterials.length === 0;
+        }
+        
+        // Remover material solicitado
+        function removeRequestedMaterial(index) {
+            requestedMaterials.splice(index, 1);
+            updateRequestedMaterialsList();
+        }
+        
+        // Confirmar solicitud de materiales
+        function confirmSolicitudMateriales() {
+            const workCanContinue = document.getElementById('workCanContinue').checked;
+            const impactDescription = document.getElementById('impactDescription').value.trim();
+            
+            if (requestedMaterials.length === 0) {
+                alert('Agrega al menos un material a la solicitud');
+                return;
+            }
+            
+            // Preparar payload
+            const payload = {
+                action: 'solicitar_materiales',
+                incident_id: currentIncidentId,
+                technician_email: currentTechnician.email,
+                level: getCurrentTechnicianLevel(),
+                materials_requested: requestedMaterials,
+                work_can_continue: workCanContinue,
+                impact_if_delayed: impactDescription || 'Sin impacto especificado'
+            };
+            
+            console.log('📦 Enviando solicitud de materiales:', payload);
+            
+            // Enviar a webhook
+            sendActionToWebhook(payload);
+            
+            // Cerrar modal
+            closeSolicitarMaterialesModal();
+        }
+        
+        /* ========================================
+           FUNCIONES AUXILIARES
+        ======================================== */
+        
+        // Obtener nivel actual del técnico
+        function getCurrentTechnicianLevel() {
+            // Esta función debe implementarse según tu lógica
+            // Por ahora retornamos L0 por defecto
+            return 'L0';
+        }
+        
+        // Cargar lista de materiales disponibles (para select)
+        async function loadAvailableMaterials() {
+            try {
+                // Esto debería cargar desde tu API/Notion los materiales del inventario
+                // Por ahora usamos datos de ejemplo
+                const materials = [
+                    { id: 'filtro-001', name: 'Filtro Hidráulico FH-445' },
+                    { id: 'aceite-001', name: 'Aceite Hidráulico SAE 32' },
+                    { id: 'bomba-001', name: 'Bomba Centrífuga 5HP' },
+                    { id: 'motor-001', name: 'Motor Asíncrono 3HP' }
+                ];
+                
+                const selectElement = document.getElementById('materialSelect');
+                selectElement.innerHTML = '<option value="">Seleccionar material...</option>' +
+                    materials.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                    
+            } catch (error) {
+                console.error('Error cargando materiales:', error);
+            }
+        }
+        
+        // Inicializar al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableMaterials();
+        });
+        
+        // Exponer funciones globalmente
+        window.addMaterial = addMaterial;
+        window.confirmMateriales = confirmMateriales;
+        window.removeMaterial = removeMaterial;
+        window.showSolicitarMaterialesModal = showSolicitarMaterialesModal;
+        window.closeSolicitarMaterialesModal = closeSolicitarMaterialesModal;
+        window.addMaterialRequest = addMaterialRequest;
+        window.removeRequestedMaterial = removeRequestedMaterial;
+        window.confirmSolicitudMateriales = confirmSolicitudMateriales;
     </script>
 </body>
 </html>   
