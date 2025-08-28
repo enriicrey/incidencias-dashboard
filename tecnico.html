@@ -3489,9 +3489,43 @@
 
         function showResolverModal(incidentId) {
             currentIncidentId = incidentId;
-            document.getElementById("resolverModal").classList.add("active");
+            document.getElementById('resolverModal').classList.add('active');
+            
+            // Limpiar campos
+            document.getElementById('solutionDescription').value = '';
+            document.getElementById('timeInvested').value = '';
+            document.getElementById('preventiveActions').value = '';
+            selectedMaterials = [];
+            updateMaterialsList();
+            
+            // Cargar materiales disponibles
+            loadAvailableMaterials();
         }
-        
+        // Cerrar modal resolver
+        function closeResolverModal() {
+            document.getElementById('resolverModal').classList.remove('active');
+            selectedMaterials = [];
+            currentIncidentId = null;
+        }
+        // Función para cerrar todos los modales
+        function closeAllModals() {
+            // Cerrar todos los modales posibles
+            const modals = [
+                'reasonModal',
+                'resolverModal', 
+                'solicitudMaterialesModal',
+                'derivarModal',
+                'ayudaModal',
+                'solicitarAsignacionModal',
+                'aportarInfoModal'
+            ];
+                modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        }
         // Cerrar modal solicitar materiales  
         function closeSolicitarMaterialesModal() {
             document.getElementById('solicitudMaterialesModal').classList.remove('active');
@@ -3665,32 +3699,136 @@
             }
         }
         
-        // Obtener nivel actual del técnico
-        function getCurrentTechnicianLevel() {
-            // Esta función debe implementarse según tu lógica
-                return currentTechnician.level || 'L0';
-        }
+            // Obtener nivel actual del técnico
+            function getCurrentTechnicianLevel() {
+                // Esta lógica debería basarse en los datos reales del técnico
+                // Por ahora, extraer del nivel del técnico actual o defaultear a L0
+                
+                if (currentTechnician && currentTechnician.level) {
+                    if (currentTechnician.level.includes('L2') || currentTechnician.level.includes('Senior')) {
+                        return 'L2';
+                    } else if (currentTechnician.level.includes('L1') || currentTechnician.level.includes('Intermedio')) {
+                        return 'L1';
+                    }
+                }
+                
+                return 'L0'; // Default
+            }
         
         // Cargar lista de materiales disponibles (para select)
-        async function loadAvailableMaterials() {
-            try {
-                // Esto debería cargar desde tu API/Notion los materiales del inventario
-                // Por ahora usamos datos de ejemplo
-                const materials = [
-                    { id: 'filtro-001', name: 'Filtro Hidráulico FH-445' },
-                    { id: 'aceite-001', name: 'Aceite Hidráulico SAE 32' },
-                    { id: 'bomba-001', name: 'Bomba Centrífuga 5HP' },
-                    { id: 'motor-001', name: 'Motor Asíncrono 3HP' }
-                ];
-                
-                const selectElement = document.getElementById('materialSelect');
-                selectElement.innerHTML = '<option value="">Seleccionar material...</option>' +
-                    materials.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            async function loadAvailableMaterials() {
+                try {
+                    // En una implementación real, esto cargaría desde Notion
+                    // Por ahora, usar datos de ejemplo más realistas
+                    const materials = [
+                        { id: 'filtro-hidraulico-fh445', name: 'Filtro Hidráulico FH-445' },
+                        { id: 'aceite-hidraulico-sae32', name: 'Aceite Hidráulico SAE 32' },
+                        { id: 'bomba-centrifuga-5hp', name: 'Bomba Centrífuga 5HP' },
+                        { id: 'motor-asincrono-3hp', name: 'Motor Asíncrono 3HP' },
+                        { id: 'rodamiento-6204', name: 'Rodamiento 6204-2RS' },
+                        { id: 'correa-a38', name: 'Correa Trapezoidal A38' },
+                        { id: 'contactor-lc1d09', name: 'Contactor LC1D09' },
+                        { id: 'fusible-10a', name: 'Fusible 10A' }
+                    ];
                     
-            } catch (error) {
-                console.error('Error cargando materiales:', error);
+                    const selectElement = document.getElementById('materialSelect');
+                    if (selectElement) {
+                        selectElement.innerHTML = '<option value="">Seleccionar material...</option>' +
+                            materials.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                    }
+                        
+                } catch (error) {
+                    console.error('Error cargando materiales:', error);
+                }
             }
+
+                    // Derivar departamento
+            function showDerivarModal(incidentId) {
+                currentIncidentId = incidentId;
+                document.getElementById('derivarModal').classList.add('active');
+            }
+
+            function confirmDerivarDepartamento() {
+        const targetDepartment = document.getElementById('targetDepartment').value;
+        const derivationReason = document.getElementById('derivationReason').value;
+        const technicalNotes = document.getElementById('technicalNotes').value;
+        
+                    if (!targetDepartment || !derivationReason) {
+                        alert('Departamento destino y motivo son obligatorios');
+                        return;
+                    }
+                     const payload = {
+                    action: 'derivar_departamento',
+                    incident_id: currentIncidentId,
+                    technician_email: currentTechnician.email,
+                    level: getCurrentTechnicianLevel(),
+                    current_department: currentTechnician.department || 'Sin especificar',
+                    target_department: targetDepartment,
+                    derivation_reason: derivationReason,
+                    technical_notes: technicalNotes
+                };
+                
+                sendActionToWebhook(payload);
+                document.getElementById('derivarModal').classList.remove('active');
+            }
+        // Solicitar ayuda (desde trabajando)
+        function showAyudaModal(incidentId) {
+            currentIncidentId = incidentId;
+            document.getElementById('ayudaModal').classList.add('active');
         }
+        
+        function confirmSolicitarAyuda() {
+            const helpType = document.getElementById('helpType').value;
+            const helpDescription = document.getElementById('helpDescription').value;
+            const urgency = document.getElementById('helpUrgency').value;
+            
+            if (!helpType || !helpDescription) {
+                alert('Tipo de ayuda y descripción son obligatorios');
+                return;
+            }
+            
+            const payload = {
+                action: 'ayuda',
+                incident_id: currentIncidentId,
+                technician_email: currentTechnician.email,
+                level: getCurrentTechnicianLevel(),
+                help_type: helpType,
+                help_description: helpDescription,
+                urgency: urgency || 'media'
+            };
+            
+            sendActionToWebhook(payload);
+            document.getElementById('ayudaModal').classList.remove('active');
+        }
+        
+        // Solicitar asignación
+        function showSolicitarAsignacionModal(incidentId) {
+            currentIncidentId = incidentId;
+            document.getElementById('solicitarAsignacionModal').classList.add('active');
+        }
+
+        function confirmSolicitarAsignacion() {
+            const requestReason = document.getElementById('requestReason').value;
+            const requestJustification = document.getElementById('requestJustification').value;
+            
+            if (!requestReason || !requestJustification) {
+                alert('Motivo y justificación son obligatorios');
+                return;
+            }
+            
+            const payload = {
+                action: 'solicitar_asignacion',
+                incident_id: currentIncidentId,
+                technician_email: currentTechnician.email,
+                level: getCurrentTechnicianLevel(),
+                request_reason: requestReason,
+                request_justification: requestJustification
+            };
+            
+            sendActionToWebhook(payload);
+            document.getElementById('solicitarAsignacionModal').classList.remove('active');
+        }
+
         
         // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
@@ -3706,6 +3844,14 @@
         window.addMaterialRequest = addMaterialRequest;
         window.removeRequestedMaterial = removeRequestedMaterial;
         window.confirmSolicitudMateriales = confirmSolicitudMateriales;
+        window.showResolverModal = showResolverModal;
+        window.closeResolverModal = closeResolverModal;
+        window.showDerivarModal = showDerivarModal;
+        window.confirmDerivarDepartamento = confirmDerivarDepartamento;
+        window.showAyudaModal = showAyudaModal;
+        window.confirmSolicitarAyuda = confirmSolicitarAyuda;
+        window.showSolicitarAsignacionModal = showSolicitarAsignacionModal;
+        window.confirmSolicitarAsignacion = confirmSolicitarAsignacion;
     </script>
 </body>
 </html>   
