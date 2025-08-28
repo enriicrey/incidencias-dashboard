@@ -1627,7 +1627,7 @@
             <select id="targetDepartment">
                 <option value="Eléctrico">Eléctrico</option>
                 <option value="Mecánico">Mecánico</option>
-                <option value="Campo">Campo</option>
+                <option value="Producción">Producción</option>
                 <option value="IT">IT</option>
             </select>
             <textarea id="derivationReason" placeholder="¿Por qué necesita derivarse?"></textarea>
@@ -3606,6 +3606,34 @@
         /* ========================================
            FUNCIONES AUXILIARES
         ======================================== */
+                async function sendActionToWebhook(payload) {
+            try {
+                showLoading('Procesando acción...');
+                
+                const response = await fetch('/api/webhook-respuesta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (data.status === 'success') {
+                    showNotification('✅ Acción procesada correctamente', 'success');
+                    // Cerrar modales
+                    closeAllModals();
+                    // Refresh después de 2 segundos
+                    setTimeout(refreshDashboard, 2000);
+                } else {
+                    showNotification(`❌ Error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('❌ Error de conexión', 'error');
+                console.error('Error:', error);
+            }
+        }
         
         // Obtener nivel actual del técnico
         function getCurrentTechnicianLevel() {
