@@ -3614,6 +3614,28 @@
         /* ========================================
            FUNCIONES AUXILIARES
         ======================================== */
+                    // Mostrar loader
+            function showLoading(message = 'Cargando...') {
+                // Si quieres usar overlay existente:
+                const overlay = document.getElementById('successOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    document.getElementById('successTitle').innerText = message;
+                    document.getElementById('successDescription').innerText = 'Por favor espera...';
+                    document.getElementById('countdown').innerText = '';
+                }
+                // O simplemente cambiar el cursor:
+                document.body.style.cursor = 'wait';
+            }
+            
+            // Ocultar loader
+            function hideLoading() {
+                const overlay = document.getElementById('successOverlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+                document.body.style.cursor = 'default';
+            }
                 async function sendActionToWebhook(payload) {
             try {
                 showLoading('Procesando acción...');
