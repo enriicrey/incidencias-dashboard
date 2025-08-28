@@ -2150,95 +2150,96 @@
             };
         }
          function getIncidentRealState(incident, technicianEmail) {
-            const now = new Date();
-            
-            // 🔍 DETERMINAR ASIGNACIÓN ACTUAL DEL TÉCNICO
-            let currentAssignment = null;
-            let wasAssignedBefore = false;
-            
-            // Verificar L0
-            if (incident.l0_technician === technicianEmail) {
-                if (incident.escalation_level === 0) {
-                    // Aún está en L0, es su responsabilidad
-                    currentAssignment = {
-                        level: 0,
-                        response: incident.l0_response,
-                        sla_end: incident.sla_l0_end
-                    };
-                } else {
-                    // Ya escaló, pero puede verla para seguimiento o solicitar
-                    wasAssignedBefore = true;
-                }
-            }
-            
-            // Verificar L1  
-            if (incident.l1_technician === technicianEmail) {
-                if (incident.escalation_level === 1) {
-                    currentAssignment = {
-                        level: 1,
-                        response: incident.l1_response,
-                        sla_end: incident.sla_l1_backup_end
-                    };
-                } else if (incident.escalation_level > 1) {
-                    wasAssignedBefore = true;
-                }
-            }
-            
-            // Verificar L2
-            if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
-                if (incident.escalation_level === 2) {
-                    currentAssignment = {
-                        level: 2,
-                        response: incident.l2_responses,
-                        sla_end: incident.sla_l2_equipo_end
-                    };
-                } else if (incident.escalation_level > 2) {
-                    wasAssignedBefore = true;
-                }
-            }
-            
-            // 🚫 Si no tiene relación, no la ve
-            if (!currentAssignment && !wasAssignedBefore) {
-                return null;
-            }
-            
-            // 🎯 LÓGICA DE ESTADOS
-            
-            // 1. TRABAJANDO - Aceptó en su nivel actual
-            if (currentAssignment && currentAssignment.response === "✅ Acepto") {
-                return 'working';
-            }
-            
-            // 2. PENDIENTE - Asignado actualmente, sin responder, SLA válido
-            if (currentAssignment && 
-                currentAssignment.response === "⭕ Sin Respuesta" && 
-                currentAssignment.sla_end) {
-                
-                const slaDeadline = new Date(currentAssignment.sla_end);
-                if (now <= slaDeadline) {
-                    return 'pending';
-                }
-            }
-            
-            // 3. VENCIDA - Su SLA expiró sin responder
-            if (currentAssignment && 
-                currentAssignment.response === "⭕ Sin Respuesta" && 
-                currentAssignment.sla_end) {
-                
-                const slaDeadline = new Date(currentAssignment.sla_end);
-                if (now > slaDeadline) {
-                    return 'expired';
-                }
-            }
-            
-            // 4. SEGUIMIENTO - Fue asignado antes o rechazó
-            if (wasAssignedBefore || 
-                (currentAssignment && currentAssignment.response === "❌ Rechazo")) {
-                return 'seguimiento';
-            }
-            
-            return 'other';
+    const now = new Date();
+    
+    // 🔍 DETERMINAR TODAS LAS ASIGNACIONES DEL TÉCNICO
+    let assignments = [];
+    let wasAssignedBefore = false;
+    
+    // Verificar L0
+    if (incident.l0_technician === technicianEmail) {
+        if (incident.escalation_level === 0) {
+            assignments.push({
+                level: 0,
+                response: incident.l0_response,
+                sla_end: incident.sla_l0_end,
+                isCurrent: true
+            });
+        } else {
+            wasAssignedBefore = true;
         }
+    }
+    
+    // Verificar L1  
+    if (incident.l1_technician === technicianEmail) {
+        if (incident.escalation_level === 1) {
+            assignments.push({
+                level: 1,
+                response: incident.l1_response,
+                sla_end: incident.sla_l1_backup_end,
+                isCurrent: true
+            });
+        } else if (incident.escalation_level > 1) {
+            wasAssignedBefore = true;
+        }
+    }
+    
+    // ✅ MEJORA: Verificar L2 - permitir asignación múltiple
+    if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+        if (incident.escalation_level === 2) {
+            assignments.push({
+                level: 2,
+                response: incident.l2_responses || "⭕ Sin Respuesta",
+                sla_end: incident.sla_l2_equipo_end,
+                isCurrent: true
+            });
+        } else if (incident.escalation_level > 2) {
+            wasAssignedBefore = true;
+        }
+    }
+    
+    // 🚫 Si no tiene relación, no la ve
+    if (assignments.length === 0 && !wasAssignedBefore) {
+        return null;
+    }
+    
+    // ✅ PRIORIDAD: Evaluar asignación actual (el nivel activo de escalado)
+    const currentAssignment = assignments.find(a => a.isCurrent);
+    
+    if (currentAssignment) {
+        // 1. TRABAJANDO - Aceptó en su nivel actual
+        if (currentAssignment.response === "✅ Acepto") {
+            return 'working';
+        }
+        
+        // 2. PENDIENTE - Asignado actualmente, sin responder, SLA válido
+        if (currentAssignment.response === "⭕ Sin Respuesta" && 
+            currentAssignment.sla_end) {
+            
+            const slaDeadline = new Date(currentAssignment.sla_end);
+            if (now <= slaDeadline) {
+                return 'pending';
+            }
+            
+            // 3. VENCIDA - Su SLA expiró sin responder EN EL NIVEL ACTUAL
+            if (now > slaDeadline) {
+                return 'expired';
+            }
+        }
+        
+        // Si rechazó en el nivel actual
+        if (currentAssignment.response === "❌ Rechazo") {
+            return 'seguimiento';
+        }
+    }
+    
+    // 4. SEGUIMIENTO - Fue asignado antes en otros niveles
+    if (wasAssignedBefore) {
+        return 'seguimiento';
+    }
+    
+    return 'other';
+}
 
         // 🔄 FUNCIÓN PARA RENDERIZAR DESPUÉS DE REFRESH
         function handleActionResponse(actionType, incidentId, response) {
