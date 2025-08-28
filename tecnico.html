@@ -2739,8 +2739,8 @@
             } else if (realState === 'working') {
                 return `
                     <div class="incident-actions">
-                        <button class="btn btn-primary" onclick="showResolverModal('INC-001')">🔧 RESOLVER</button>
-                        <button class="btn btn-purple" onclick="showSolicitarMaterialesModal()">📦 MATERIALES</button>
+                        <button class="btn btn-primary" onclick="showResolverModal('currentIncidentId')">🔧 RESOLVER</button>
+                        <button class="btn btn-purple" onclick="showSolicitarMaterialesModal('currentIncidentId')">📦 MATERIALES</button>
                         <button class="btn btn-secondary" onclick="handleAction('derivar_departamento', '${incident.id}')">🔄 DERIVAR</button>
                         <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">🆘 PEDIR AYUDA</button>
                     </div>
