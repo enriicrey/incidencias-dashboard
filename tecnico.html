@@ -1569,23 +1569,23 @@
                 console.error('Usuario no autenticado');
                 return;
             }
-
+        
             showLoadingState();
-
+        
             try {
-               const response = await fetchWithRetry(
-                        `/api/webhook-respuesta?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`
-                    );
+                const response = await fetchWithRetry(
+                    `/api/webhook-respuesta?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`
+                );
                 
                 const data = await response.json();
                 
-               if (data && data.incidents && Array.isArray(data.incidents)) {
+                if (data && data.incidents && Array.isArray(data.incidents)) {
                     allIncidents = data.incidents;
-                   console.log(`📊 Cargadas ${allIncidents.length} incidencias`);
+                    console.log(`📊 Cargadas ${allIncidents.length} incidencias`);
                     
                     updateStatistics();
                     renderIncidents();
-                    //startAutoRefresh();
+                    // ❌ ELIMINAR ESTA LÍNEA: startAutoRefresh();
                     startSLATimers();
                 } else {
                     throw new Error('Datos inválidos recibidos del servidor');
@@ -2673,18 +2673,12 @@
                 refreshBtn.innerHTML = originalText;
             });
         }
+        
         function startAutoRefresh() {
                     console.log('⚠️ Auto-refresh deshabilitado para evitar consumo excesivo');
             // No hacer nada - solo refresh manual
         }
             
-            refreshInterval = setInterval(() => {
-                console.log('🔄 Auto-refresh ejecutándose...');
-                loadDashboard();
-            }, CONFIG.REFRESH_INTERVAL);
-            
-            console.log(`⏰ Auto-refresh configurado cada ${CONFIG.REFRESH_INTERVAL / 1000} segundos`);
-        }
 
         function startSLATimers() {
             if (slaTimerInterval) {
