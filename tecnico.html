@@ -340,21 +340,80 @@
             border-color: var(--primary-color);
         }
 
-        .incident-header {
+         .incident-header {
+            background: linear-gradient(135deg, var(--gray-50), #ffffff);
+            border: 1px solid var(--gray-200);
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .incident-title {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--gray-100);
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 8px; /* ✅ REDUCIDO DE 15px A 8px */
         }
-
-        .incident-title h4 {
-            margin: 0 0 10px 0;
-            color: var(--gray-800);
-            font-size: 1.2rem;
+        .timer-container {
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .sla-timer, .working-timer {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        
+        .working-timer {
+            background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+            color: #01579b;
+            border: 1px solid #29b6f6;
+        }
+        
+        .sla-timer.sla-good {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c8);
+            color: #1b5e20;
+            border: 1px solid #4caf50;
+        }
+        
+        .sla-timer.sla-warning {
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+        
+        .sla-timer.sla-critical {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            color: #b71c1c;
+            border: 1px solid #f44336;
+            animation: pulse-sla 2s infinite;
+        }
+        
+        .sla-expired {
+            background: linear-gradient(135deg, #ffebee, #ef9a9a);
+            color: #b71c1c;
+            padding: 10px 14px;
+            border-radius: 8px;
             font-weight: 700;
-            line-height: 1.2;
+            border: 2px solid #f44336;
+            animation: pulse-sla 1.5s infinite;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        
+        @keyframes pulse-sla {
+            0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3); }
+            50% { transform: scale(1.02); box-shadow: 0 4px 12px rgba(244, 67, 54, 0.5); }
         }
 
         .badges {
@@ -431,50 +490,67 @@
             font-weight: 600;
         }
 
-        .contacts-info {
-            background: linear-gradient(135deg, #fefce8, #fef3c7);
-            padding: 15px;
+       .contacts-info {
             margin: 15px 0;
-            border-radius: 10px;
-            border-left: 4px solid #eab308;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
         }
-
+        
         .contacts-header {
+            background: linear-gradient(135deg, var(--gray-100), #f8f9fa);
+            padding: 12px 16px;
             font-weight: 600;
-            color: #92400e;
-            margin-bottom: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-200);
+            transition: all 0.2s ease;
+            user-select: none;
         }
-
+        
         .contacts-header:hover {
-            color: #78350f;
+            background: linear-gradient(135deg, var(--gray-200), #e9ecef);
+            color: var(--gray-800);
         }
-
+        
         .contacts-list {
-            margin-top: 10px;
-            display: none;
+            background: white;
+            padding: 0;
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
-
-        .contacts-list div {
-            margin: 6px 0;
-            font-size: 13px;
-            color: #713f12;
+        
+        .contact-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+            line-height: 1.4;
         }
-
-        .contacts-list a {
-            color: var(--info-dark);
+        
+        .contact-item:last-child {
+            border-bottom: none;
+        }
+        
+        .phone-link {
+            color: var(--primary-color);
             text-decoration: none;
             font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
         }
-
-        .contacts-list a:hover {
-            text-decoration: underline;
+        
+        .phone-link:hover {
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
         }
-
+        
+        .toggle-icon {
+            float: right;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
         .time-elapsed {
             background: linear-gradient(135deg, #fdf4ff, #fae8ff);
             padding: 10px 15px;
@@ -2439,27 +2515,30 @@
             `;
         }
 
-            function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
-                  const slaTimer = renderSLATimer(incident, escalationLevel);
-                  const workingTimer = renderWorkingTimer(incident);
-                  const timerBadge = workingTimer || slaTimer;
-                
-                return `
-                    <div class="incident-header">
-                        <div class="incident-title">
-                            <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
-                            <div class="badges">
-                                <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
-                                <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
-                                ${getStateBadge(realState)}
-                            </div>
-                            <!-- TIMER ÚNICO AQUÍ -->
-                            ${timerBadge ? `<div class="timer-container">${timerBadge}</div>` : ''}
+        function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
+            const slaTimer = renderSLATimer(incident, escalationLevel);
+            const workingTimer = renderWorkingTimer(incident);
+            
+            return `
+                <div class="incident-header">
+                    <div class="incident-title">
+                        <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
+                        <div class="badges">
+                            <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
+                            <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
+                            ${getStateBadge(realState)}
                         </div>
-                        <div class="incident-id">${incident.id}</div>
                     </div>
-                `;
-            }
+                    <!-- ✅ TIMER BIEN POSICIONADO Y CON CONTAINER -->
+                    <div class="timer-container">
+                        ${workingTimer || slaTimer}
+                    </div>
+                    <div class="incident-location">
+                        📍 ${incident.zone || 'Zona no especificada'}
+                    </div>
+                </div>
+            `;
+        }
 
         function renderIncidentBody(incident, technicianEmail, escalationLevel) {
             return `
@@ -2701,21 +2780,21 @@
             
             let contacts = '';
             if (incident.reporter && incident.reporter_phone) {
-                contacts += `<div>📋 Reportador: <strong>${incident.reporter}</strong> - <a href="tel:${incident.reporter_phone}">${incident.reporter_phone}</a></div>`;
+                contacts += `<div class="contact-item">📋 <strong>Reportador:</strong> ${incident.reporter} - <a href="tel:${incident.reporter_phone}" class="phone-link">${incident.reporter_phone}</a></div>`;
             }
             if (incident.supervisor && incident.supervisor_phone) {
-                contacts += `<div>👨‍💼 Supervisor: <strong>${incident.supervisor}</strong> - <a href="tel:${incident.supervisor_phone}">${incident.supervisor_phone}</a></div>`;
+                contacts += `<div class="contact-item">👨‍💼 <strong>Supervisor:</strong> ${incident.supervisor} - <a href="tel:${incident.supervisor_phone}" class="phone-link">${incident.supervisor_phone}</a></div>`;
             }
             if (incident.zone_manager && incident.zone_manager_phone) {
-                contacts += `<div>🏢 Encargado Zona: <strong>${incident.zone_manager}</strong> - <a href="tel:${incident.zone_manager_phone}">${incident.zone_manager_phone}</a></div>`;
+                contacts += `<div class="contact-item">🏢 <strong>Encargado Zona:</strong> ${incident.zone_manager} - <a href="tel:${incident.zone_manager_phone}" class="phone-link">${incident.zone_manager_phone}</a></div>`;
             }
             
             return `
                 <div class="contacts-info">
-                    <div class="contacts-header" onclick="toggleContacts('${incident.id}')">
-                        📞 Contactos <span class="toggle-icon">▼</span>
+                    <div class="contacts-header" onclick="toggleContacts('${incident.id}')" style="cursor: pointer;">
+                        📞 Contactos <span class="toggle-icon" id="contacts-toggle-${incident.id}">▼</span>
                     </div>
-                    <div class="contacts-list" id="contacts-${incident.id}">
+                    <div class="contacts-list" id="contacts-${incident.id}" style="display: none;">
                         ${contacts}
                     </div>
                 </div>
@@ -3230,21 +3309,31 @@
         }
 
         function toggleContacts(incidentId) {
-                const contactsContent = document.getElementById(`contacts-${incidentId}`);
-                const toggleIcon = document.getElementById(`contacts-toggle-${incidentId}`);
+            const contactsContent = document.getElementById(`contacts-${incidentId}`);
+            const toggleIcon = document.getElementById(`contacts-toggle-${incidentId}`);
+            
+            console.log('🔍 toggleContacts llamado:', incidentId);
+            console.log('📞 contactsContent:', contactsContent);
+            console.log('🔽 toggleIcon:', toggleIcon);
+            
+            if (contactsContent) {
+                const isHidden = contactsContent.style.display === 'none';
                 
-                if (contactsContent && toggleIcon) {
-                    const isVisible = contactsContent.style.display !== 'none';
-                    
-                    if (isVisible) {
-                        contactsContent.style.display = 'none';
-                        toggleIcon.textContent = '▶';
-                    } else {
-                        contactsContent.style.display = 'block';
-                        toggleIcon.textContent = '▼';
-                    }
+                if (isHidden) {
+                    contactsContent.style.display = 'block';
+                    contactsContent.style.maxHeight = '200px';
+                    contactsContent.style.opacity = '1';
+                    if (toggleIcon) toggleIcon.textContent = '▲';
+                } else {
+                    contactsContent.style.display = 'none';
+                    contactsContent.style.maxHeight = '0';
+                    contactsContent.style.opacity = '0';
+                    if (toggleIcon) toggleIcon.textContent = '▼';
                 }
+            } else {
+                console.error('❌ No se encontró elemento contacts-' + incidentId);
             }
+        }
 
         function toggleEscalationHistory(incidentId) {
             const historyContent = document.getElementById(`escalation-${incidentId}`);
