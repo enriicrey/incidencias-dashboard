@@ -2243,6 +2243,7 @@
                 modal.classList.remove('active');
             });
         }
+    
         function filterIncidents(filter, buttonElement = null) {
                 currentStatusFilter = filter;
                 if (buttonElement) {
@@ -2739,8 +2740,8 @@
             } else if (realState === 'working') {
                 return `
                     <div class="incident-actions">
-                        <button class="btn btn-primary" onclick="showResolverModal('currentIncidentId')">🔧 RESOLVER</button>
-                        <button class="btn btn-purple" onclick="showSolicitarMaterialesModal('currentIncidentId')">📦 MATERIALES</button>
+                        <button class="btn btn-primary" onclick="showResolverModal('${incident.id}')">🔧 RESOLVER</button>
+                        <button class="btn btn-purple" onclick="showSolicitarMaterialesModal('${incident.id}')">📦 MATERIALES</button>
                         <button class="btn btn-secondary" onclick="handleAction('derivar_departamento', '${incident.id}')">🔄 DERIVAR</button>
                         <button class="btn btn-warning" onclick="handleAction('solicitar_apoyo', '${incident.id}')">🆘 PEDIR AYUDA</button>
                     </div>
@@ -3476,12 +3477,19 @@
         ======================================== */
         
         let requestedMaterials = []; // Array para materiales solicitados
+        let currentIncidentId = null; //declarar la variable global
         
         // Mostrar modal solicitar materiales
-        function showSolicitarMaterialesModal() {
+        function showSolicitarMaterialesModal(incidentId) {
+            currentIncidentId = incidentId;   // 🔹 Guardamos la incidencia actual
             requestedMaterials = []; // Limpiar array
             document.getElementById('solicitudMaterialesModal').classList.add('active');
             updateRequestedMaterialsList();
+        }
+
+        function showResolverModal(incidentId) {
+            currentIncidentId = incidentId;
+            document.getElementById("resolverModal").classList.add("active");
         }
         
         // Cerrar modal solicitar materiales  
