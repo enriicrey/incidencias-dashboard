@@ -1263,10 +1263,10 @@
         const CONFIG = {
             API_INCIDENTS: '/api/webhook-respuesta',
             API_RESPONSE: '/api/webhook-respuesta',
-            REFRESH_INTERVAL: 60000,
+            REFRESH_INTERVAL: 300000,
             SLA_UPDATE_INTERVAL: 30000,
-            MAX_RETRY_ATTEMPTS: 3,
-            RETRY_DELAY: 2000
+            MAX_RETRY_ATTEMPTS: 2,
+            RETRY_DELAY: 1000
         };
 
         // Variables globales
@@ -1585,7 +1585,7 @@
                     
                     updateStatistics();
                     renderIncidents();
-                    startAutoRefresh();
+                    //startAutoRefresh();
                     startSLATimers();
                 } else {
                     throw new Error('Datos inválidos recibidos del servidor');
@@ -2673,11 +2673,10 @@
                 refreshBtn.innerHTML = originalText;
             });
         }
-
         function startAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
+                    console.log('⚠️ Auto-refresh deshabilitado para evitar consumo excesivo');
+            // No hacer nada - solo refresh manual
+        }
             
             refreshInterval = setInterval(() => {
                 console.log('🔄 Auto-refresh ejecutándose...');
@@ -2836,6 +2835,11 @@
         window.verifyPIN = verifyPIN;
 
         console.log('🔧 Dashboard ABC.xyz - Versión Completa Reorganizada cargada');
+       
+        if (typeof refreshInterval !== 'undefined' && refreshInterval) {
+            clearInterval(refreshInterval);
+            console.log('🧹 Interval de auto-refresh limpiado');
+        }
     </script>
 </body>
 </html>   
