@@ -1680,40 +1680,157 @@
                 seguimiento: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'seguimiento').length
             };
         }
-               function getIncidentRealState(incident, technicianEmail) {
-                    const now = new Date();
-                    
-                    // Si está asignado y aceptado por este técnico
-                    if (incident.tecnico_asignado === technicianEmail && 
-                        incident.estado === "En Proceso") {
-                        return 'working';
-                    }
-                    
-                    // Si está asignado a este técnico en su nivel actual y dentro de SLA
-                    const currentLevel = `tecnico_l${incident.nivel_actual || 0}`;
-                    if (incident[currentLevel] === technicianEmail && 
-                        incident.escalado === true &&
-                        new Date(incident.sla_vencimiento) > now) {
-                        return 'pending';
-                    }
-                    
-                    // Si venció el SLA del técnico
-                    const technicianLevel = getUserLevel(technicianEmail, incident);
-                    if (technicianLevel && 
-                        incident.nivel_actual > technicianLevel &&
-                        new Date(incident.sla_vencimiento) < now) {
-                        return 'expired';
-                    }
-                    
-                    // Si fue rechazado por este técnico o escalado más allá
-                    if (incident[`respuesta_l${technicianLevel}`] === 'rechazado' ||
-                        incident.nivel_actual > technicianLevel) {
-                        return 'seguimiento';
-                    }
-                    
-                    return 'other';
+         function getIncidentRealState(incident, technicianEmail) {
+            const now = new Date();
+            
+            // 🔍 DETERMINAR ASIGNACIÓN ACTUAL DEL TÉCNICO
+            let currentAssignment = null;
+            let wasAssignedBefore = false;
+            
+            // Verificar L0
+            if (incident.l0_technician === technicianEmail) {
+                if (incident.escalation_level === 0) {
+                    // Aún está en L0, es su responsabilidad
+                    currentAssignment = {
+                        level: 0,
+                        response: incident.l0_response,
+                        sla_end: incident.sla_l0_end
+                    };
+                } else {
+                    // Ya escaló, pero puede verla para seguimiento o solicitar
+                    wasAssignedBefore = true;
                 }
+            }
+            
+            // Verificar L1  
+            if (incident.l1_technician === technicianEmail) {
+                if (incident.escalation_level === 1) {
+                    currentAssignment = {
+                        level: 1,
+                        response: incident.l1_response,
+                        sla_end: incident.sla_l1_backup_end
+                    };
+                } else if (incident.escalation_level > 1) {
+                    wasAssignedBefore = true;
+                }
+            }
+            
+            // Verificar L2
+            if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+                if (incident.escalation_level === 2) {
+                    currentAssignment = {
+                        level: 2,
+                        response: incident.l2_responses,
+                        sla_end: incident.sla_l2_equipo_end
+                    };
+                } else if (incident.escalation_level > 2) {
+                    wasAssignedBefore = true;
+                }
+            }
+            
+            // 🚫 Si no tiene relación, no la ve
+            if (!currentAssignment && !wasAssignedBefore) {
+                return null;
+            }
+            
+            // 🎯 LÓGICA DE ESTADOS
+            
+            // 1. TRABAJANDO - Aceptó en su nivel actual
+            if (currentAssignment && currentAssignment.response === "✅ Acepto") {
+                return 'working';
+            }
+            
+            // 2. PENDIENTE - Asignado actualmente, sin responder, SLA válido
+            if (currentAssignment && 
+                currentAssignment.response === "⭕ Sin Respuesta" && 
+                currentAssignment.sla_end) {
+                
+                const slaDeadline = new Date(currentAssignment.sla_end);
+                if (now <= slaDeadline) {
+                    return 'pending';
+                }
+            }
+            
+            // 3. VENCIDA - Su SLA expiró sin responder
+            if (currentAssignment && 
+                currentAssignment.response === "⭕ Sin Respuesta" && 
+                currentAssignment.sla_end) {
+                
+                const slaDeadline = new Date(currentAssignment.sla_end);
+                if (now > slaDeadline) {
+                    return 'expired';
+                }
+            }
+            
+            // 4. SEGUIMIENTO - Fue asignado antes o rechazó
+            if (wasAssignedBefore || 
+                (currentAssignment && currentAssignment.response === "❌ Rechazo")) {
+                return 'seguimiento';
+            }
+            
+            return 'other';
+        }
 
+        // 🔄 FUNCIÓN PARA RENDERIZAR DESPUÉS DE REFRESH
+        function handleActionResponse(actionType, incidentId, response) {
+            if (response.status === 'success') {
+                // Mostrar notificación
+                showNotification(`✅ ${actionType} procesado correctamente`, 'success');
+                
+                // Nota al usuario sobre refresh
+                showNotification(`🔄 Haz refresh para ver los cambios actualizados`, 'info', 8000);
+                
+                // Opcional: Auto-refresh después de 3 segundos
+                setTimeout(() => {
+                    console.log('🔄 Auto-refresh después de acción exitosa');
+                    refreshDashboard();
+                }, 3000);
+            } else {
+                showNotification(`❌ Error: ${response.message}`, 'error');
+            }
+        }
+        
+        // 🎯 ACCIONES PENDIENTES POR IMPLEMENTAR:
+        
+        const PENDING_ACTIONS = {
+            // YA IMPLEMENTADAS:
+            'acepto': '✅ Implementada',
+            'rechazo': '✅ Implementada',
+            
+            // PENDIENTES:
+            'resolver': '🚧 Pendiente - Completar incidencia con solución',
+            'solicitar_materiales': '🚧 Pendiente - Pedir materiales al almacén', 
+            'derivar_departamento': '🚧 Pendiente - Transferir a otro departamento',
+            'solicitar_traspaso': '🚧 Pendiente - Pedir asignación de incidencia ajena',
+            'aportar_informacion': '🚧 Pendiente - Enviar info útil a técnico actual',
+            'solicitar_asignacion': '🚧 Pendiente - Pedir hacerse cargo de vencida'
+        };
+        
+        // 📋 BOTONES POR ESTADO (para validar renderizado)
+        const BUTTONS_BY_STATE = {
+            'pending': [
+                { text: '✅ ACEPTO', action: 'acepto', class: 'btn-success' },
+                { text: '❌ RECHAZO', action: 'rechazo', class: 'btn-danger' }, 
+                { text: '🆘 PEDIR AYUDA', action: 'ayuda', class: 'btn-warning' }
+            ],
+            
+            'working': [
+                { text: '🔧 RESOLVER', action: 'resolver', class: 'btn-primary' },
+                { text: '📦 MATERIALES', action: 'solicitar_materiales', class: 'btn-purple' },
+                { text: '🔄 DERIVAR', action: 'derivar_departamento', class: 'btn-secondary' },
+                { text: '🆘 PEDIR AYUDA', action: 'ayuda', class: 'btn-warning' }
+            ],
+            
+            'seguimiento': [
+                { text: '👁️ VER PROGRESO', action: 'ver_progreso', class: 'btn-info', readonly: true },
+                { text: '🔄 SOLICITAR', action: 'solicitar_asignacion', class: 'btn-secondary' },
+                { text: '💬 APORTAR INFO', action: 'aportar_informacion', class: 'btn-light' }
+            ],
+            
+            'expired': [
+                { text: '🔄 SOLICITAR', action: 'solicitar_asignacion', class: 'btn-secondary' }
+            ]
+        };
         /* ========================================
            LÓGICA DE ESTADOS DE INCIDENCIAS
         ======================================== */
