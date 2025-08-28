@@ -2185,7 +2185,7 @@
     }
     
     // ✅ MEJORA: Verificar L2 - permitir asignación múltiple
-    if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+    if (incident.l2_technicians && incident.l2_technicians.split(',').map(t => t.trim()).includes(technicianEmail)) {
         if (incident.escalation_level === 2) {
             assignments.push({
                 level: 2,
@@ -2335,7 +2335,7 @@
             switch (level) {
                 case 0: return incident.l0_technician === technicianEmail;
                 case 1: return incident.l1_technician === technicianEmail;
-                case 2: return incident.l2_technicians && incident.l2_technicians.includes(technicianEmail);
+                case 2: return incident.l2_technicians && incident.l2_technicians.split(',').map(t => t.trim()).includes(technicianEmail);
                 case 3: return incident.l3_supervisor === technicianEmail;
                 default: return false;
             }
