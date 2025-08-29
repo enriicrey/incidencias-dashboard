@@ -2560,21 +2560,21 @@
                 `;
             }
 
-         function renderIncidentBody(incident, technicianEmail, escalationLevel) {
-            return `
-                <div class="incident-body">
-                    <div class="zone">📍 <strong>${incident.zone}</strong></div>
-                    <div class="description">${incident.description}</div>
-                    
-                    ${renderCurrentEscalationInfo(incident, technicianEmail, escalationLevel)}
-                    ${renderTechnicianInfo(incident, technicianEmail)}
-                    ${renderAssignmentNotes(incident)}
-                    ${renderActionsTaken(incident)}
-                    ${renderContactsInfo(incident)}
-                    ${renderEscalationHistory(incident, technicianEmail)}
-                </div>
-            `;
-        }
+            function renderIncidentBody(incident, technicianEmail, escalationLevel) {
+                return `
+                    <div class="incident-body">
+                        <div class="zone">📍 <strong>${incident.zone}</strong></div>
+                        <div class="description">${incident.description}</div>
+                        
+                        ${renderCurrentEscalationInfo(incident, technicianEmail, escalationLevel)}
+                        ${renderTechnicianInfo(incident, technicianEmail)}
+                        ${renderAssignmentNotes(incident)}
+                        ${renderActionsTaken(incident)}
+                        ${renderContactsInfo(incident)}
+                        ${renderEscalationHistory(incident, technicianEmail)}
+                    </div>
+                `;
+            }
         function renderCurrentEscalationInfo(incident, technicianEmail, escalationLevel) {
             if (escalationLevel === 0) return ''; // Sin escalado
             
@@ -2802,29 +2802,6 @@
             const hours = Math.floor(diffMinutes / 60);
             const minutes = diffMinutes % 60;
             return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        }
-
-        function renderTimeElapsed(incident, technicianEmail) {
-            let acceptanceDate = null;
-            
-            if (incident.l0_technician === technicianEmail && incident.l0_acceptance_date) {
-                acceptanceDate = incident.l0_acceptance_date;
-            } else if (incident.l1_technician === technicianEmail && incident.l1_acceptance_date) {
-                acceptanceDate = incident.l1_acceptance_date;
-            } else if (incident.l2_acceptance_date) {
-                acceptanceDate = incident.l2_acceptance_date;
-            }
-            
-            if (!acceptanceDate) return '';
-            
-            const now = new Date();
-            const accepted = new Date(acceptanceDate);
-            const diffMinutes = Math.floor((now - accepted) / 60000);
-            
-            const hours = Math.floor(diffMinutes / 60);
-            const minutes = diffMinutes % 60;
-            
-            return `<div class="time-elapsed">🔧 Trabajando: ${hours}h ${minutes}m</div>`;
         }
 
         function renderAssignmentNotes(incident) {
