@@ -1502,11 +1502,9 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <div class="logo">
-                    <span>🔧</span>
-                    <span>Dashboard Técnico ABC.xyz</span>
-                </div>
+                <div class="logo">🔧 Dashboard Técnico - Sistema ABC.xyz</div>
                 <div class="user-info">
+                <div class="user-name" id="technicianName">Cargando técnico...</div>
                     <span id="userEmail">usuario@abc.xyz</span>
                     <span>|</span>
                     <span id="userRole">Técnico L0</span>
@@ -2081,9 +2079,11 @@
                     allIncidents = data.incidents;
                     console.log(`📊 Cargadas ${allIncidents.length} incidencias`);
                     
+                    // ✅ AÑADIR AQUÍ: Actualizar header con datos existentes
+                    updateHeaderInfo();
+                    
                     updateStatistics();
                     renderIncidents();
-                    // ❌ ELIMINAR ESTA LÍNEA: startAutoRefresh();
                     startSLATimers();
                 } else {
                     throw new Error('Datos inválidos recibidos del servidor');
@@ -2093,6 +2093,21 @@
                 showErrorState(error.message);
             }
         }
+        
+        // ✅ AÑADIR ESTA FUNCIÓN NUEVA:
+            function updateHeaderInfo() {
+                if (currentTechnician && currentTechnician.email) {
+                    // Obtener nombre del técnico (de URL params o login)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const nameFromUrl = urlParams.get('nombre'); // Del correo
+                    const nameFromLogin = currentTechnician.name; // Del login
+                    
+                    const displayName = nameFromUrl || nameFromLogin || currentTechnician.email.split('@')[0];
+                    
+                    document.getElementById('userEmail').textContent = displayName;
+                    document.getElementById('userRole').textContent = currentTechnician.email;
+                }
+            }
 
         async function fetchWithRetry(url, options = {}, attempt = 1) {
             try {
@@ -2309,8 +2324,7 @@
         const BUTTONS_BY_STATE = {
             'pending': [
                 { text: '✅ ACEPTO', action: 'acepto', class: 'btn-success' },
-                { text: '❌ RECHAZO', action: 'rechazo', class: 'btn-danger' }, 
-                { text: '🆘 PEDIR AYUDA', action: 'ayuda', class: 'btn-warning' }
+                { text: '❌ RECHAZO', action: 'rechazo', class: 'btn-danger' }
             ],
             
             'working': [
@@ -2758,45 +2772,9 @@
         }
 
         function renderTechnicianInfo(incident, userEmail) {
-            let techInfo = '';
-            
-            if (incident.l0_technician) {
-                const isCurrentTech = incident.l0_technician === userEmail;
-                techInfo += `
-                    <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
-                        👨‍🔧 L0: <strong>${incident.l0_technician.split('@')[0]}</strong>
-                        ${isCurrentTech ? ' (TÚ)' : ''}
-                        ${incident.l0_response ? ` - ${incident.l0_response}` : ''}
-                        ${incident.l0_acceptance_date ? ` - ${new Date(incident.l0_acceptance_date).toLocaleString('es-ES')}` : ''}
-                    </div>
-                `;
-            }
-            
-            if (parseInt(incident.escalation_level) >= 1 && incident.l1_technician) {
-                const isCurrentTech = incident.l1_technician === userEmail;
-                techInfo += `
-                    <div class="technician-info ${isCurrentTech ? 'current-tech' : ''}">
-                        👨‍🔧 L1: <strong>${incident.l1_technician.split('@')[0]}</strong>
-                        ${isCurrentTech ? ' (TÚ)' : ''}
-                        ${incident.l1_response ? ` - ${incident.l1_response}` : ''}
-                        ${incident.l1_acceptance_date ? ` - ${new Date(incident.l1_acceptance_date).toLocaleString('es-ES')}` : ''}
-                    </div>
-                `;
-            }
-            
-            if (parseInt(incident.escalation_level) >= 2 && incident.l2_technicians) {
-                const l2Techs = incident.l2_technicians.split(',');
-                const isCurrentInL2 = l2Techs.some(tech => tech.trim() === userEmail);
-                techInfo += `
-                    <div class="technician-info ${isCurrentInL2 ? 'current-tech' : ''}">
-                        👥 L2: <strong>${l2Techs.map(t => t.split('@')[0]).join(', ')}</strong>
-                        ${isCurrentInL2 ? ' (INCLUYE A TI)' : ''}
-                        ${incident.l2_response ? ` - ${incident.l2_response}` : ''}
-                    </div>
-                `;
-            }
-            
-            return techInfo;
+            // ✅ Info de técnicos solo en historial de escalado (desplegable)
+            // La tarjeta se mantiene limpia para foco en la acción
+            return '';
         }
 
         function renderSLATimer(incident, escalationLevel) {
