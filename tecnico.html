@@ -2205,17 +2205,18 @@
             }
             
             // ✅ MEJORA: Verificar L2 - permitir asignación múltiple
-                if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
-                    if (incident.escalation_level === 2) {
-                        currentAssignment = {
-                            level: 2,
-                            response: incident.l2_responses,
-                            sla_end: incident.sla_l2_equipo_end
-                        };
-                    } else if (incident.escalation_level > 2) {
-                        wasAssignedBefore = true;
-                    }
-                }
+         if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
+            if (incident.escalation_level === 2) {
+                assignments.push({  // ✅ Usa el array assignments
+                    level: 2,
+                    response: incident.l2_responses,
+                    sla_end: incident.sla_l2_equipo_end,
+                    isCurrent: true
+                });
+            } else if (incident.escalation_level > 2) {
+                wasAssignedBefore = true;
+            }
+        }
             
             // 🚫 Si no tiene relación, no la ve
             if (assignments.length === 0 && !wasAssignedBefore) {
