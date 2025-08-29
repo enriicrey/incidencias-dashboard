@@ -1435,6 +1435,26 @@
             .requested-materials-list::-webkit-scrollbar-thumb:hover {
                 background: var(--text-secondary);
             }
+            .current-escalation-info {
+            background: linear-gradient(135deg, #fff3cd, #fef7e3);
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+        }
+        
+        .escalation-badge {
+            font-weight: 700;
+            color: #856404;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .escalation-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -2150,96 +2170,95 @@
             };
         }
          function getIncidentRealState(incident, technicianEmail) {
-    const now = new Date();
-    
-    // 🔍 DETERMINAR TODAS LAS ASIGNACIONES DEL TÉCNICO
-    let assignments = [];
-    let wasAssignedBefore = false;
-    
-    // Verificar L0
-    if (incident.l0_technician === technicianEmail) {
-        if (incident.escalation_level === 0) {
-            assignments.push({
-                level: 0,
-                response: incident.l0_response,
-                sla_end: incident.sla_l0_end,
-                isCurrent: true
-            });
-        } else {
-            wasAssignedBefore = true;
-        }
-    }
-    
-    // Verificar L1  
-    if (incident.l1_technician === technicianEmail) {
-        if (incident.escalation_level === 1) {
-            assignments.push({
-                level: 1,
-                response: incident.l1_response,
-                sla_end: incident.sla_l1_backup_end,
-                isCurrent: true
-            });
-        } else if (incident.escalation_level > 1) {
-            wasAssignedBefore = true;
-        }
-    }
-    
-    // ✅ MEJORA: Verificar L2 - permitir asignación múltiple
-    if (incident.l2_technicians && incident.l2_technicians.split(',').map(t => t.trim()).includes(technicianEmail)) {
-        if (incident.escalation_level === 2) {
-            assignments.push({
-                level: 2,
-                response: incident.l2_responses || "⭕ Sin Respuesta",
-                sla_end: incident.sla_l2_equipo_end,
-                isCurrent: true
-            });
-        } else if (incident.escalation_level > 2) {
-            wasAssignedBefore = true;
-        }
-    }
-    
-    // 🚫 Si no tiene relación, no la ve
-    if (assignments.length === 0 && !wasAssignedBefore) {
-        return null;
-    }
-    
-    // ✅ PRIORIDAD: Evaluar asignación actual (el nivel activo de escalado)
-    const currentAssignment = assignments.find(a => a.isCurrent);
-    
-    if (currentAssignment) {
-        // 1. TRABAJANDO - Aceptó en su nivel actual
-        if (currentAssignment.response === "✅ Acepto") {
-            return 'working';
-        }
-        
-        // 2. PENDIENTE - Asignado actualmente, sin responder, SLA válido
-        if (currentAssignment.response === "⭕ Sin Respuesta" && 
-            currentAssignment.sla_end) {
+            const now = new Date();
             
-            const slaDeadline = new Date(currentAssignment.sla_end);
-            if (now <= slaDeadline) {
-                return 'pending';
+            // 🔍 DETERMINAR TODAS LAS ASIGNACIONES DEL TÉCNICO
+            let assignments = [];
+            let wasAssignedBefore = false;
+            
+            // Verificar L0
+            if (incident.l0_technician === technicianEmail) {
+                if (incident.escalation_level === 0) {
+                    assignments.push({
+                        level: 0,
+                        response: incident.l0_response,
+                        sla_end: incident.sla_l0_end,
+                        isCurrent: true
+                    });
+                } else {
+                    wasAssignedBefore = true;
+                }
             }
             
-            // 3. VENCIDA - Su SLA expiró sin responder EN EL NIVEL ACTUAL
-            if (now > slaDeadline) {
-                return 'expired';
+            // Verificar L1  
+            if (incident.l1_technician === technicianEmail) {
+                if (incident.escalation_level === 1) {
+                    assignments.push({
+                        level: 1,
+                        response: incident.l1_response,
+                        sla_end: incident.sla_l1_backup_end,
+                        isCurrent: true
+                    });
+                } else if (incident.escalation_level > 1) {
+                    wasAssignedBefore = true;
+                }
             }
+            
+            // ✅ MEJORA: Verificar L2 - permitir asignación múltiple
+                if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
+                    if (incident.escalation_level === 2) {
+                        currentAssignment = {
+                            level: 2,
+                            response: incident.l2_responses,
+                            sla_end: incident.sla_l2_equipo_end
+                        };
+                    } else if (incident.escalation_level > 2) {
+                        wasAssignedBefore = true;
+                    }
+                }
+            
+            // 🚫 Si no tiene relación, no la ve
+            if (assignments.length === 0 && !wasAssignedBefore) {
+                return null;
+            }
+            
+            // ✅ PRIORIDAD: Evaluar asignación actual (el nivel activo de escalado)
+            const currentAssignment = assignments.find(a => a.isCurrent);
+            
+            if (currentAssignment) {
+                // 1. TRABAJANDO - Aceptó en su nivel actual
+                if (currentAssignment.response === "✅ Acepto") {
+                    return 'working';
+                }
+                
+                // 2. PENDIENTE - Asignado actualmente, sin responder, SLA válido
+                if (currentAssignment.response === "⭕ Sin Respuesta" && 
+                    currentAssignment.sla_end) {
+                    
+                    const slaDeadline = new Date(currentAssignment.sla_end);
+                    if (now <= slaDeadline) {
+                        return 'pending';
+                    }
+                    
+                    // 3. VENCIDA - Su SLA expiró sin responder EN EL NIVEL ACTUAL
+                    if (now > slaDeadline) {
+                        return 'expired';
+                    }
+                }
+                
+                // Si rechazó en el nivel actual
+                if (currentAssignment.response === "❌ Rechazo") {
+                    return 'seguimiento';
+                }
+            }
+            
+            // 4. SEGUIMIENTO - Fue asignado antes en otros niveles
+            if (wasAssignedBefore) {
+                return 'seguimiento';
+            }
+            
+            return 'other';
         }
-        
-        // Si rechazó en el nivel actual
-        if (currentAssignment.response === "❌ Rechazo") {
-            return 'seguimiento';
-        }
-    }
-    
-    // 4. SEGUIMIENTO - Fue asignado antes en otros niveles
-    if (wasAssignedBefore) {
-        return 'seguimiento';
-    }
-    
-    return 'other';
-}
 
         // 🔄 FUNCIÓN PARA RENDERIZAR DESPUÉS DE REFRESH
         function handleActionResponse(actionType, incidentId, response) {
@@ -2331,15 +2350,15 @@
             renderIncidents(); // Llamar sin parámetros
         }
 
-        function checkCurrentAssignment(incident, technicianEmail, level) {
-            switch (level) {
-                case 0: return incident.l0_technician === technicianEmail;
-                case 1: return incident.l1_technician === technicianEmail;
-                case 2: return incident.l2_technicians && incident.l2_technicians.split(',').map(t => t.trim()).includes(technicianEmail);
-                case 3: return incident.l3_supervisor === technicianEmail;
-                default: return false;
+         function checkCurrentAssignment(incident, technicianEmail, level) {
+                switch (level) {
+                    case 0: return incident.l0_technician === technicianEmail;
+                    case 1: return incident.l1_technician === technicianEmail;
+                    case 2: return incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail);
+                    case 3: return incident.l3_supervisor === technicianEmail;
+                    default: return false;
+                }
             }
-        }
 
         function hasAcceptedAtLevel(incident, technicianEmail, level) {
             switch (level) {
@@ -2378,13 +2397,16 @@
                         return incident.sla_l0_end;
                     } else if (incident.l1_technician === technicianEmail) {
                         return incident.sla_l1_backup_end;
-                    } else if (incident.l2_technicians && incident.l2_technicians.includes(technicianEmail)) {
+                   } else if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
                         return incident.sla_l2_equipo_end;
                     }
                 }
                 
                 return null;
             }
+        console.log('L2 technicians string:', incident.l2_technicians);
+        console.log('L2 array:', incident.l2_technicians.split(',').map(email => email.trim()));
+        console.log('Fernando incluido?:', incident.l2_technicians.split(',').map(email => email.trim()).includes('fernando.castro@empresa.com'));
 
         function canTechnicianRespond(incident, technicianEmail) {
             const state = getIncidentRealState(incident, technicianEmail);
@@ -2516,39 +2538,36 @@
             `;
         }
 
-        function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
-            const slaTimer = renderSLATimer(incident, escalationLevel);
-            const workingTimer = renderWorkingTimer(incident);
-            
-            return `
-                <div class="incident-header">
-                    <div class="incident-title">
-                        <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
-                        <div class="badges">
-                            <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
-                            <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
-                            ${getStateBadge(realState)}
+            function renderIncidentHeader(incident, priority, priorityColor, escalationLevel, realState) {
+                const slaTimer = renderSLATimer(incident, escalationLevel);
+                const workingTimer = renderWorkingTimer(incident);
+                
+                return `
+                    <div class="incident-header">
+                        <div class="incident-title">
+                            <h4>${incident.equipment || incident.component || 'Equipo no especificado'}</h4>
+                            <div class="badges">
+                                <span class="priority-badge" style="background-color: ${priorityColor};">${priority}</span>
+                                <span class="badge bg-info">L${escalationLevel} ACTIVO</span>
+                                ${getStateBadge(realState)}
+                            </div>
+                        </div>
+                        <!-- ✅ TIMER ÚNICO EN HEADER -->
+                        <div class="timer-container">
+                            ${workingTimer || slaTimer}
                         </div>
                     </div>
-                    <!-- ✅ TIMER BIEN POSICIONADO Y CON CONTAINER -->
-                    <div class="timer-container">
-                        ${workingTimer || slaTimer}
-                    </div>
-                    <div class="incident-location">
-                        📍 ${incident.zone || 'Zona no especificada'}
-                    </div>
-                </div>
-            `;
-        }
+                `;
+            }
 
-        function renderIncidentBody(incident, technicianEmail, escalationLevel) {
+         function renderIncidentBody(incident, technicianEmail, escalationLevel) {
             return `
                 <div class="incident-body">
                     <div class="zone">📍 <strong>${incident.zone}</strong></div>
                     <div class="description">${incident.description}</div>
                     
+                    ${renderCurrentEscalationInfo(incident, technicianEmail, escalationLevel)}
                     ${renderTechnicianInfo(incident, technicianEmail)}
-                    ${renderTimeElapsed(incident, technicianEmail)}
                     ${renderAssignmentNotes(incident)}
                     ${renderActionsTaken(incident)}
                     ${renderContactsInfo(incident)}
@@ -2556,6 +2575,60 @@
                 </div>
             `;
         }
+        function renderCurrentEscalationInfo(incident, technicianEmail, escalationLevel) {
+            if (escalationLevel === 0) return ''; // Sin escalado
+            
+            const currentLevelInfo = getCurrentLevelInfo(incident, escalationLevel);
+            
+            if (!currentLevelInfo) return '';
+            
+            return `
+                <div class="current-escalation-info">
+                    <div class="escalation-badge">
+                        🔺 ESCALADO NIVEL ${escalationLevel}
+                    </div>
+                    <div class="escalation-details">
+                        <strong>Técnico actual:</strong> ${currentLevelInfo.technician || 'Buscando técnico...'}
+                        ${currentLevelInfo.sla_end ? `<br><strong>SLA:</strong> ${new Date(currentLevelInfo.sla_end).toLocaleString('es-ES')}` : ''}
+                        ${currentLevelInfo.response && currentLevelInfo.response !== '⭕ Sin Respuesta' ? `<br><strong>Estado:</strong> ${currentLevelInfo.response}` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCurrentLevelInfo(incident, escalationLevel) {
+            switch (escalationLevel) {
+                case 0:
+                    return {
+                        technician: incident.l0_technician,
+                        response: incident.l0_response,
+                        sla_end: incident.sla_l0_end
+                    };
+                case 1:
+                    return {
+                        technician: incident.l1_technician,
+                        response: incident.l1_response,
+                        sla_end: incident.sla_l1_backup_end
+                    };
+                case 2:
+                    const l2Techs = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()) : [];
+                    return {
+                        technician: l2Techs.length > 1 ? `Equipo L2 (${l2Techs.length} técnicos)` : l2Techs[0],
+                        response: incident.l2_responses,
+                        sla_end: incident.sla_l2_equipo_end,
+                        team: l2Techs
+                    };
+                case 3:
+                    return {
+                        technician: incident.l3_technician,
+                        response: incident.l3_response,
+                        sla_end: incident.sla_l3_responsable_end
+                    };
+                default:
+                    return null;
+            }
+        }
+        
 
         function renderIncidentFooter(incident, realState, technicianEmail) {
             return `
