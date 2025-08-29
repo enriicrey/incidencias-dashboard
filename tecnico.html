@@ -358,7 +358,7 @@
         }
         .timer-container {
             margin-top: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 4px;
         }
         
         .sla-timer, .working-timer {
@@ -372,10 +372,19 @@
             margin: 8px 0;
         }
         
-        .working-timer {
+       .working-timer {
             background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
             color: #01579b;
             border: 1px solid #29b6f6;
+            font-weight: 500; /* ✅ Menos impacto que bold */
+        }
+        
+        .sla-timer.sla-good, .sla-timer.sla-warning {
+            font-weight: 500; /* ✅ Consistente con working */
+        }
+        
+        .sla-timer.sla-critical, .sla-expired {
+            font-weight: 700; /* ✅ Mantener bold solo para crítico/vencido */
         }
         
         .sla-timer.sla-good {
@@ -2385,26 +2394,42 @@
                    (incident.l1_technician === technicianEmail && incident.l1_response !== '⭕ Sin Respuesta');
         }
 
-            function getCurrentLevelSLA(incident, escalationLevel) {
-                const technicianEmail = currentTechnician.email;
-                const state = getIncidentRealState(incident, technicianEmail);
-                
-                // Si está trabajando, NO mostrar SLA
-                if (state === 'working') return null;
-                
-                // Solo mostrar SLA si está pendiente
-                if (state === 'pending') {
-                    if (incident.l0_technician === technicianEmail) {
-                        return incident.sla_l0_end;
-                    } else if (incident.l1_technician === technicianEmail) {
-                        return incident.sla_l1_backup_end;
-                   } else if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
-                        return incident.sla_l2_equipo_end;
-                    }
+        function getCurrentLevelSLA(incident, escalationLevel) {
+            const technicianEmail = currentTechnician.email;
+            const state = getIncidentRealState(incident, technicianEmail);
+            
+            // Si está trabajando, NO mostrar SLA
+            if (state === 'working') return null;
+            
+            // ✅ SOLO mostrar SLA del nivel ACTUAL donde puede responder
+            if (state === 'pending') {
+                // Verificar según el nivel actual de escalado
+                switch (incident.escalation_level) {
+                    case 0:
+                        if (incident.l0_technician === technicianEmail) {
+                            return incident.sla_l0_end;
+                        }
+                        break;
+                    case 1:
+                        if (incident.l1_technician === technicianEmail) {
+                            return incident.sla_l1_backup_end;
+                        }
+                        break;
+                    case 2:
+                        if (incident.l2_technicians && incident.l2_technicians.split(',').map(email => email.trim()).includes(technicianEmail)) {
+                            return incident.sla_l2_equipo_end;
+                        }
+                        break;
+                    case 3:
+                        if (incident.l3_technician === technicianEmail) {
+                            return incident.sla_l3_responsable_end;
+                        }
+                        break;
                 }
-                
-                return null;
             }
+            
+            return null;
+        }
         console.log('L2 technicians string:', incident.l2_technicians);
         console.log('L2 array:', incident.l2_technicians.split(',').map(email => email.trim()));
         console.log('Fernando incluido?:', incident.l2_technicians.split(',').map(email => email.trim()).includes('fernando.castro@empresa.com'));
@@ -2799,10 +2824,13 @@
         function getSLAText(slaEnd) {
             if (!slaEnd) return '';
             const diffMinutes = Math.floor((new Date(slaEnd) - new Date()) / 60000);
-            if (diffMinutes < 0) return `${Math.abs(diffMinutes)}m vencido`;
+            
+            // ✅ Si vencido, solo "VENCIDO" sin tiempo
+            if (diffMinutes < 0) return 'VENCIDO';
+            
             const hours = Math.floor(diffMinutes / 60);
             const minutes = diffMinutes % 60;
-            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            return hours > 0 ? `${hours}h ${minutes}m restantes` : `${minutes}m restantes`;
         }
 
         function renderAssignmentNotes(incident) {
