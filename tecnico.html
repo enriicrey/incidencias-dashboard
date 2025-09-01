@@ -658,56 +658,6 @@
             line-height: 1.4;
         }
 
-        /* ========================================
-           SLA TIMERS
-        ======================================== */
-        .sla-timer {
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sla-timer.sla-good {
-            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-            color: #065f46;
-            border: 1px solid var(--success-color);
-        }
-
-        .sla-timer.sla-warning {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            color: #92400e;
-            border: 1px solid var(--warning-color);
-        }
-
-        .sla-timer.sla-critical {
-            background: linear-gradient(135deg, #fee2e2, #fecaca);
-            color: #991b1b;
-            border: 1px solid var(--danger-color);
-            animation: pulse 2s infinite;
-        }
-
-        .sla-expired {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            color: #991b1b;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-weight: 700;
-            border: 2px solid var(--danger-color);
-            animation: pulse 2s infinite;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
 
         /* ========================================
            ACTION BUTTONS
@@ -1464,6 +1414,37 @@
             color: #6c757d;
             line-height: 1.4;
         }
+        .radio-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+        /* === Pedir Ayuda / Materiales === */
+    .radio-group label {
+        display: block;
+        margin: 6px 0;
+        cursor: pointer;
+    }
+    .radio-group input[type="radio"] {
+        margin-right: 8px;
+    }
+    select optgroup {
+        font-weight: 600;
+        color: #333;
+        padding: 4px 0;
+    }
+    .alert { 
+        border-radius: 8px; 
+        padding: 10px 12px; 
+        margin: 10px 0; 
+        font-size: 14px;
+    }
+    .alert-success { background: #e6f7ee; border: 1px solid #28a745; }
+    .alert-info    { background: #eef7ff; border: 1px solid #17a2b8; }
+    .alert-warning { background: #fff8e5; border: 1px solid #ffc107; }
+    
+
     </style>
 </head>
 <body>
@@ -1700,12 +1681,10 @@
                     
                     <!-- Información adicional -->
                     <div class="form-group">
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="workCanContinue" checked>
-                                <span class="checkmark"></span>
-                                Puedo continuar trabajando mientras llegan los materiales
-                            </label>
+                        <label>¿Puedes continuar trabajando sin estos materiales?</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="workCanContinue" value="true" checked> Sí, puedo continuar mientras tanto</label>
+                            <label><input type="radio" name="workCanContinue" value="false"> No, el trabajo está parado</label>
                         </div>
                     </div>
                     
@@ -2093,6 +2072,24 @@
                 showErrorState(error.message);
             }
         }
+                // 🔍 Monitoreo proactivo
+        function startMonitoring() {
+          console.log("📡 Iniciando monitoreo proactivo...");
+          // Aquí podrías integrar Prometheus/Grafana o alertas básicas con fetch
+        }
+        
+        // 🚀 Integración CI/CD
+        function deployWithCI() {
+          console.log("⚙️ Simulando integración CI/CD (GitHub Actions)...");
+          // Hook para automatizar builds/despliegues
+        }
+        
+        // 🔄 Refactor de endpoints
+        const API_ENDPOINTS = {
+          incidents: "/api/v2/incidents",
+          auth: "/api/v2/auth"
+        };
+
         
         // ✅ AÑADIR ESTA FUNCIÓN NUEVA:
             function updateHeaderInfo() {
@@ -2104,8 +2101,10 @@
                     
                     const displayName = nameFromUrl || nameFromLogin || currentTechnician.email.split('@')[0];
                     
-                    document.getElementById('userEmail').textContent = displayName;
-                    document.getElementById('userRole').textContent = currentTechnician.email;
+                    document.getElementById('technicianName').textContent = displayName;
+                    document.getElementById('userEmail').textContent = currentTechnician.email;
+                    document.getElementById('userRole').textContent = currentTechnician.role || "Técnico";
+
                 }
             }
 
@@ -2284,44 +2283,9 @@
             
             return 'other';
         }
-
-        // 🔄 FUNCIÓN PARA RENDERIZAR DESPUÉS DE REFRESH
-        function handleActionResponse(actionType, incidentId, response) {
-            if (response.status === 'success') {
-                // Mostrar notificación
-                showNotification(`✅ ${actionType} procesado correctamente`, 'success');
-                
-                // Nota al usuario sobre refresh
-                showNotification(`🔄 Haz refresh para ver los cambios actualizados`, 'info', 8000);
-                
-                // Opcional: Auto-refresh después de 3 segundos
-                setTimeout(() => {
-                    console.log('🔄 Auto-refresh después de acción exitosa');
-                    refreshDashboard();
-                }, 3000);
-            } else {
-                showNotification(`❌ Error: ${response.message}`, 'error');
-            }
-        }
-        
-        // 🎯 ACCIONES PENDIENTES POR IMPLEMENTAR:
-        
-        const PENDING_ACTIONS = {
-            // YA IMPLEMENTADAS:
-            'acepto': '✅ Implementada',
-            'rechazo': '✅ Implementada',
-            
-            // PENDIENTES:
-            'resolver': '🚧 Pendiente - Completar incidencia con solución',
-            'solicitar_materiales': '🚧 Pendiente - Pedir materiales al almacén', 
-            'derivar_departamento': '🚧 Pendiente - Transferir a otro departamento',
-            'solicitar_traspaso': '🚧 Pendiente - Pedir asignación de incidencia ajena',
-            'aportar_informacion': '🚧 Pendiente - Enviar info útil a técnico actual',
-            'solicitar_asignacion': '🚧 Pendiente - Pedir hacerse cargo de vencida'
-        };
         
         // 📋 BOTONES POR ESTADO (para validar renderizado)
-        const BUTTONS_BY_STATE = {
+        const buttonsByStatus = {
             'pending': [
                 { text: '✅ ACEPTO', action: 'acepto', class: 'btn-success' },
                 { text: '❌ RECHAZO', action: 'rechazo', class: 'btn-danger' }
@@ -2329,15 +2293,13 @@
             
             'working': [
                 { text: '🔧 RESOLVER', action: 'resolver', class: 'btn-primary' },
-                { text: '📦 MATERIALES', action: 'solicitar_materiales', class: 'btn-purple' },
-                { text: '🔄 DERIVAR', action: 'derivar_departamento', class: 'btn-secondary' },
+                { text: '📦 SOLICITAR MATERIALES', action: 'solicitar_materiales', class: 'btn-purple' },
                 { text: '🆘 PEDIR AYUDA', action: 'ayuda', class: 'btn-warning' }
             ],
             
             'seguimiento': [
                 { text: '👁️ VER PROGRESO', action: 'ver_progreso', class: 'btn-info', readonly: true },
-                { text: '🔄 SOLICITAR', action: 'solicitar_asignacion', class: 'btn-secondary' },
-                { text: '💬 APORTAR INFO', action: 'aportar_informacion', class: 'btn-light' }
+                { text: '📤 SOLICITAR ASIGNACIÓN', action: 'solicitar_asignacion', class: 'btn-secondary' }
             ],
             
             'expired': [
@@ -2994,7 +2956,7 @@
         /* ========================================
            MANEJO DE ACCIONES
         ======================================== */
-        function handleAction(action, incidentId) {
+         function handleAction(action, incidentId) {
             currentIncident = allIncidents.find(inc => inc.id === incidentId);
             if (!currentIncident) {
                 console.error('Incidencia no encontrada:', incidentId);
@@ -3005,19 +2967,216 @@
                 showPINModal();
                 return;
             }
+        
             if (action === 'acepto') {
                 pendingAction = action;
                 confirmAction();
             } else if (action === 'completar') {
                 showCompletionModal();
             } else if (action === 'solicitar_materiales') {
-                document.getElementById('materialesModal').classList.add('active');
+                // Tu modal existente de materiales
+                document.getElementById('solicitudMaterialesModal').classList.add('active');
             } else if (action === 'derivar_departamento') {
                 document.getElementById('derivarModal').classList.add('active');
+            } else if ( action === 'pedir_ayuda') {
+                // NUEVO: modal consolidado de "Pedir Ayuda" (Claude)
+                showPedirAyudaModal();
             } else {
+                // Mantén tu motivo genérico para otras acciones
                 showReasonModal(action);
             }
         }
+        function showPedirAyudaModal() {
+            const modal = document.getElementById('pedirAyudaModal');
+            if (!modal) {
+                createPedirAyudaModal();
+            }
+            document.getElementById('pedirAyudaModal').classList.add('active');
+        }
+        
+        function createPedirAyudaModal() {
+            const modalHTML = `
+                <div id="pedirAyudaModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <h3>🆘 Solicitar Ayuda</h3>
+                        
+                        <div class="form-group">
+                            <label>Tipo de ayuda necesaria:</label>
+                            <select id="tipoAyuda" onchange="updateAyudaInfo()" required>
+                                <option value="">Selecciona el tipo de ayuda</option>
+                                <optgroup label="Apoyo Técnico">
+                                    <option value="apoyo_segundo_tecnico">Solicitar segundo técnico</option>
+                                    <option value="segunda_opinion">Necesito una segunda opinión</option>
+                                </optgroup>
+                                <optgroup label="Recursos">
+                                    <option value="repuesto_no_disponible">Repuesto no disponible</option>
+                                    <option value="acceso_restringido">Área de acceso restringido</option>
+                                    <option value="herramientas_especiales">Herramientas especiales</option>
+                                </optgroup>
+                                <optgroup label="Gestión de Tiempo">
+                                    <option value="tiempo_insuficiente">Tiempo insuficiente para completar</option>
+                                    <option value="fin_de_turno">No puedo completar en mi turno</option>
+                                </optgroup>
+                                <optgroup label="Derivación/Reasignación">
+                                    <option value="derivar_departamento">Derivar a otro departamento</option>
+                                    <option value="solicitar_reasignacion">Solicitar reasignación (médico/personal)</option>
+                                </optgroup>
+                                <optgroup label="Información">
+                                    <option value="revisar_historial">Ver historial de fallos del equipo</option>
+                                    <option value="otro">Otro tipo de apoyo</option>
+                                </optgroup>
+                            </select>
+                        </div>
+        
+                        <!-- Campos dinámicos según tipo -->
+                        <div id="camposDinamicos"></div>
+        
+                        <div class="form-group">
+                            <label>Descripción específica:</label>
+                            <textarea id="descripcionAyuda" placeholder="Describe qué tipo de apoyo necesitas..." rows="3"></textarea>
+                        </div>
+        
+                        <div id="ayudaInfo" class="info-box" style="display: none;"></div>
+        
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                            <button class="btn btn-warning" onclick="procesarAyuda()">Solicitar Ayuda</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function updateAyudaInfo() {
+            const tipo = document.getElementById('tipoAyuda').value;
+            const infoDiv = document.getElementById('ayudaInfo');
+            const camposDinamicos = document.getElementById('camposDinamicos');
+            camposDinamicos.innerHTML = '';
+        
+            const infoMessages = {
+                'apoyo_segundo_tecnico': { message: 'Se asignará automáticamente un técnico de apoyo disponible en tu zona', class: 'alert-success' },
+                'segunda_opinion': { message: 'Un supervisor o técnico senior revisará tu diagnóstico', class: 'alert-info' },
+                'repuesto_no_disponible': { message: 'Se gestionará la compra o búsqueda del repuesto necesario', class: 'alert-warning' },
+                'acceso_restringido': { message: 'Se gestionará la autorización para acceder a la zona', class: 'alert-info' },
+                'herramientas_especiales': { message: 'Se coordinará el envío de herramientas necesarias', class: 'alert-info' },
+                'tiempo_insuficiente': { message: 'Se evaluará asignar tiempo adicional o apoyo extra', class: 'alert-warning' },
+                'fin_de_turno': {
+                    message: 'Se trasladará la incidencia al siguiente turno disponible',
+                    class: 'alert-info',
+                    campos: `
+                        <div class="form-group">
+                            <label>¿En cuánto tiempo termina tu turno?</label>
+                            <select id="tiempoRestante">
+                                <option value="30">30 minutos</option>
+                                <option value="60">1 hora</option>
+                                <option value="90">1.5 horas</option>
+                                <option value="120">2 horas</option>
+                            </select>
+                        </div>
+                    `
+                },
+                'derivar_departamento': {
+                    message: 'Se solicitará aprobación para derivar a otro departamento',
+                    class: 'alert-warning',
+                    campos: `
+                        <div class="form-group">
+                            <label>Departamento destino:</label>
+                            <select id="departamentoDestino" required>
+                                <option value="">Selecciona departamento</option>
+                                <option value="Mtto-Mecánico">Mantenimiento Mecánico</option>
+                                <option value="Mtto-Eléctrico">Mantenimiento Eléctrico</option>
+                                <option value="Instrumentación">Instrumentación</option>
+                                <option value="Operaciones">Operaciones</option>
+                            </select>
+                        </div>
+                    `
+                },
+                'solicitar_reasignacion': {
+                    message: 'Se notificará al supervisor para reasignar a otro técnico',
+                    class: 'alert-warning',
+                    campos: `
+                        <div class="form-group">
+                            <label>Motivo de la reasignación:</label>
+                            <select id="motivoReasignacion">
+                                <option value="medico">Cita médica urgente</option>
+                                <option value="reunion_urgente">Reunión de trabajo urgente</option>
+                                <option value="emergencia_familiar">Emergencia familiar</option>
+                                <option value="problema_tecnico">Problema técnico personal</option>
+                                <option value="otro">Otro motivo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>¿Cuándo podrías estar disponible?</label>
+                            <input type="datetime-local" id="disponibleDesde">
+                        </div>
+                    `
+                },
+                'revisar_historial': { message: 'Se abrirá el historial de fallos de este componente', class: 'alert-info' }
+            };
+        
+            if (tipo && infoMessages[tipo]) {
+                const info = infoMessages[tipo];
+                infoDiv.innerHTML = `<div class="alert ${info.class}">${info.message}</div>`;
+                infoDiv.style.display = 'block';
+                if (info.campos) camposDinamicos.innerHTML = info.campos;
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+        
+        // Importante: no sobreescribo tu executeAction(). Uso la variante existente que acepta (action, extraData)
+        function procesarAyuda() {
+            const tipoAyuda = document.getElementById('tipoAyuda').value;
+            const descripcion = document.getElementById('descripcionAyuda').value.trim();
+            if (!tipoAyuda) { alert('Selecciona el tipo de ayuda'); return; }
+        
+            // Campos adicionales según tipo
+            const extra = {};
+            if (tipoAyuda === 'fin_de_turno') {
+                extra.turno_restante_min = parseInt(document.getElementById('tiempoRestante')?.value || '0', 10);
+            } else if (tipoAyuda === 'derivar_departamento') {
+                extra.departamento_destino = document.getElementById('departamentoDestino')?.value || '';
+                if (!extra.departamento_destino) { alert('Selecciona el departamento destino'); return; }
+            } else if (tipoAyuda === 'solicitar_reasignacion') {
+                extra.motivo_reasignacion = document.getElementById('motivoReasignacion')?.value || '';
+                extra.disponible_desde = document.getElementById('disponibleDesde')?.value || '';
+            } else if (tipoAyuda === 'revisar_historial') {
+                // Abrir historial (si tienes TAG):
+                if (!currentIncident?.component_tag) {
+                    alert('Esta incidencia no tiene un componente/TAG definido');
+                    return;
+                }
+                const notionUrl = `https://www.notion.so/your-workspace/data?...componenteTAG=${encodeURIComponent(currentIncident.component_tag)}`;
+                window.open(notionUrl, '_blank');
+            }
+
+        
+            fetch(CONFIG.API_RESPONSE, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "pedir_ayuda",
+                    incident_id: currentIncident.id,
+                    category: tipo,
+                    technician_email: currentTechnician.email
+                })
+            }).then(r => r.json())
+              .then(data => {
+                  closeAyudaModal();
+                  showNotification("✅ Solicitud de ayuda enviada", "success");
+              })
+              .catch(err => {
+                  console.error("Error:", err);
+                  showNotification("❌ Error al enviar solicitud", "error");
+              });
+        }
+        
+        function closeAyudaModal() {
+            document.getElementById("pedirAyudaModal").remove();
+        }
+
+
 
         function showReasonModal(action) {
             pendingAction = action;
@@ -3200,7 +3359,19 @@
                     return;
                 }
             
-                executeAction('solicitar_materiales', { materials_requested: materials });
+              const workCanContinue = document.querySelector('input[name="workCanContinue"]:checked')?.value === 'true';
+              const impactDescription = document.getElementById('impactDescription')?.value?.trim() || '';
+                if (!impactDescription) {
+                    alert('Describe el impacto si se retrasa la entrega');
+                    return;
+                }
+                
+                executeAction('solicitar_materiales', {
+                    materials_requested: materials,
+                    work_can_continue: workCanContinue,
+                    impact_if_delayed: impactDescription
+                });
+
             }
             
             function confirmDerivar() {
