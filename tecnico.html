@@ -229,6 +229,60 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        /* ========================================
+        FILTERS BAR - PRIORIDAD
+        Barra de botones para filtrar incidencias
+        por nivel de prioridad (Crítica, Alta, Media, Baja).
+        ======================================== */
+        .filters-bar {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-label {
+            font-weight: 600;
+            color: var(--secondary-color);
+            font-size: 14px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--gray-300);
+            border-radius: 20px;
+            background: white;
+            color: var(--gray-500);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--info-color);
+            border-color: var(--info-color);
+            color: white;
+        }
+
 
         /* ========================================
            INCIDENTS SECTION
@@ -277,7 +331,37 @@
             align-items: flex-start;
             margin-bottom: 16px;
         }
-
+       .incident-header-right{
+          text-align:right;
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+          align-items:flex-end;
+        }
+        .seguimiento-banner{
+          margin-top:10px;
+          padding:10px 12px;
+          border-radius:10px;
+          border:1px solid var(--gray-200);
+          background:#fff7ed;
+          color:#7c2d12;
+          box-shadow:var(--shadow-sm);
+          font-size:13px;
+        }
+        .materials-badge{
+          display:inline-block;
+          padding:6px 10px;
+          border-radius:999px;
+          font-size:12px;
+          font-weight:700;
+          border:1px solid var(--gray-200);
+        }
+        .materials-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
+        .materials-pending{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
+        .sla-timer{ font-size:12px; padding:4px 8px; border-radius:8px; }
+        .sla-good{ background:#eef2ff; }
+        .sla-warning{ background:#fff7ed; }
+        .sla-critical{ background:#fee2e2; }
         .incident-title {
             font-size: 18px;
             font-weight: 600;
@@ -506,6 +590,84 @@
             .incident-actions { justify-content: center; }
             .modal { width: 95%; }
         }
+        /* ========================================
+           MODAL DE AYUDA / GESTIÓN - TARJETAS
+        ======================================== */
+        .ayuda-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        
+        .ayuda-card {
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .ayuda-card:hover {
+            border-color: var(--primary-color);
+            background: var(--gray-50);
+        }
+        
+        .ayuda-card.selected {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+        }
+        
+        .ayuda-extra {
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .ayuda-extra.active {
+            display: block;
+        }
+        /* ========================================
+           MODAL SOLICITAR MATERIALES
+           Permite gestionar múltiples materiales
+        ======================================== */
+        .materials-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .material-item {
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            background: var(--gray-50);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .material-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .material-actions button {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .material-actions button:hover {
+            background: var(--danger-dark);
+        }
     </style>
 </head>
 <body>
@@ -563,6 +725,22 @@
                 <div class="stat-card" onclick="filterByStatus('seguimiento', this)">
                     <div class="stat-number seguimiento" id="seguimientoCount">0</div>
                     <div class="stat-label">Seguimiento</div>
+                </div>
+            </section>
+            <!-- ========================================
+                 FILTERS BAR - PRIORIDAD
+                 Barra para filtrar incidencias según nivel
+            ======================================== -->
+            <section class="filters-bar">
+                <div class="filter-group">
+                    <span class="filter-label">Prioridad:</span>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
+                        <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">Crítica</button>
+                        <button class="filter-btn" onclick="filterByPriority('ALTA', this)">Alta</button>
+                        <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">Media</button>
+                        <button class="filter-btn" onclick="filterByPriority('BAJA', this)">Baja</button>
+                    </div>
                 </div>
             </section>
 
@@ -627,94 +805,61 @@
 
     <!-- Modal de Solicitar Materiales -->
     <div id="materialesModal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>📦 Solicitar Materiales</h3>
+    <div class="modal large-modal">
+        <div class="modal-header">
+            <h3>📦 Solicitar Materiales</h3>
+        </div>
+        <div class="modal-body">
+            <!-- Formulario de nuevo material -->
+            <div class="form-grid">
+                <input type="text" id="matNombre" placeholder="Nombre del material" class="form-control">
+                <input type="number" id="matCantidad" placeholder="Cantidad" class="form-control">
+                <select id="matTipo" class="form-control">
+                    <option value="">-- Tipo --</option>
+                    <option value="consumible">Consumible</option>
+                    <option value="herramienta">Herramienta</option>
+                    <option value="repuesto">Repuesto</option>
+                </select>
+                <select id="matUrgencia" class="form-control">
+                    <option value="normal">Normal</option>
+                    <option value="urgente">Urgente</option>
+                </select>
+                <input type="text" id="matJustificacion" placeholder="Justificación" class="form-control">
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="materialName" class="form-label">Material necesario:</label>
-                    <input type="text" id="materialName" class="form-control" placeholder="Ej: Rodamiento SKF 6203" required>
-                </div>
-                <div class="form-group">
-                    <label for="materialQuantity" class="form-label">Cantidad:</label>
-                    <input type="number" id="materialQuantity" class="form-control" min="1" value="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="materialConsumptionType" class="form-label">Tipo de consumo:</label>
-                    <select id="materialConsumptionType" class="form-control" required>
-                        <option value="">-- Selecciona tipo --</option>
-                        <option value="consumible">🔴 Consumible (se resta stock al usar)</option>
-                        <option value="repuesto">🟠 Repuesto (se resta stock al instalar)</option>
-                        <option value="reutilizable">🟢 Reutilizable (no se resta stock)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="materialUrgency" class="form-label">Urgencia:</label>
-                    <select id="materialUrgency" class="form-control" required>
-                        <option value="critica">🔴 Crítica - Producción parada</option>
-                        <option value="alta">🟠 Alta - Riesgo de parada</option>
-                        <option value="media" selected>🟡 Media - Planificada</option>
-                        <option value="baja">🟢 Baja - Preventiva</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="materialJustification" class="form-label">Justificación:</label>
-                    <textarea id="materialJustification" class="form-control" rows="3" placeholder="Explica por qué necesitas este material..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="workCanContinue">
-                        Puedo continuar trabajando mientras llegan los materiales
-                    </label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
-                <button class="btn btn-purple" onclick="confirmSolicitudMateriales()">📦 Solicitar Materiales</button>
-            </div>
+            <button class="btn btn-secondary" onclick="agregarMaterial()">➕ Añadir a la lista</button>
+
+            <!-- Lista de materiales añadidos -->
+            <div class="materials-list" id="materialsList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
+            <button class="btn btn-success" onclick="enviarMateriales()">✅ Enviar solicitud</button>
         </div>
     </div>
+</div>
+
 
     <!-- Modal de Ayuda/Gestionar -->
-    <div id="ayudaModal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>🛠️ Ayuda y Gestión</h3>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="tipoAyuda" class="form-label">Selecciona una opción:</label>
-                    <select id="tipoAyuda" class="form-control" onchange="updateAyudaOptions()" required>
-                        <option value="">-- Selecciona --</option>
-                        <optgroup label="📋 Información y Seguimiento">
-                            <option value="aportar_informacion">📝 Aportar información adicional</option>
-                            <option value="revisar_materiales">📊 Revisar estado materiales solicitados</option>
-                            <option value="revisar_historial">🔍 Revisar historial del componente</option>
-                        </optgroup>
-                        <optgroup label="🔄 Transferencias">
-                            <option value="derivar_departamento">🏢 Derivar a otro departamento</option>
-                            <option value="fin_de_turno">🕐 Fin de turno (≤ 15min restantes)</option>
-                        </optgroup>
-                        <optgroup label="🆘 Solicitar Apoyo">
-                            <option value="apoyo_segundo_tecnico">👥 Solicitar segundo técnico</option>
-                            <option value="segunda_opinion">🤔 Necesito segunda opinión</option>
-                            <option value="apoyo_supervisor">📞 Apoyo directo supervisor</option>
-                        </optgroup>
-                    </select>
+        <div id="ayudaModal" class="modal-overlay hidden">
+            <div class="modal large-modal">
+                <div class="modal-header">
+                    <h3>🛠️ Ayuda y Gestión</h3>
                 </div>
-                <div id="ayudaExtraFields"></div>
-                <div class="form-group">
-                    <label for="ayudaDescripcion" class="form-label">Descripción:</label>
-                    <textarea id="ayudaDescripcion" class="form-control" rows="3" placeholder="Proporciona detalles sobre lo que necesitas..."></textarea>
+                <div class="modal-body">
+                    <!-- Opciones principales como tarjetas -->
+                    <div class="ayuda-options" id="ayudaOptions">
+                        <!-- Se generarán dinámicamente con JS -->
+                    </div>
+        
+                    <!-- Contenedor de campos adicionales -->
+                    <div id="ayudaExtraFields"></div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('ayudaModal')">Cancelar</button>
-                <button class="btn btn-warning" onclick="procesarAyuda()">🛠️ Continuar</button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('ayudaModal')">Cancelar</button>
+                    <button class="btn btn-warning" onclick="procesarAyuda()">🛠️ Continuar</button>
+                </div>
             </div>
         </div>
-    </div>
 
     <script>
         // ========================================
@@ -1003,35 +1148,48 @@
         }
 
         function renderIncidentCard(incident, technicianEmail) {
-            const state = getIncidentRealState(incident, technicianEmail);
-            const priorityClass = getPriorityClass(incident.priority);
-            const priority = cleanPriority(incident.priority);
-            
-            return `
-                <div class="incident-card" data-incident-id="${incident.id}">
-                    <div class="incident-header">
-                        <div>
-                            <div class="incident-title">${incident.equipment || 'Equipo no especificado'}</div>
-                            <div class="incident-meta">
-                                <span>📍 ${incident.zone || 'Zona no especificada'}</span>
-                                <span>🆔 ${incident.id}</span>
-                                <span>📅 ${formatDate(incident.occurrence_date)}</span>
-                                ${renderSLATimer(incident, state)}
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div class="priority-badge priority-${priorityClass}">${priority}</div>
-                            <div class="state-badge state-${state}">${getStateLabel(state)}</div>
-                        </div>
-                    </div>
-                    <div class="incident-description" style="margin-bottom: 12px;">
-                        ${incident.description || 'Sin descripción disponible'}
-                    </div>
-                    ${renderNotificationBadges(incident)}
-                    ${renderActionButtons(incident, state)}
+          const state = getIncidentRealState(incident, technicianEmail);
+          const priorityClass = getPriorityClass(incident.priority);
+          const priority = cleanPriority(incident.priority);
+        
+          return `
+            <div class="incident-card" data-incident-id="${incident.id}" data-priority="${priority}">
+              <div class="incident-header">
+                <div>
+                  <div class="incident-title">${incident.equipment || 'Equipo no especificado'}</div>
+                  <div class="incident-meta">
+                    <span>📍 ${incident.zone || 'Zona no especificada'}</span>
+                    <span>🆔 ${incident.id}</span>
+                    <span>📅 ${formatDate(incident.occurrence_date)}</span>
+                  </div>
                 </div>
-            `;
+        
+                <div class="incident-header-right">
+                  <div class="priority-badge priority-${priorityClass}">${priority}</div>
+                  <div class="state-badge state-${state}">${getStateLabel(state)}</div>
+                  ${renderSlaChipIfPending(incident, state)}
+                  ${renderPendingChips(incident)}
+                </div>
+              </div>
+        
+              <div class="incident-description" style="margin-bottom: 12px;">
+                ${incident.description || 'Sin descripción disponible'}
+              </div>
+        
+              ${renderSeguimientoBanner(incident, state)}
+              ${renderNotificationBadges(incident)}
+              ${renderActionButtonsByState(state, incident)}
+            </div>
+          `;
         }
+                function abrirAyuda(id){ showAyudaModal(id); }
+                function abrirMateriales(id){ showMaterialesModal(id); }
+                function abrirResolver(id){ showResolverModal(id); }
+                
+                function aceptarIncidencia(id){ handleAction('acepto', id); }
+                function rechazarIncidencia(id){ showReasonModal('rechazo', id); }
+                function solicitarAsignacion(id){ handleAction('solicitar_asignacion', id); }
+
 
         function renderNotificationBadges(incident) {
             if (!incident.active_notifications || incident.active_notifications.length === 0) {
@@ -1079,32 +1237,6 @@
                 'resolution_blocked': '#6b7280'
             };
             return colors[type] || '#6b7280';
-        }
-
-        function renderActionButtons(incident, state) {
-            if (state === 'pending') {
-                return `
-                    <div class="incident-actions">
-                        <button class="btn btn-success" onclick="handleAction('acepto', '${incident.id}')">✅ ACEPTO</button>
-                        <button class="btn btn-danger" onclick="showReasonModal('rechazo', '${incident.id}')">❌ RECHAZO</button>
-                    </div>
-                `;
-            } else if (state === 'working') {
-                return `
-                    <div class="incident-actions">
-                        <button class="btn btn-primary" onclick="showResolverModal('${incident.id}')">🔧 RESOLVER</button>
-                        <button class="btn btn-purple" onclick="showMaterialesModal('${incident.id}')">📦 MATERIALES</button>
-                        <button class="btn btn-warning" onclick="showAyudaModal('${incident.id}')">🛠️ AYUDA/GESTIONAR</button>
-                    </div>
-                `;
-            } else if (state === 'seguimiento') {
-                return `
-                    <div class="incident-actions">
-                        <button class="btn btn-info" onclick="handleAction('solicitar_asignacion', '${incident.id}')">🙋‍♂️ SOLICITAR ASIGNACIÓN</button>
-                    </div>
-                `;
-            }
-            return '';
         }
 
         // ========================================
@@ -1311,179 +1443,25 @@
             closeModal('reasonModal');
         }
 
-        function confirmResolver() {
-            const solution = document.getElementById('solutionDescription').value.trim();
-            const materials = document.getElementById('materialsUsed').value.trim();
-            
-            if (!solution) {
-                alert('Describe la solución implementada');
-                return;
-            }
-
-            // Verificar si hay materiales pendientes de validación
-            const incident = allIncidents.find(i => i.id === currentIncidentId);
-            const hasPendingMaterials = incident?.active_notifications?.some(notif => 
-                notif.type === 'material_pending_supervisor' || 
-                notif.type === 'resolution_blocked'
-            );
-
-            if (hasPendingMaterials) {
-                alert('❌ No puedes resolver la incidencia\n\nTienes materiales pendientes de validación por el supervisor.\nEspera la aprobación o contacta directamente al supervisor.');
-                return;
-            }
-            
-            handleAction('resolver', currentIncidentId, {
-                solution_description: solution,
-                materials_used: materials
-            });
-            
-            closeModal('resolverModal');
-        }
-
-        function confirmSolicitudMateriales() {
-            const material = document.getElementById('materialName').value.trim();
-            const quantity = document.getElementById('materialQuantity').value;
-            const urgency = document.getElementById('materialUrgency').value;
-            const justification = document.getElementById('materialJustification').value.trim();
-            const canContinue = document.getElementById('workCanContinue').checked;
-            const consumptionType = document.getElementById('materialConsumptionType').value;
-            
-            if (!material || !quantity || !justification || !consumptionType) {
-                alert('Completa todos los campos requeridos');
-                return;
-            }
-            
-            handleAction('solicitar_materiales', currentIncidentId, {
-                material_name: material,
-                quantity: parseInt(quantity),
-                urgency: urgency,
-                justification: justification,
-                can_continue_working: canContinue,
-                consumption_type: consumptionType
-            });
-            
-            closeModal('materialesModal');
-        }
-
-        function updateAyudaOptions() {
-            const tipoAyuda = document.getElementById('tipoAyuda').value;
-            const extraFields = document.getElementById('ayudaExtraFields');
-            
-            // Campos específicos según el tipo de ayuda
-            const fieldTemplates = {
-                derivar_departamento: `
-                    <div class="form-group">
-                        <label class="form-label">Departamento destino:</label>
-                        <select id="departamentoDestino" class="form-control" required>
-                            <option value="">Selecciona departamento</option>
-                            <option value="Mtto-Mecánico">Mantenimiento Mecánico</option>
-                            <option value="Mtto-Eléctrico">Mantenimiento Eléctrico</option>
-                            <option value="Instrumentación">Instrumentación</option>
-                            <option value="Calidad">Control de Calidad</option>
-                        </select>
-                    </div>
-                `,
-                fin_de_turno: `
-                    <div class="form-group">
-                        <label class="form-label">Tiempo restante en turno:</label>
-                        <select id="tiempoRestante" class="form-control" required>
-                            <option value="5">5 minutos</option>
-                            <option value="10">10 minutos</option>
-                            <option value="15">15 minutos</option>
-                        </select>
-                        <small style="color: #dc2626; font-weight: 600;">⚠️ Solo disponible en los últimos 15 minutos del turno</small>
-                        <div style="margin-top: 8px; padding: 8px; background: #f3f4f6; border-radius: 4px; font-size: 12px;">
-                            <strong>Turnos:</strong> 6-14h | 14-22h | 22-6h
-                        </div>
-                    </div>
-                `
-            };
-            
-            extraFields.innerHTML = fieldTemplates[tipoAyuda] || '';
-        }
-
-        function procesarAyuda() {
-            const tipoAyuda = document.getElementById('tipoAyuda').value;
-            const descripcion = document.getElementById('ayudaDescripcion').value.trim();
-            
-            if (!tipoAyuda) {
-                alert('Selecciona el tipo de ayuda');
-                return;
-            }
-
-            // Acciones directas que abren Notion
-            if (tipoAyuda === 'aportar_informacion') {
-                const incident = allIncidents.find(i => i.id === currentIncidentId);
-                if (incident?.url) {
-                    window.open(incident.url, '_blank');
-                }
-                closeModal('ayudaModal');
-                return;
-            }
-
-            if (tipoAyuda === 'revisar_materiales' || tipoAyuda === 'revisar_historial') {
-                const incident = allIncidents.find(i => i.id === currentIncidentId);
-                if (incident?.url) {
-                    window.open(incident.url, '_blank');
-                }
-                closeModal('ayudaModal');
-                return;
-            }
-
-            // Fin de turno - validar tiempo restante
-            if (tipoAyuda === 'fin_de_turno') {
-                const tiempoRestante = document.getElementById('tiempoRestante')?.value;
-                if (!tiempoRestante) {
-                    alert('Selecciona el tiempo restante de tu turno');
-                    return;
-                }
-
-                // Validar que realmente esté en los últimos 15 minutos
-                const now = new Date();
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
-                
-                // Verificar si está en los últimos 15 minutos de algún turno
-                const isNearEndOfShift = 
-                    (currentHour === 13 && currentMinute >= 45) || // 6-14h
-                    (currentHour === 21 && currentMinute >= 45) || // 14-22h  
-                    (currentHour === 5 && currentMinute >= 45);    // 22-6h
-
-                if (!isNearEndOfShift) {
-                    alert('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h');
-                    return;
-                }
-
-                handleAction('fin_de_turno', currentIncidentId, {
-                    help_type: tipoAyuda,
-                    tiempo_restante_minutos: tiempoRestante,
-                    description: descripcion
-                });
-            }
-            // Derivación departamento
-            else if (tipoAyuda === 'derivar_departamento') {
-                const departamento = document.getElementById('departamentoDestino')?.value;
-                if (!departamento) {
-                    alert('Selecciona el departamento destino');
-                    return;
-                }
-
-                handleAction('derivar_departamento', currentIncidentId, {
-                    help_type: tipoAyuda,
-                    target_department: departamento,
-                    description: descripcion
-                });
-            }
-            // Resto de ayudas estándar
-            else {
-                handleAction('solicitar_apoyo', currentIncidentId, {
-                    help_type: tipoAyuda,
-                    description: descripcion
-                });
-            }
-            
-            closeModal('ayudaModal');
-        }
+      function confirmResolver() {
+      const solution = document.getElementById('solutionDescription').value.trim();
+      const materials = document.getElementById('materialsUsed').value.trim();
+      if (!solution) { alert('Describe la solución implementada'); return; }
+    
+      const inc = allIncidents.find(i => i.id === currentIncidentId);
+      // Bloquea si hay 📦 Materiales en Validaciones Pendientes
+      const pend = getPendingValidations(inc);
+      if (pend.includes("📦 Materiales")) {
+        alert('❌ No puedes resolver: hay materiales pendientes de validar.');
+        return;
+      }
+    
+      handleAction('resolver', currentIncidentId, {
+        solution_description: solution,
+        materials_used: materials
+      });
+      closeModal('resolverModal');
+    }
 
         // ========================================
         //  UTILIDADES Y HELPERS
@@ -1522,41 +1500,6 @@
                 'seguimiento': '👁️ SEGUIMIENTO'
             };
             return labels[state] || state.toUpperCase();
-        }
-
-        function renderSLATimer(incident, state) {
-            if (state !== 'pending') return '';
-            
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            let slaEnd = null;
-
-            // Determinar SLA según nivel
-            switch (escalationLevel) {
-                case 0: slaEnd = incident.sla_l0_end; break;
-                case 1: slaEnd = incident.sla_l1_backup_end; break;
-                case 2: slaEnd = incident.sla_l2_equipo_end; break;
-            }
-
-            if (!slaEnd) return '';
-
-            const deadline = new Date(slaEnd);
-            const now = new Date();
-            const remainingMs = deadline - now;
-
-            if (remainingMs <= 0) {
-                return '<div class="sla-timer danger">⚠️ SLA VENCIDO</div>';
-            }
-
-            const remainingMinutes = Math.floor(remainingMs / 1000 / 60);
-            const hours = Math.floor(remainingMinutes / 60);
-            const minutes = remainingMinutes % 60;
-
-            const isUrgent = remainingMinutes <= 30;
-            return `
-                <div class="sla-timer ${isUrgent ? 'danger' : ''}">
-                    ⏱️ SLA: ${hours}h ${minutes}m
-                </div>
-            `;
         }
 
         function getActionMessage(action) {
@@ -1617,6 +1560,112 @@
                 }
             }, 4000);
         }
+        // ===========================
+        // VALIDACIONES PENDIENTES
+        // ===========================
+       // ===== Validaciones Pendientes (array con etiquetas + emoji) =====
+        const VP = {
+          MATERIALES: "📦 Materiales",
+          DERIVACION: "🏢 Derivación de departamento",
+          APOYO: "👥 Apoyo segundo técnico",
+        };
+        
+        function getPendingValidations(incident) {
+          const arr = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
+          return Array.isArray(arr) ? arr.map(x => String(x).trim()) : [];
+        }
+        function hasValidation(incident, label) {
+          return getPendingValidations(incident).includes(label);
+        }
+        function canResolve(incident) {
+          // Solo bloquea por Materiales
+          return !hasValidation(incident, VP.MATERIALES);
+        }
+        function renderPendingChips(incident) {
+          const list = getPendingValidations(incident);
+          if (list.length === 0)
+            return `<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`;
+          return list.map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
+        }
+        
+        // ===== SLA (solo en pending, si no vencido) =====
+        function getCurrentLevel(incident) {
+          return parseInt(incident.escalation_level ?? 0, 10);
+        }
+        function getSlaEndForLevel(incident, level) {
+          if (level === 0) return incident.sla_l0_end || "";
+          if (level === 1) return incident.sla_l1_backup_end || "";
+          if (level === 2) return incident.sla_l2_equipo_end || "";
+          if (level === 3) return incident.sla_l3_responsable_end || "";
+          return "";
+        }
+        function formatRemain(ms) {
+          const s = Math.max(0, Math.floor(ms / 1000));
+          const h = Math.floor(s / 3600);
+          const m = Math.floor((s % 3600) / 60);
+          return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+        function renderSlaChipIfPending(incident, state) {
+          if (state !== "pending") return "";
+          const end = getSlaEndForLevel(incident, getCurrentLevel(incident));
+          if (!end) return "";
+          const delta = Date.parse(end) - Date.now();
+          if (delta <= 0) return ""; // vencido → no mostrar
+          const mins = delta / 60000;
+          const cls = mins <= 30 ? "sla-critical" : mins <= 120 ? "sla-warning" : "sla-good";
+          return `<div class="sla-timer ${cls}">⏱️ ${formatRemain(delta)}</div>`;
+        }
+        
+        // ===== Banner para estado "seguimiento" =====
+        function renderSeguimientoBanner(incident, state) {
+          if (state !== "seguimiento") return "";
+          const L = getCurrentLevel(incident);
+          const end = getSlaEndForLevel(incident, L);
+          const vencido = end ? (Date.now() > Date.parse(end)) : false;
+        
+          const reject =
+            (L===0 && incident.l0_reject_reason) ||
+            (L===1 && incident.l1_reject_reason) ||
+            (L===2 && incident.l2_reject_reasons) ||
+            (L===3 && "") || "";
+        
+          const finTxt = end ? new Date(end).toLocaleString() : "";
+          if (vencido) return `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`;
+          if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong> — Motivo: ${reject}</div>`;
+          return `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`;
+        }
+        
+        // ===== Botones por estado (usar SIEMPRE esta) =====
+        function renderActionButtonsByState(state, incident) {
+          const resolveDisabled = !canResolve(incident);
+          const resolveTitle = resolveDisabled ? `title="Pendiente validar materiales"` : "";
+          if (state === "pending") {
+            return `
+              <div class="incident-actions">
+                <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
+                <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
+              </div>`;
+          }
+          if (state === "working") {
+            return `
+              <div class="incident-actions">
+                <button class="btn btn-secondary" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+                <button class="btn btn-warning" onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
+                        onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
+                <button class="btn btn-dark" onclick="finTurno('${incident.id}')">🕐 Fin de turno</button>
+              </div>`;
+          }
+          if (state === "seguimiento") {
+            return `
+              <div class="incident-actions">
+                <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
+              </div>`;
+          }
+          return "";
+        }
+
+
 
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
@@ -1676,6 +1725,245 @@
                 }, 2000);
             }
         }
+            // ========================================
+            //  FILTRO DE PRIORIDAD
+            //  Muestra solo las incidencias según
+            //  la prioridad seleccionada
+            // ========================================
+            function filterByPriority(priority, button) {
+                // Marcar botón activo
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+        
+                // Filtrar tarjetas de incidencias
+                const incidents = document.querySelectorAll('.incident-card');
+                incidents.forEach(card => {
+                    const prio = card.getAttribute('data-priority');
+                    if (priority === 'all' || prio === priority) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+        // ========================================
+        //  AYUDA / GESTIÓN - TARJETAS EXPANDIBLES
+        // ========================================
+                const ayudaOptions = [
+          {
+            id: "aportar_informacion",
+            title: "📝 Aportar información adicional",
+            description: "Agrega más detalles sobre la incidencia.",
+            fields: `<textarea id="infoExtra" class="form-control" rows="3" placeholder="Describe la información adicional..."></textarea>`
+          },
+          {
+            id: "revisar_materiales",
+            title: "📊 Revisar estado materiales solicitados",
+            description: "Abrir Notion con los materiales de la incidencia.",
+            url: "open_notion_materiales" // marcador: abriremos la URL de la incidencia
+          },
+          {
+            id: "revisar_historial",
+            title: "🔍 Revisar historial del componente",
+            description: "Abrir Notion con el historial de fallos.",
+            url: "open_notion_historial" // marcador
+          },
+          {
+            id: "derivar_departamento",
+            title: "🏢 Derivar a otro departamento",
+            description: "Transferir incidencia a otro departamento.",
+            fields: `
+              <label class="form-label">Departamento:</label>
+              <select id="departamentoSelect" class="form-control">
+                <option value="">-- Selecciona --</option>
+                <option value="mecanica">Mecánica</option>
+                <option value="electrica">Eléctrica</option>
+                <option value="it">IT</option>
+              </select>
+              <label class="form-label">Motivo:</label>
+              <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea>
+            `
+          },
+          {
+            id: "fin_de_turno",
+            title: "🕐 Fin de turno",
+            description: "Ceder incidencia al siguiente turno.",
+            fields: `<textarea id="detalleFinTurno" class="form-control" rows="3" placeholder="Detalles para el próximo técnico..."></textarea>`
+          },
+          {
+            id: "apoyo_segundo_tecnico",
+            title: "👥 Solicitar segundo técnico",
+            description: "Pide apoyo de otro técnico.",
+            fields: `<textarea id="detalleApoyo" class="form-control" rows="3" placeholder="Explica por qué necesitas apoyo..."></textarea>`
+          }
+        ];
+        
+        let selectedAyuda = null;
+        
+        function loadAyudaOptions() {
+          const container = document.getElementById('ayudaOptions');
+          container.innerHTML = ayudaOptions.map(opt => `
+            <div class="ayuda-card" onclick="selectAyuda('${opt.id}', event)">
+              <h4>${opt.title}</h4>
+              <p>${opt.description}</p>
+            </div>
+          `).join('');
+        }
+        
+        function selectAyuda(id, ev) {
+          selectedAyuda = ayudaOptions.find(opt => opt.id === id);
+          document.querySelectorAll('.ayuda-card').forEach(c => c.classList.remove('selected'));
+          ev.currentTarget.classList.add('selected');
+        
+          const extra = document.getElementById('ayudaExtraFields');
+          if (selectedAyuda.fields) {
+            extra.innerHTML = `<div class="ayuda-extra active">${selectedAyuda.fields}</div>`;
+          } else if (selectedAyuda.url) {
+            const inc = allIncidents.find(i => i.id === currentIncidentId);
+            const notionURL = inc?.url || '#';
+            // Abrimos directamente la ficha de la incidencia; si tuvieras URLs separadas, cámbialas aquí
+            extra.innerHTML = `<div class="ayuda-extra active">
+              <a href="${notionURL}" target="_blank" class="btn btn-info">🌐 Abrir en Notion</a>
+            </div>`;
+          } else {
+            extra.innerHTML = '';
+          }
+        }
+        
+        function procesarAyuda() {
+          if (!selectedAyuda) { alert("Selecciona una opción antes de continuar."); return; }
+        
+          const id = selectedAyuda.id;
+        
+          // Acciones que solo abren Notion
+          if (id === 'revisar_materiales' || id === 'revisar_historial') {
+            const inc = allIncidents.find(i => i.id === currentIncidentId);
+            if (inc?.url) window.open(inc.url, '_blank');
+            closeModal('ayudaModal');
+            return;
+          }
+        
+          if (id === 'aportar_informacion') {
+            const info = (document.getElementById('infoExtra')?.value || '').trim();
+            handleAction('solicitar_apoyo', currentIncidentId, {
+              help_type: 'aportar_informacion',
+              description: info
+            });
+            closeModal('ayudaModal');
+            return;
+          }
+        
+          if (id === 'derivar_departamento') {
+            const depto = document.getElementById('departamentoSelect')?.value;
+            const motivo = (document.getElementById('motivoDerivacion')?.value || '').trim();
+            if (!depto) { alert('Selecciona el departamento destino'); return; }
+            handleAction('derivar_departamento', currentIncidentId, {
+              help_type: 'derivar_departamento',
+              target_department: depto,
+              description: motivo
+            });
+            closeModal('ayudaModal');
+            return;
+          }
+        
+          if (id === 'apoyo_segundo_tecnico') {
+            const motivo = (document.getElementById('detalleApoyo')?.value || '').trim();
+            handleAction('solicitar_apoyo', currentIncidentId, {
+              help_type: 'apoyo_segundo_tecnico',
+              description: motivo
+            });
+            closeModal('ayudaModal');
+            return;
+          }
+        
+          if (id === 'fin_de_turno') {
+            const detalle = (document.getElementById('detalleFinTurno')?.value || '').trim();
+            // Validación de “últimos 15 minutos de turno”
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes();
+            const nearEnd = (h===13 && m>=45) || (h===21 && m>=45) || (h===5 && m>=45);
+            if (!nearEnd) {
+              alert('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h');
+              return;
+            }
+            handleAction('fin_de_turno', currentIncidentId, {
+              help_type: 'fin_de_turno',
+              description: detalle
+            });
+            closeModal('ayudaModal');
+            return;
+          }
+        }
+        document.addEventListener("DOMContentLoaded", loadAyudaOptions);
+
+
+        // ========================================
+        //  SOLICITAR MATERIALES - MULTIPLE
+        // ========================================
+        let materialesTemp = [];
+        
+        function agregarMaterial() {
+            const nombre = document.getElementById("matNombre").value.trim();
+            const cantidad = document.getElementById("matCantidad").value;
+            const tipo = document.getElementById("matTipo").value;
+            const urgencia = document.getElementById("matUrgencia").value;
+            const justificacion = document.getElementById("matJustificacion").value.trim();
+        
+            if (!nombre || !cantidad || !tipo) {
+                alert("Por favor completa al menos nombre, cantidad y tipo.");
+                return;
+            }
+        
+            const nuevoMaterial = { nombre, cantidad, tipo, urgencia, justificacion };
+            materialesTemp.push(nuevoMaterial);
+        
+            renderMaterialesList();
+        
+            // limpiar inputs
+            document.getElementById("matNombre").value = "";
+            document.getElementById("matCantidad").value = "";
+            document.getElementById("matTipo").value = "";
+            document.getElementById("matUrgencia").value = "normal";
+            document.getElementById("matJustificacion").value = "";
+        }
+        
+        function renderMaterialesList() {
+            const container = document.getElementById("materialsList");
+            if (materialesTemp.length === 0) {
+                container.innerHTML = "<p>No hay materiales añadidos.</p>";
+                return;
+            }
+        
+            container.innerHTML = materialesTemp.map((mat, idx) => `
+                <div class="material-item">
+                    <strong>${mat.nombre}</strong> - Cantidad: ${mat.cantidad} (${mat.tipo}, ${mat.urgencia})
+                    <p>${mat.justificacion || "Sin justificación"}</p>
+                    <div class="material-actions">
+                        <button onclick="eliminarMaterial(${idx})">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function eliminarMaterial(index) {
+            materialesTemp.splice(index, 1);
+            renderMaterialesList();
+        }
+        
+        function enviarMateriales() {
+          if (materialesTemp.length === 0) {
+            alert("No hay materiales para enviar.");
+            return;
+          }
+          handleAction('solicitar_materiales', currentIncidentId, {
+            materiales: materialesTemp // se envía todo el array
+          });
+          materialesTemp = [];
+          renderMaterialesList();
+          closeModal("materialesModal");
+        }
+
     </script>
 </body>
 </html>
