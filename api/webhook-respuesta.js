@@ -66,6 +66,15 @@ export default async function handler(req, res) {
                 error: 'Falta parámetro action'
             });
         }
+        function formatNameFromEmail(email) {
+          if (!email) return '';
+          return email
+            .split('@')[0]
+            .split('.')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+        }
+
         
         // Preparar payload base para Make
         let makePayload = {
@@ -73,7 +82,7 @@ export default async function handler(req, res) {
             action: action,
             incident_id: incident_id,
             technician_email: technician_email,
-            technician_name: technician_name || technician_email?.split('@')[0],
+            technician_name: technician_name || formatNameFromEmail(technician_email),
             level: level || 'L0',
             user_agent: req.headers['user-agent'],
             ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress
