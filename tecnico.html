@@ -404,32 +404,6 @@
         .state-working { background: #dbeafe; color: #1e40af; }
         .state-seguimiento { background: #f3f4f6; color: #6b7280; }
 
-        /* SLA Timer */
-        .sla-timer {
-            background: #f0f9ff;
-            border: 1px solid #0ea5e9;
-            color: #0c4a6e;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .sla-timer.danger {
-            background: #fee2e2;
-            border-color: #ef4444;
-            color: #991b1b;
-        }
-
-        .working-timer {
-            background: #f0fdf4;
-            color: #166534;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
         /* Notification Badges */
         .notification-badges {
             margin-top: 12px;
@@ -667,6 +641,22 @@
         
         .material-actions button:hover {
             background: var(--danger-dark);
+        }
+        /* Botón usado en “Fin de turno” */
+        .btn-dark { background:#111827; color:#fff; }
+        .btn-dark:hover { background:#0b1220; }
+        
+        /* Modales grandes (Ayuda / Materiales) */
+        .modal.large-modal { max-width: 900px; }
+        
+        /* Grid del formulario de materiales */
+        .form-grid{
+          display:grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap:12px;
+        }
+        @media (max-width: 640px){
+          .form-grid{ grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -1054,7 +1044,8 @@
             const currentAssignments = [
                 { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
                 { level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end },
-                { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end }
+                { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end },
+                { level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end }
             ];
 
             // Buscar asignación actual
@@ -1262,15 +1253,15 @@
             ];
 
             options.innerHTML = rejectReasons.map(reason => `
-                <div class="reason-option" onclick="selectReason('${reason.id}')">
-                    <div style="display: flex; align-items: center;">
-                        <span class="reason-icon">${reason.title.split(' ')[0]}</span>
-                        <div>
-                            <div style="font-weight: 600;">${reason.title.substring(2)}</div>
-                            <div style="font-size: 14px; color: #6b7280;">${reason.description}</div>
-                        </div>
-                    </div>
+              <div class="reason-option" onclick="selectReason('${reason.id}', event)">
+                <div style="display:flex;align-items:center;">
+                  <span class="reason-icon">${reason.title.split(' ')[0]}</span>
+                  <div>
+                    <div style="font-weight:600;">${reason.title.substring(2)}</div>
+                    <div style="font-size:14px;color:#6b7280;">${reason.description}</div>
+                  </div>
                 </div>
+              </div>
             `).join('');
 
             modal.classList.remove('hidden');
@@ -1305,10 +1296,12 @@
             currentIncidentId = null;
         }
 
-        function selectReason(reasonId) {
-            selectedReason = reasonId;
-            document.querySelectorAll('.reason-option').forEach(opt => opt.classList.remove('selected'));
-            event.target.closest('.reason-option').classList.add('selected');
+        function selectReason(reasonId, ev) {
+          selectedReason = reasonId;
+          document.querySelectorAll('.reason-option').forEach(opt => opt.classList.remove('selected'));
+          // Preferimos currentTarget (el div con el onclick)
+          const card = ev?.currentTarget || ev?.target?.closest('.reason-option');
+          if (card) card.classList.add('selected');
         }
 
         // ========================================
@@ -1804,12 +1797,21 @@
         function loadAyudaOptions() {
           const container = document.getElementById('ayudaOptions');
           container.innerHTML = ayudaOptions.map(opt => `
-            <div class="ayuda-card" onclick="selectAyuda('${opt.id}', event)">
+            <div class="ayuda-card" data-id="${opt.id}" onclick="selectAyuda('${opt.id}', event)">
               <h4>${opt.title}</h4>
               <p>${opt.description}</p>
             </div>
           `).join('');
         }
+        function finTurno(id){
+          showAyudaModal(id);
+          // preselecciona la tarjeta de “fin_de_turno”
+          setTimeout(() => {
+            const card = document.querySelector('.ayuda-card[data-id="fin_de_turno"]');
+            if (card) { card.click(); }
+          }, 0);
+        }
+
         
         function selectAyuda(id, ev) {
           selectedAyuda = ayudaOptions.find(opt => opt.id === id);
