@@ -1443,7 +1443,87 @@
     .alert-success { background: #e6f7ee; border: 1px solid #28a745; }
     .alert-info    { background: #eef7ff; border: 1px solid #17a2b8; }
     .alert-warning { background: #fff8e5; border: 1px solid #ffc107; }
+    .btn-purple {
+    background: linear-gradient(135deg, #6f42c1, #5a2d91);
+    color: white;
+    border: none;
+}
+
+    .btn-purple:hover {
+        background: linear-gradient(135deg, #5a2d91, #4c2471);
+        transform: translateY(-1px);
+    }
     
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .radio-group label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .radio-group input[type="radio"] {
+        width: auto;
+        margin: 0;
+    }
+    
+    optgroup {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    optgroup option {
+        font-weight: normal;
+        padding-left: 16px;
+    }
+    
+    .info-box {
+        margin: 15px 0;
+        padding: 12px;
+        border-radius: 6px;
+    }
+    
+    .alert {
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+    
+    .alert-info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .text-muted {
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
 
     </style>
 </head>
@@ -2300,10 +2380,6 @@
             'seguimiento': [
                 { text: '👁️ VER PROGRESO', action: 'ver_progreso', class: 'btn-info', readonly: true },
                 { text: '📤 SOLICITAR ASIGNACIÓN', action: 'solicitar_asignacion', class: 'btn-secondary' }
-            ],
-            
-            'expired': [
-                { text: '🔄 SOLICITAR', action: 'solicitar_asignacion', class: 'btn-secondary' }
             ]
         };
         /* ========================================
@@ -2986,6 +3062,7 @@
                 showReasonModal(action);
             }
         }
+        
         function showPedirAyudaModal() {
             const modal = document.getElementById('pedirAyudaModal');
             if (!modal) {
@@ -3129,54 +3206,132 @@
         function procesarAyuda() {
             const tipoAyuda = document.getElementById('tipoAyuda').value;
             const descripcion = document.getElementById('descripcionAyuda').value.trim();
-            if (!tipoAyuda) { alert('Selecciona el tipo de ayuda'); return; }
-        
-            // Campos adicionales según tipo
-            const extra = {};
-            if (tipoAyuda === 'fin_de_turno') {
-                extra.turno_restante_min = parseInt(document.getElementById('tiempoRestante')?.value || '0', 10);
-            } else if (tipoAyuda === 'derivar_departamento') {
-                extra.departamento_destino = document.getElementById('departamentoDestino')?.value || '';
-                if (!extra.departamento_destino) { alert('Selecciona el departamento destino'); return; }
-            } else if (tipoAyuda === 'solicitar_reasignacion') {
-                extra.motivo_reasignacion = document.getElementById('motivoReasignacion')?.value || '';
-                extra.disponible_desde = document.getElementById('disponibleDesde')?.value || '';
-            } else if (tipoAyuda === 'revisar_historial') {
-                // Abrir historial (si tienes TAG):
-                if (!currentIncident?.component_tag) {
-                    alert('Esta incidencia no tiene un componente/TAG definido');
-                    return;
-                }
-                const notionUrl = `https://www.notion.so/your-workspace/data?...componenteTAG=${encodeURIComponent(currentIncident.component_tag)}`;
-                window.open(notionUrl, '_blank');
+            
+            if (!tipoAyuda) {
+                alert('Selecciona el tipo de ayuda');
+                return;
             }
+            
+            // Procesar según tipo específico
+            switch(tipoAyuda) {
+                case 'revisar_historial':
+                    handleRevisarHistorial();
+                    break;
+                case 'fin_de_turno':
+                    handleFinDeTurno();
+                    break;
+                case 'derivar_departamento':
+                    handleDerivarDepartamento();
+                    break;
+                case 'solicitar_reasignacion':
+                    handleSolicitarReasignacion();
+                    break;
+                default:
+                    // Ayuda estándar que requiere aprobación supervisor
+                    const payload = {
+                        action: 'pedir_ayuda',
+                        incident_id: currentIncident.id,
+                        technician_email: currentTechnician.email,
+                        help_type: tipoAyuda,
+                        help_description: descripcion,
+                        level: getCurrentTechnicianLevel()
+                    };
+                    
+                    sendActionToWebhook(payload);
+                    break;
+            }
+            
+            closeAllModals();
+        }
+        // 4. HANDLERS ESPECÍFICOS PARA OPCIONES DE AYUDA
+        function handleRevisarHistorial() {
+            if (!currentIncident.component_tag) {
+                alert('Esta incidencia no tiene un componente/TAG definido');
+                return;
+            }
+            
+            const notionUrl = `https://www.notion.so/your-workspace/database-id?filter=ComponenteTAG=${encodeURIComponent(currentIncident.component_tag)}`;
+            window.open(notionUrl, '_blank');
+            
+            // Registrar la consulta
+            const payload = {
+                action: 'revisar_historial',
+                incident_id: currentIncident.id,
+                technician_email: currentTechnician.email,
+                component_tag: currentIncident.component_tag,
+                level: getCurrentTechnicianLevel()
+            };
+            
+            sendActionToWebhook(payload);
+        }
+        
+        function handleFinDeTurno() {
+            const tiempoRestante = document.getElementById('tiempoRestante')?.value;
+            const descripcion = document.getElementById('descripcionAyuda').value.trim();
+            
+            if (tiempoRestante && parseInt(tiempoRestante) > 120) {
+                alert('Solo puedes usar "Fin de Turno" en las últimas 2 horas');
+                return;
+            }
+            
+            const payload = {
+                action: 'fin_de_turno',
+                incident_id: currentIncident.id,
+                technician_email: currentTechnician.email,
+                tiempo_restante_minutos: tiempoRestante || '60',
+                descripcion: descripcion,
+                level: getCurrentTechnicianLevel()
+            };
+            
+            sendActionToWebhook(payload);
+        }
+        function handleDerivarDepartamento() {
+            const departamentoDestino = document.getElementById('departamentoDestino')?.value;
+            const descripcion = document.getElementById('descripcionAyuda').value.trim();
+            
+            if (!departamentoDestino) {
+                alert('Selecciona el departamento destino');
+                return;
+            }
+            
+            const payload = {
+                action: 'derivar_departamento',
+                incident_id: currentIncident.id,
+                technician_email: currentTechnician.email,
+                target_department: departamentoDestino,
+                derivation_reason: descripcion,
+                current_department: currentIncident.department || 'Mtto-Mecánico',
+                level: getCurrentTechnicianLevel()
+            };
+            
+            sendActionToWebhook(payload);
+        }
+        
+        function handleSolicitarReasignacion() {
+            const motivo = document.getElementById('motivoReasignacion')?.value;
+            const disponibleDesde = document.getElementById('disponibleDesde')?.value;
+            const descripcion = document.getElementById('descripcionAyuda').value.trim();
+            
+            const payload = {
+                action: 'solicitar_reasignacion',
+                incident_id: currentIncident.id,
+                technician_email: currentTechnician.email,
+                reassignment_reason: motivo || 'otro',
+                available_from: disponibleDesde,
+                explanation: descripcion,
+                level: getCurrentTechnicianLevel()
+            };
+            
+            sendActionToWebhook(payload);
+        }
+
+
 
         
-            fetch(CONFIG.API_RESPONSE, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "pedir_ayuda",
-                    incident_id: currentIncident.id,
-                    category: tipo,
-                    technician_email: currentTechnician.email
-                })
-            }).then(r => r.json())
-              .then(data => {
-                  closeAyudaModal();
-                  showNotification("✅ Solicitud de ayuda enviada", "success");
-              })
-              .catch(err => {
-                  console.error("Error:", err);
-                  showNotification("❌ Error al enviar solicitud", "error");
-              });
-        }
         
         function closeAyudaModal() {
             document.getElementById("pedirAyudaModal").remove();
         }
-
-
 
         function showReasonModal(action) {
             pendingAction = action;
@@ -4120,7 +4275,7 @@
                 }
             }
 
-                    // Derivar departamento
+            // Derivar departamento
             function showDerivarModal(incidentId) {
                 currentIncidentId = incidentId;
                 document.getElementById('derivarModal').classList.add('active');
@@ -4180,10 +4335,79 @@
         }
         
         // Solicitar asignación
-        function showSolicitarAsignacionModal(incidentId) {
-            currentIncidentId = incidentId;
-            document.getElementById('solicitarAsignacionModal').classList.add('active');
+        function showSolicitarAsignacionModal() {
+            const modal = document.getElementById('asignacionModal');
+            if (!modal) {
+                createAsignacionModal();
+            }
+            
+            document.getElementById('asignacionModal').classList.add('active');
         }
+        function createAsignacionModal() {
+            const modalHTML = `
+                <div id="asignacionModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <h3>Solicitar Asignación</h3>
+                        <p class="text-muted">Solicitar hacerse cargo de esta incidencia</p>
+                        
+                        <div class="form-group">
+                            <label>¿Por qué quieres hacerte cargo de esta incidencia?</label>
+                            <select id="motivoAsignacion" required>
+                                <option value="">Selecciona el motivo</option>
+                                <option value="disponibilidad">Tengo disponibilidad ahora</option>
+                                <option value="especialidad">Es mi área de especialidad</option>
+                                <option value="ubicacion">Estoy cerca de la ubicación</option>
+                                <option value="urgencia">Veo que es urgente y puedo ayudar</option>
+                                <option value="experiencia">Tengo experiencia con este tipo de problema</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Comentarios adicionales:</label>
+                            <textarea id="comentariosAsignacion" placeholder="Información relevante sobre tu disponibilidad o experiencia..." rows="3"></textarea>
+                        </div>
+                        
+                        <div class="info-box">
+                            <div class="alert alert-info">
+                                ${currentIncident && currentIncident.assigned_technician && currentIncident.assigned_technician !== 'Sin asignar' 
+                                  ? 'Esta incidencia ya tiene un técnico asignado. Se enviará una solicitud de traspaso.' 
+                                  : 'Se enviará la solicitud al supervisor para evaluación.'}
+                            </div>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="confirmarSolicitudAsignacion()">Enviar Solicitud</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function confirmarSolicitudAsignacion() {
+            const motivo = document.getElementById('motivoAsignacion').value;
+            const comentarios = document.getElementById('comentariosAsignacion').value.trim();
+            
+            if (!motivo) {
+                alert('Selecciona el motivo');
+                return;
+            }
+            
+            const payload = {
+                action: 'solicitar_asignacion',
+                incident_id: currentIncident.id,
+                technician_email: currentTechnician.email,
+                request_reason: motivo,
+                comments: comentarios,
+                current_assigned_technician: currentIncident.assigned_technician,
+                level: getCurrentTechnicianLevel()
+            };
+            
+            sendActionToWebhook(payload);
+            closeAllModals();
+        }
+        
 
         function confirmSolicitarAsignacion() {
             const requestReason = document.getElementById('requestReason').value;
