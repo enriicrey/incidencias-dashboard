@@ -709,6 +709,13 @@
         let currentIncidentId = null;
 
         // ========================================
+        //  VARIABLES PARA ACCESO DIRECTO
+        // ========================================
+        let directIncidentId = null;
+        let pendingAction = null;
+        let pendingActionData = {};
+
+        // ========================================
         //  AUTENTICACIÓN Y LOGIN
         // ========================================
         async function loginWithPIN() {
@@ -721,13 +728,73 @@
                 return;
             }
 
+            // Mostrar modal PIN
+            showPINModal(email);
+        }
+
+        function showPINModal(email) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'pinModal';
+            modal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>🔐 Verificación de Identidad</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p>Ingresa tu PIN de 4 dígitos para confirmar tu identidad:</p>
+                        <div class="form-group">
+                            <label class="form-label">PIN:</label>
+                            <input type="password" id="pinInput" class="form-control" maxlength="4" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
+                        </div>
+                        <div id="pinError" class="error-message hidden"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closePINModal()">Cancelar</button>
+                        <button class="btn btn-primary" id="verifyPinBtn" onclick="verifyPIN('${email}')" disabled>Verificar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const pinInput = document.getElementById('pinInput');
+            const verifyBtn = document.getElementById('verifyPinBtn');
+            
+            pinInput.focus();
+            
+            pinInput.oninput = function() {
+                verifyBtn.disabled = this.value.length !== 4;
+            };
+            
+            pinInput.onkeypress = function(e) {
+                if (e.key === 'Enter' && this.value.length === 4) {
+                    verifyPIN(email);
+                }
+                // Solo permitir números
+                if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                    e.preventDefault();
+                }
+            };
+        }
+
+        async function verifyPIN(email) {
+            const pin = document.getElementById('pinInput').value;
+            const pinError = document.getElementById('pinError');
+            
+            if (pin.length !== 4) {
+                showPINError('PIN debe tener 4 dígitos');
+                return;
+            }
+
             try {
                 const response = await fetch('/api/webhook-respuesta', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'validate_technician',
-                        technician_email: email
+                        action: 'validate_pin',
+                        technician_email: email,
+                        pin: pin
                     })
                 });
 
@@ -738,7 +805,8 @@
                         email: email,
                         name: data.technician?.name || email.split('@')[0],
                         department: data.technician?.department || 'Mtto-Mecánico',
-                        authenticated: true
+                        authenticated: true,
+                        pin: pin // Guardar PIN para futuras acciones
                     };
 
                     // Actualizar UI
@@ -746,20 +814,40 @@
                     document.getElementById('userEmail').textContent = email;
                     document.getElementById('userRole').textContent = `${currentTechnician.department}`;
                     
-                    // Ocultar login y mostrar dashboard
+                    // Cerrar modal PIN y login
+                    closePINModal();
                     document.getElementById('loginContainer').classList.add('hidden');
                     document.getElementById('dashboardContainer').classList.remove('hidden');
+                    
+                    // Si hay acción pendiente (acceso directo), ejecutarla
+                    if (pendingAction) {
+                        await handleAction(pendingAction, directIncidentId, pendingActionData);
+                        pendingAction = null;
+                        directIncidentId = null;
+                        pendingActionData = {};
+                    }
                     
                     // Cargar incidencias
                     loadDashboard();
                 } else {
-                    errorDiv.textContent = data.message || 'Email no encontrado en el sistema';
-                    errorDiv.classList.remove('hidden');
+                    showPINError(data.message || 'PIN incorrecto');
                 }
             } catch (error) {
-                console.error('Error en login:', error);
-                errorDiv.textContent = 'Error de conexión. Intenta de nuevo.';
-                errorDiv.classList.remove('hidden');
+                console.error('Error verificando PIN:', error);
+                showPINError('Error de conexión');
+            }
+        }
+
+        function showPINError(message) {
+            const pinError = document.getElementById('pinError');
+            pinError.textContent = message;
+            pinError.classList.remove('hidden');
+        }
+
+        function closePINModal() {
+            const modal = document.getElementById('pinModal');
+            if (modal) {
+                modal.remove();
             }
         }
 
@@ -902,7 +990,7 @@
             const priority = cleanPriority(incident.priority);
             
             return `
-                <div class="incident-card">
+                <div class="incident-card" data-incident-id="${incident.id}">
                     <div class="incident-header">
                         <div>
                             <div class="incident-title">${incident.equipment || 'Equipo no especificado'}</div>
@@ -1074,15 +1162,30 @@
         }
 
         // ========================================
-        //  ACCIONES PRINCIPALES
+        //  ACCIONES PRINCIPALES CON PIN
         // ========================================
         async function handleAction(action, incidentId, extraData = {}) {
-            if (!currentTechnician?.authenticated) return;
+            if (!currentTechnician?.authenticated) {
+                alert('Debes estar autenticado para realizar acciones');
+                return;
+            }
+
+            // Si no hay PIN guardado, solicitarlo
+            if (!currentTechnician.pin) {
+                pendingAction = action;
+                directIncidentId = incidentId;
+                pendingActionData = extraData;
+                
+                // Solicitar PIN para la acción
+                showActionPINModal(action, incidentId);
+                return;
+            }
 
             const payload = {
                 action: action,
                 incident_id: incidentId,
                 technician_email: currentTechnician.email,
+                pin: currentTechnician.pin,  // ✅ Incluir PIN en todas las acciones
                 timestamp: new Date().toISOString(),
                 ...extraData
             };
@@ -1105,6 +1208,75 @@
             } catch (error) {
                 console.error('Error en acción:', error);
                 showNotification('❌ Error de conexión', 'error');
+            }
+        }
+
+        function showActionPINModal(action, incidentId) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'actionPinModal';
+            modal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>🔐 Confirmar Acción</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p>Para realizar la acción <strong>${getActionMessage(action)}</strong>, confirma tu PIN:</p>
+                        <div class="form-group">
+                            <label class="form-label">PIN:</label>
+                            <input type="password" id="actionPinInput" class="form-control" maxlength="4" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
+                        </div>
+                        <div id="actionPinError" class="error-message hidden"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeActionPINModal()">Cancelar</button>
+                        <button class="btn btn-primary" id="confirmActionBtn" onclick="confirmActionWithPIN()" disabled>Confirmar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const pinInput = document.getElementById('actionPinInput');
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            
+            pinInput.focus();
+            
+            pinInput.oninput = function() {
+                confirmBtn.disabled = this.value.length !== 4;
+            };
+            
+            pinInput.onkeypress = function(e) {
+                if (e.key === 'Enter' && this.value.length === 4) {
+                    confirmActionWithPIN();
+                }
+                if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                    e.preventDefault();
+                }
+            };
+        }
+
+        async function confirmActionWithPIN() {
+            const pin = document.getElementById('actionPinInput').value;
+            
+            if (pin.length !== 4) {
+                document.getElementById('actionPinError').textContent = 'PIN debe tener 4 dígitos';
+                document.getElementById('actionPinError').classList.remove('hidden');
+                return;
+            }
+
+            // Guardar PIN y ejecutar acción
+            currentTechnician.pin = pin;
+            closeActionPINModal();
+            
+            // Ejecutar acción pendiente
+            await handleAction(pendingAction, directIncidentId, pendingActionData);
+        }
+
+        function closeActionPINModal() {
+            const modal = document.getElementById('actionPinModal');
+            if (modal) {
+                modal.remove();
             }
         }
 
@@ -1427,14 +1599,63 @@
         }
 
         // ========================================
-        //  INICIALIZACIÓN
+        //  INICIALIZACIÓN Y ACCESO DIRECTO URL
         // ========================================
         document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si hay acceso directo por URL
+            checkDirectAccess();
+            
             // Permitir login con Enter
             document.getElementById('emailInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') loginWithPIN();
             });
         });
+
+        function checkDirectAccess() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const incidentId = urlParams.get('incident_id');
+            const action = urlParams.get('action');
+            
+            if (incidentId) {
+                directIncidentId = incidentId;
+                
+                // Mostrar mensaje de acceso directo
+                const directAccessInfo = document.createElement('div');
+                directAccessInfo.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #17a2b8;
+                    color: white;
+                    padding: 12px 20px;
+                    text-align: center;
+                    z-index: 10001;
+                    font-weight: 600;
+                `;
+                directAccessInfo.innerHTML = `
+                    📧 Acceso directo a incidencia: <strong>${incidentId}</strong>
+                    ${action ? ` | Acción: <strong>${action}</strong>` : ''}
+                `;
+                
+                document.body.appendChild(directAccessInfo);
+                
+                // Si hay acción específica, prepararla
+                if (action) {
+                    pendingAction = action;
+                }
+                
+                // Auto-scroll a la incidencia después de cargar
+                setTimeout(() => {
+                    const incidentCard = document.querySelector(`[data-incident-id="${incidentId}"]`);
+                    if (incidentCard) {
+                        incidentCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        incidentCard.style.border = '3px solid #17a2b8';
+                        incidentCard.style.boxShadow = '0 0 15px rgba(23, 162, 184, 0.3)';
+                    }
+                }, 2000);
+            }
+        }
     </script>
 </body>
 </html>
