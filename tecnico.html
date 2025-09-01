@@ -802,7 +802,7 @@
                 if (data.status === 'success') {
                     currentTechnician = {
                         email: email,
-                        name: data.technician?.name || email.split('@')[0],
+                        name: data.technician?.name || formatNameFromEmail(email),
                         department: data.technician?.department || 'Mtto-Mecánico',
                         authenticated: true,
                         pin: pin // Guardar PIN para futuras acciones
@@ -1469,6 +1469,8 @@
         // ========================================
         //  UTILIDADES Y HELPERS
         // ========================================
+      const formatNameFromEmail = (email) => email?.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
         function formatDate(dateString) {
             if (!dateString) return 'Fecha no disponible';
             const date = new Date(dateString);
