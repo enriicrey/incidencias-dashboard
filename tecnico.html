@@ -404,23 +404,6 @@
         .state-working { background: #dbeafe; color: #1e40af; }
         .state-seguimiento { background: #f3f4f6; color: #6b7280; }
 
-        /* Notification Badges */
-        .notification-badges {
-            margin-top: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .notification-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            color: white;
-        }
-
         /* Action Buttons */
         .incident-actions {
             display: flex;
@@ -1048,45 +1031,40 @@
         //  GESTIÓN DE ESTADOS Y FILTROS
         // ========================================
         function getIncidentRealState(incident, technicianEmail) {
-            const escalationLevel = parseInt(incident.escalation_level) || 0;
-            const now = new Date();
-            
-            // Verificar si está asignado actualmente en algún nivel
-            const currentAssignments = [
-                { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
-                { level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end },
-                { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end },
-                { level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end }
-            ];
-
-            // Buscar asignación actual
-            const currentAssignment = currentAssignments.find(assign => 
-                assign.level === escalationLevel && 
-                (assign.tech === technicianEmail || (assign.tech && assign.tech.includes(technicianEmail)))
-            );
-
-            if (currentAssignment) {
-                // Si aceptó, está trabajando
-                if (currentAssignment.response === 'acepto' || currentAssignment.response === '✅ Acepto') {
-                    return 'working';
-                }
-                
-                // Si no ha respondido y SLA válido
-                if (currentAssignment.response === '⭕ Sin Respuesta' && currentAssignment.sla) {
-                    const slaDeadline = new Date(currentAssignment.sla);
-                    if (now <= slaDeadline) {
-                        return 'pending';
-                    }
-                }
+          const level = parseInt(incident.escalation_level) || 0;
+        
+          // Preferir el log de respuestas
+          const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
+          if (respText.trim()) {
+            const rows = parseRespLog(respText);
+            return getTechnicianStateByLevel(incident, rows, level, technicianEmail);
+          }
+        
+          // --- Fallback legado (sin log) ---
+          const now = new Date();
+          const currentAssignments = [
+            { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
+            { level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end },
+            { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end },
+            { level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end }
+          ];
+          const currentAssignment = currentAssignments.find(assign =>
+            assign.level === level &&
+            (assign.tech === technicianEmail || (assign.tech && String(assign.tech).includes(technicianEmail)))
+          );
+          if (currentAssignment) {
+            if (currentAssignment.response === 'acepto' || currentAssignment.response === '✅ Acepto') return 'working';
+            if (currentAssignment.response === '⭕ Sin Respuesta' && currentAssignment.sla) {
+              const slaDeadline = new Date(currentAssignment.sla);
+              if (now <= slaDeadline) return 'pending';
             }
-
-            // Si fue asignado antes o rechazó
-            const wasAssignedBefore = currentAssignments.some(assign => 
-                assign.tech === technicianEmail && assign.response && assign.response !== '⭕ Sin Respuesta'
-            );
-
-            return wasAssignedBefore ? 'seguimiento' : 'other';
+          }
+          const wasAssignedBefore = currentAssignments.some(assign =>
+            assign.tech === technicianEmail && assign.response && assign.response !== '⭕ Sin Respuesta'
+          );
+          return wasAssignedBefore ? 'seguimiento' : 'other';
         }
+
 
         function filterByStatus(status, element) {
             currentStatusFilter = status;
@@ -1153,7 +1131,12 @@
           const state = getIncidentRealState(incident, technicianEmail);
           const priorityClass = getPriorityClass(incident.priority);
           const priority = cleanPriority(incident.priority);
-        
+        const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
+        let currentOwner = null;
+        if (respText.trim()) {
+          const rows = parseRespLog(respText);
+          currentOwner = getCurrentOwnerByLevel(rows, parseInt(incident.escalation_level)||0);
+        }
           return `
             <div class="incident-card" data-incident-id="${incident.id}" data-priority="${priority}">
               <div class="incident-header">
@@ -1162,7 +1145,7 @@
                   <div class="incident-meta">
                     <span>📍 ${incident.zone || 'Zona no especificada'}</span>
                     <span>🆔 ${incident.id}</span>
-                    <span>📅 ${formatDate(incident.occurrence_date)}</span>
+                    <span>📅 ${formatDate(getBestDate(incident))}</span>
                   </div>
                 </div>
         
@@ -1170,6 +1153,7 @@
                   <div class="priority-badge priority-${priorityClass}">${priority}</div>
                   <div class="state-badge state-${state}">${getStateLabel(state)}</div>
                   ${renderSlaChipIfPending(incident, state)}
+                  ${currentOwner ? `<div class="sla-timer sla-good">👤 Titular L${parseInt(incident.escalation_level)||0}: ${currentOwner}</div>` : ""}
                   ${renderHeaderChips(incident)}
                 </div>
               </div>
@@ -1191,54 +1175,6 @@
                 function rechazarIncidencia(id){ showReasonModal('rechazo', id); }
                 function solicitarAsignacion(id){ handleAction('solicitar_asignacion', id); }
 
-
-        function renderNotificationBadges(incident) {
-            if (!incident.active_notifications || incident.active_notifications.length === 0) {
-                return '';
-            }
-
-            const badgeTemplates = {
-                // Materiales
-                'material_approved': '🟢 Materiales autorizados',
-                'material_rejected': '🔴 Materiales rechazados',
-                'material_insufficient_stock': '📞 Contactar almacén - Stock insuficiente',
-                'material_pending_supervisor': '🟡 Pendiente validación supervisor',
-                
-                // Derivación
-                'derivation_approved': '✅ Derivación aprobada',
-                'derivation_rejected': '❌ Derivación rechazada - Continuar',
-                'derivation_pending': '🟡 Derivación pendiente validación',
-                
-                // Resolución
-                'resolution_blocked': '🚫 No puede resolver - Materiales sin validar',
-                'incident_closed': '✅ Incidencia cerrada por supervisor',
-                'solution_rejected': '🔄 Reabierta - Completar solución'
-            };
-
-            const badges = incident.active_notifications.map(notif => `
-                <div class="notification-badge" style="background: ${getNotificationColor(notif.type)};">
-                    ${badgeTemplates[notif.type] || notif.message}
-                </div>
-            `).join('');
-
-            return `<div class="notification-badges">${badges}</div>`;
-        }
-
-        function getNotificationColor(type) {
-            const colors = {
-                'material_approved': '#22c55e',
-                'derivation_approved': '#22c55e',
-                'incident_closed': '#22c55e',
-                'material_rejected': '#ef4444',
-                'derivation_rejected': '#ef4444',
-                'solution_rejected': '#f59e0b',
-                'material_insufficient_stock': '#dc2626',
-                'material_pending_supervisor': '#f59e0b',
-                'derivation_pending': '#f59e0b',
-                'resolution_blocked': '#6b7280'
-            };
-            return colors[type] || '#6b7280';
-        }
 
         // ========================================
         //  GESTIÓN DE MODALES
@@ -1641,7 +1577,7 @@
         }
         
         // --- Chips de Validaciones Pendientes (robustos ante desfases) ---
-        function renderPendingChips(incident) {
+         function renderPendingChips(incident) {
           // 1) Lo que dice Notion (campo multiselect)
           const vpField = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
           const notionSet = new Set(Array.isArray(vpField) ? vpField.map(s=>String(s).trim()) : []);
@@ -1657,12 +1593,9 @@
             APOYO: "👥 Apoyo segundo técnico",
           };
         
-          // Unificar: si el log dice pendiente, forzamos mostrar; si no, y Notion lo tiene, lo dejamos (por si log no recogió algo aún).
+          // Unificar
           const chips = new Set();
-        
-          // desde log
           pendingCats.forEach(cat => chips.add(labelByCat[cat]));
-          // desde notion
           notionSet.forEach(lbl => chips.add(lbl));
         
           if (chips.size === 0) {
@@ -1670,26 +1603,126 @@
           }
           return Array.from(chips).map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
         }
+        // ==============================
+        // RESPUESTAS (log) - Helpers
+        // Campo Notion: "Respuestas (log)"
+        // ==============================
+        function parseRespLog(text = "") {
+          const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          const rows = [];
+          for (const line of lines) {
+            // [fecha] RESP#L<n>#<email>|<EVENTO>|<detalle>
+            const m = line.match(/^\[(.+?)\]\s+RESP#L(\d)#([^|]+)\|([^|]+)\|?(.*)$/);
+            if (!m) continue;
+            const [, when, lvl, email, ev, detail] = m;
+            rows.push({
+              when: new Date(when),
+              level: parseInt(lvl, 10),
+              email: email.trim(),
+              ev: ev.trim(),              // ASSIGNED | REASSIGN_TO | REASSIGN_FROM | REJECTED::<motivo> | NO_RESPONSE
+              detail: (detail || "").trim()
+            });
+          }
+          rows.sort((a,b)=> a.when - b.when);
+          return rows;
+        }
         
-        // --- Inyectar notificaciones si no vienen del backend ---
-        function renderNotificationBadges(incident) {
-          const notifs = (incident.active_notifications && incident.active_notifications.length)
-            ? incident.active_notifications
-            : buildNotificationsFromLog(incident);
+        // ¿Quién es el titular vigente de un nivel?
+        function getCurrentOwnerByLevel(respRows, level) {
+          const stack = new Map(); // email -> activo?
+          for (const r of respRows.filter(r => r.level === level)) {
+            if (r.ev === "ASSIGNED" || r.ev === "REASSIGN_TO") stack.set(r.email, true);
+            if (r.ev === "REASSIGN_FROM") stack.set(r.email, false);
+          }
+          // Devuelve el último ASSIGNED/REASSIGN_TO con activo=true
+          const lastAssigned = [...respRows.filter(r => r.level === level && (r.ev === "ASSIGNED" || r.ev === "REASSIGN_TO"))]
+            .reverse().find(r => stack.get(r.email));
+          return lastAssigned?.email || null;
+        }
         
-          if (!notifs || notifs.length === 0) return "";
-          const color = (t)=>({
-            material_approved:'#22c55e', material_rejected:'#ef4444',
-            derivation_approved:'#22c55e', derivation_rejected:'#ef4444',
-            support_approved:'#22c55e', support_rejected:'#ef4444'
-          }[t] || '#6b7280');
+        // Último rechazo (motivo) por nivel, opcional
+        function getLastRejectReasonByLevel(respRows, level) {
+          const row = [...respRows.filter(r => r.level === level && r.ev.startsWith("REJECTED"))].pop();
+          if (!row) return null;
+          const parts = row.ev.split("::");
+          return parts[1] ? parts[1].trim() : (row.detail || null);
+        }
         
-          return `<div class="notification-badges">
-            ${notifs.map(n=> `<div class="notification-badge" style="background:${color(n.type)}">${n.message}</div>`).join("")}
-          </div>`;
+        // ¿Cómo va el técnico logueado en este nivel?
+        // Devuelve: 'working' | 'seguimiento' | 'pending'
+        //   - working: si es titular vigente del nivel
+        //   - seguimiento: si rechazó / fue reasignado / ya pasó su respuesta
+        //   - pending: si está notificado y sin respuesta en plazo (fallback con tus campos si hace falta)
+        function getTechnicianStateByLevel(incident, respRows, level, technicianEmail) {
+          const owner = getCurrentOwnerByLevel(respRows, level);
+          if (owner && owner.toLowerCase() === (technicianEmail||"").toLowerCase()) return 'working';
+        
+          // ¿rechazó?
+          const myEvents = respRows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||"").toLowerCase());
+          const lastMine = myEvents[myEvents.length - 1];
+          if (lastMine?.ev.startsWith("REJECTED")) return 'seguimiento';
+          if (lastMine?.ev === "REASSIGN_FROM") return 'seguimiento';
+        
+          // Fallback “pendiente” (si aún usa campos antiguos):
+          // ver si está asignado/notificado en este nivel y con SLA vigente y "⭕ Sin Respuesta"
+          const now = Date.now();
+          const slaEnd = getSlaEndForLevel(incident, level);
+          const slaOk = slaEnd ? (Date.parse(slaEnd) - now) > 0 : false;
+        
+          if (level === 0) {
+            if ((incident.l0_technician||"").includes(technicianEmail) && incident.l0_response === '⭕ Sin Respuesta' && slaOk) return 'pending';
+          } else if (level === 1) {
+            if ((incident.l1_technician||"").includes(technicianEmail) && incident.l1_response === '⭕ Sin Respuesta' && slaOk) return 'pending';
+          } else if (level === 2) {
+            if ((incident.l2_technicians||"").includes(technicianEmail) && (incident.l2_responses||"").includes('⭕ Sin Respuesta') && slaOk) return 'pending';
+          } else if (level === 3) {
+            if ((incident.l3_technician||"").includes(technicianEmail) && incident.l3_response === '⭕ Sin Respuesta' && slaOk) return 'pending';
+          }
+        
+          return 'seguimiento';
+        }
+        
+        // Fecha a mostrar en la tarjeta (occurrence si existe, si no, reporte)
+        function getBestDate(incident) {
+          const occ = incident["Fecha-Ocurrencia"] || incident.occurrence_date || incident.fecha_ocurrencia;
+          const rep = incident["Fecha-Reporte"] || incident.report_date || incident.fecha_reporte;
+          return occ || rep || incident.created_at || incident.timestamp || "";
         }
 
+        // =============================
+        // VALIDADORES DE LÍNEAS DE LOG
+        // =============================
         
+        // Regex estrictas (ISO con zona, categorías/fases controladas)
+        const RX_SOL = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:MATERIAL|DERIVACION|APOYO)#[A-Za-z0-9_\-]+\|(REQUEST|APPROVED|REJECTED)\|.*$/;
+        const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*$/;
+        
+        function validateLogLines({ lines, kind }) {
+          // kind: 'SOL' (Solicitudes) | 'RESP' (Respuestas)
+          const rx = kind === 'SOL' ? RX_SOL : RX_RESP;
+          const accepted = [];
+          const rejected = [];
+          for (let raw of (lines || [])) {
+            const line = String(raw || "").trim();
+            if (!line) continue;
+            if (rx.test(line)) {
+              accepted.push(line);
+            } else {
+              rejected.push({ line, reason: 'Formato inválido para ' + (kind === 'SOL' ? 'Solicitudes' : 'Respuestas') });
+            }
+          }
+          return { accepted, rejected };
+        }
+        
+        // Genera el nuevo texto (append seguro) y devuelve también las rechazadas
+        function safeAppendLog({ currentText, newLines, kind }) {
+          const { accepted, rejected } = validateLogLines({ lines: newLines, kind });
+          const base = (currentText || "").trim();
+          const joined = accepted.join("\n");
+          const nextText = joined ? (base ? base + "\n" + joined : joined) : base;
+          return { text: nextText, rejected };
+        }
+
         // ===========================
         // VALIDACIONES PENDIENTES
         // ===========================
@@ -1711,12 +1744,6 @@
           // Solo bloquea por Materiales
           return !hasValidation(incident, VP.MATERIALES);
         }
-        function renderPendingChips(incident) {
-          const list = getPendingValidations(incident);
-          if (list.length === 0)
-            return `<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`;
-          return list.map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
-        }
         
         // ===== SLA (solo en pending, si no vencido) =====
         function getCurrentLevel(incident) {
@@ -1735,6 +1762,7 @@
           const m = Math.floor((s % 3600) / 60);
           return h > 0 ? `${h}h ${m}m` : `${m}m`;
         }
+        
         function renderSlaChipIfPending(incident, state) {
           if (state !== "pending") return "";
           const end = getSlaEndForLevel(incident, getCurrentLevel(incident));
@@ -1749,21 +1777,32 @@
         // ===== Banner para estado "seguimiento" =====
         function renderSeguimientoBanner(incident, state) {
           if (state !== "seguimiento") return "";
+        
           const L = getCurrentLevel(incident);
           const end = getSlaEndForLevel(incident, L);
           const vencido = end ? (Date.now() > Date.parse(end)) : false;
         
-          const reject =
-            (L===0 && incident.l0_reject_reason) ||
-            (L===1 && incident.l1_reject_reason) ||
-            (L===2 && incident.l2_reject_reasons) ||
-            (L===3 && "") || "";
+          // Preferir motivo desde "Respuestas (log)"
+          const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
+          let reject = null;
+          if (respText.trim()) {
+            const rows = parseRespLog(respText);
+            reject = getLastRejectReasonByLevel(rows, L);
+          } else {
+            // Fallback a tus campos antiguos
+            reject =
+              (L===0 && incident.l0_reject_reason) ||
+              (L===1 && incident.l1_reject_reason) ||
+              (L===2 && incident.l2_reject_reasons) ||
+              "";
+          }
         
           const finTxt = end ? new Date(end).toLocaleString() : "";
           if (vencido) return `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`;
-          if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong> — Motivo: ${reject}</div>`;
+          if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong>${reject ? ` — Motivo: ${reject}` : ""}</div>`;
           return `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`;
         }
+
         
         // ===== Botones por estado (usar SIEMPRE esta) =====
         function renderActionButtonsByState(state, incident) {
@@ -1796,53 +1835,39 @@
         }
 
         function renderHeaderChips(incident){
-          // 1) Validaciones (chips)
-          const v = getPendingValidations(incident);
-          const validChips = (v.length === 0)
-            ? [`<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`]
-            : v.map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`);
+          // 1) Validaciones (chips) — robusto (Notion + Log)
+          const validChipsHTML = renderPendingChips(incident);
         
-          // 2) Notificaciones (chips compactas)
+          // 2) Notificaciones (chips compactas) — SIEMPRE desde el log
           const notifMap = {
-            // Materiales
             material_approved: '🟢 Materiales autorizados',
             material_rejected: '🔴 Materiales rechazados',
-            material_insufficient_stock: '📞 Stock insuficiente',
-            material_pending_supervisor: '🟡 Pendiente supervisor',
-        
-            // Derivación
             derivation_approved: '✅ Derivación aprobada',
             derivation_rejected: '❌ Derivación rechazada',
-            derivation_pending: '🟡 Derivación pendiente',
-        
-            // Apoyo técnico
             support_approved: '👥 Apoyo aprobado',
             support_rejected: '👥 Apoyo rechazado',
-            support_pending: '👥 Apoyo pendiente',
-        
-            // Otros
             incident_closed: '✅ Cerrada por supervisor',
             solution_rejected: '🔄 Solución rechazada'
           };
         
           const notifClass = (t) =>
-            t.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
-            t.endsWith('rejected') ? 'notif-bad' :
-            'notif-warn';
+            t?.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
+            t?.endsWith('rejected') ? 'notif-bad' : 'notif-warn';
         
-          const notifs = Array.isArray(incident.active_notifications) ? incident.active_notifications : [];
-          // Muestra, por ejemplo, máximo 3 notificaciones recientes
-          const notifChips = notifs.slice(0,3).map(n =>
+          const notifs = buildNotificationsFromLog(incident); // ✅ fuente única
+          const notifChips = (notifs || []).slice(0, 3).map(n =>
             `<span class="notif-chip ${notifClass(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
           );
         
           return `
             <div class="chips-stack">
-              ${validChips.join(' ')}
+              ${validChipsHTML}
               ${notifChips.length ? `<div class="chip-sep"></div>${notifChips.join(' ')}` : ''}
             </div>
           `;
         }
+
+
 
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
