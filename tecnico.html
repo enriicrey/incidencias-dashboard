@@ -190,10 +190,18 @@
             padding: 30px 20px;
         }
 
-        /* Stats Bar - Solo 3 estados reales */
-       .stats-bar { display:grid; grid-template-columns: repeat(4, 1fr); gap:20px; margin-bottom:30px; }
-        @media (max-width: 900px){ .stats-bar { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 600px){ .stats-bar { grid-template-columns: 1fr; } }
+       .stats-bar {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        @media (max-width: 900px) {
+          .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+          .stats-bar { grid-template-columns: 1fr; }
+        }
 
 
         .stat-card {
@@ -1123,6 +1131,14 @@
 
             const incidentsHTML = relevantIncidents.map(incident => renderIncidentCard(incident, technicianEmail)).join('');
             container.innerHTML = incidentsHTML;
+            if (directIncidentId) {
+            const card = container.querySelector(`[data-incident-id="${directIncidentId}"]`);
+            if (card) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.style.border = '3px solid #17a2b8';
+              card.style.boxShadow = '0 0 15px rgba(23, 162, 184, 0.3)';
+            }
+          }
         }
 
         function renderIncidentCard(incident, technicianEmail) {
@@ -2055,8 +2071,7 @@
         
           if (id === 'aportar_informacion') {
             const info = (document.getElementById('infoExtra')?.value || '').trim();
-            handleAction('solicitar_apoyo', currentIncidentId, {
-              help_type: 'aportar_informacion',
+            handleAction('aportar_informacion', currentIncidentId, {
               description: info
             });
             closeModal('ayudaModal');
