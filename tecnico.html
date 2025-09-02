@@ -548,7 +548,6 @@
         @media (max-width: 768px) {
             .header-content { flex-direction: column; gap: 16px; }
             .user-info { flex-direction: column; gap: 8px; }
-            .stats-bar { grid-template-columns: 1fr; }
             .incident-header { flex-direction: column; gap: 12px; }
             .incident-actions { justify-content: center; }
             .modal { width: 95%; }
@@ -866,6 +865,7 @@
         //  VARIABLES PARA ACCESO DIRECTO
         // ========================================
         let directIncidentId = null;
+        let directScrollDone = false; 
         let pendingActionData = {};
 
         // ========================================
@@ -898,7 +898,7 @@
                         <p>Ingresa tu PIN de 4 dígitos para confirmar tu identidad:</p>
                         <div class="form-group">
                             <label class="form-label">PIN:</label>
-                            <input type="password" id="pinInput" class="form-control" maxlength="4" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
+                            <input type="password" id="pinInput" class="form-control" maxlength="4" inputmode="numeric" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
                         </div>
                         <div id="pinError" class="error-message hidden"></div>
                     </div>
@@ -917,7 +917,8 @@
             pinInput.focus();
             
             pinInput.oninput = function() {
-                verifyBtn.disabled = this.value.length !== 4;
+               this.value = this.value.replace(/\D/g, '').slice(0, 4);
+               verifyBtn.disabled = this.value.length !== 4;
             };
             
             pinInput.onkeypress = function(e) {
@@ -1131,12 +1132,13 @@
 
             const incidentsHTML = relevantIncidents.map(incident => renderIncidentCard(incident, technicianEmail)).join('');
             container.innerHTML = incidentsHTML;
-            if (directIncidentId) {
+            if (directIncidentId && !directScrollDone) {
             const card = container.querySelector(`[data-incident-id="${directIncidentId}"]`);
             if (card) {
               card.scrollIntoView({ behavior: 'smooth', block: 'center' });
               card.style.border = '3px solid #17a2b8';
               card.style.boxShadow = '0 0 15px rgba(23, 162, 184, 0.3)';
+              directScrollDone = true;
             }
           }
         }
@@ -1204,25 +1206,25 @@
             title.textContent = '❌ Motivo del Rechazo';
             
             const rejectReasons = [
-                { id: 'no_herramientas', title: '🔧 No tengo herramientas necesarias', description: 'Faltan herramientas específicas' },
-                { id: 'no_conocimiento', title: '📚 No tengo conocimiento técnico', description: 'Requiere conocimientos especializados' },
-                { id: 'fuera_horario', title: '🕐 Fuera de horario laboral', description: 'Asignada fuera del turno de trabajo' },
-                { id: 'sobrecarga', title: '📊 Sobrecarga de trabajo', description: 'Trabajando en múltiples incidencias' },
-                { id: 'ubicacion_lejana', title: '📍 Ubicación lejana', description: 'Fuera de zona de cobertura' },
-                { id: 'otro', title: '💬 Otro motivo', description: 'Especificar motivo', requiresText: true }
+                { id: 'no_herramientas',   emoji: '🔧', title: 'No tengo herramientas necesarias',   description: 'Faltan herramientas específicas' },
+                { id: 'no_conocimiento',   emoji: '📚', title: 'No tengo conocimiento técnico',      description: 'Requiere conocimientos especializados' },
+                { id: 'fuera_horario',     emoji: '🕐', title: 'Fuera de horario laboral',          description: 'Asignada fuera del turno de trabajo' },
+                { id: 'sobrecarga',        emoji: '📊', title: 'Sobrecarga de trabajo',             description: 'Trabajando en múltiples incidencias' },
+                { id: 'ubicacion_lejana',  emoji: '📍', title: 'Ubicación lejana',                  description: 'Fuera de zona de cobertura' },
+                { id: 'otro',              emoji: '💬', title: 'Otro motivo',                       description: 'Especificar motivo', requiresText: true }
             ];
 
-            options.innerHTML = rejectReasons.map(reason => `
-              <div class="reason-option" onclick="selectReason('${reason.id}', event)">
-                <div style="display:flex;align-items:center;">
-                  <span class="reason-icon">${reason.title.split(' ')[0]}</span>
-                  <div>
-                    <div style="font-weight:600;">${reason.title.substring(2)}</div>
-                    <div style="font-size:14px;color:#6b7280;">${reason.description}</div>
+                  options.innerHTML = rejectReasons.map(r => `
+                  <div class="reason-option" onclick="selectReason('${r.id}', event)">
+                    <div style="display:flex;align-items:center;">
+                      <span class="reason-icon">${r.emoji}</span>
+                      <div>
+                        <div style="font-weight:600;">${r.title}</div>
+                        <div style="font-size:14px;color:#6b7280;">${r.description}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            `).join('');
+                `).join('');
 
             modal.classList.remove('hidden');
         }
@@ -1315,49 +1317,52 @@
         }
 
         function showActionPINModal(action, incidentId) {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.id = 'actionPinModal';
-            modal.innerHTML = `
-                <div class="modal">
-                    <div class="modal-header">
-                        <h3>🔐 Confirmar Acción</h3>
-                    </div>
-                    <div class="modal-body">
-                        <p>Para realizar la acción <strong>${getActionMessage(action)}</strong>, confirma tu PIN:</p>
-                        <div class="form-group">
-                            <label class="form-label">PIN:</label>
-                            <input type="password" id="actionPinInput" class="form-control" maxlength="4" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
-                        </div>
-                        <div id="actionPinError" class="error-message hidden"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="closeActionPINModal()">Cancelar</button>
-                        <button class="btn btn-primary" id="confirmActionBtn" onclick="confirmActionWithPIN()" disabled>Confirmar</button>
-                    </div>
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay';
+          modal.id = 'actionPinModal';
+          modal.innerHTML = `
+            <div class="modal">
+              <div class="modal-header">
+                <h3>🔐 Confirmar Acción</h3>
+              </div>
+              <div class="modal-body">
+                <p>Para realizar la acción <strong>${getActionMessage(action)}</strong>, confirma tu PIN:</p>
+                <div class="form-group">
+                  <label class="form-label">PIN:</label>
+                  <input type="password" id="actionPinInput" class="form-control" maxlength="4" inputmode="numeric" placeholder="••••" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
                 </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            const pinInput = document.getElementById('actionPinInput');
-            const confirmBtn = document.getElementById('confirmActionBtn');
-            
-            pinInput.focus();
-            
-            pinInput.oninput = function() {
-                confirmBtn.disabled = this.value.length !== 4;
-            };
-            
-            pinInput.onkeypress = function(e) {
-                if (e.key === 'Enter' && this.value.length === 4) {
-                    confirmActionWithPIN();
-                }
-                if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
-                    e.preventDefault();
-                }
-            };
+                <div id="actionPinError" class="error-message hidden"></div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeActionPINModal()">Cancelar</button>
+                <button class="btn btn-primary" id="confirmActionBtn" onclick="confirmActionWithPIN()" disabled>Confirmar</button>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(modal);
+          
+          const pinInput = document.getElementById('actionPinInput');
+          const confirmBtn = document.getElementById('confirmActionBtn');
+        
+          pinInput.focus();
+        
+          pinInput.oninput = function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+            confirmBtn.disabled = this.value.length !== 4;
+          };
+        
+          pinInput.onkeypress = function(e) {
+            if (e.key === 'Enter' && this.value.length === 4) {
+              confirmActionWithPIN();
+              return;
+            }
+            if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+              e.preventDefault();
+            }
+          };
         }
+
 
         async function confirmActionWithPIN() {
             const pin = document.getElementById('actionPinInput').value;
@@ -1464,7 +1469,8 @@
                 'derivar_departamento': 'Solicitud de derivación enviada al supervisor',
                 'fin_de_turno': 'Incidencia transferida al siguiente turno',
                 'solicitar_apoyo': 'Solicitud de apoyo enviada al supervisor',
-                'solicitar_asignacion': 'Solicitud de asignación enviada'
+                'solicitar_asignacion': 'Solicitud de asignación enviada',
+                'aportar_informacion': 'Información adicional registrada'
             };
             return messages[action] || `Acción ${action} procesada correctamente`;
         }
@@ -1897,50 +1903,37 @@
         });
 
         function checkDirectAccess() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const incidentId = urlParams.get('incident_id');
-            const action = urlParams.get('action');
-            
-            if (incidentId) {
-                directIncidentId = incidentId;
-                
-                // Mostrar mensaje de acceso directo
-                const directAccessInfo = document.createElement('div');
-                directAccessInfo.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    background: #17a2b8;
-                    color: white;
-                    padding: 12px 20px;
-                    text-align: center;
-                    z-index: 10001;
-                    font-weight: 600;
-                `;
-                directAccessInfo.innerHTML = `
-                    📧 Acceso directo a incidencia: <strong>${incidentId}</strong>
-                    ${action ? ` | Acción: <strong>${action}</strong>` : ''}
-                `;
-                
-                document.body.appendChild(directAccessInfo);
-                
-                // Si hay acción específica, prepararla
-                if (action) {
-                    pendingAction = action;
-                }
-                
-                // Auto-scroll a la incidencia después de cargar
-                setTimeout(() => {
-                    const incidentCard = document.querySelector(`[data-incident-id="${incidentId}"]`);
-                    if (incidentCard) {
-                        incidentCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        incidentCard.style.border = '3px solid #17a2b8';
-                        incidentCard.style.boxShadow = '0 0 15px rgba(23, 162, 184, 0.3)';
-                    }
-                }, 2000);
-            }
+          const urlParams = new URLSearchParams(window.location.search);
+          const incidentId = urlParams.get('incident_id');
+          const action = urlParams.get('action');
+        
+          if (incidentId) {
+            directIncidentId = incidentId;
+            directScrollDone = false; // asegúrate de que haga scroll una sola vez tras render
+        
+            const directAccessInfo = document.createElement('div');
+            directAccessInfo.style.cssText = `
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              background: #17a2b8;
+              color: white;
+              padding: 12px 20px;
+              text-align: center;
+              z-index: 10001;
+              font-weight: 600;
+            `;
+            directAccessInfo.innerHTML = `
+              📧 Acceso directo a incidencia: <strong>${incidentId}</strong>
+              ${action ? ` | Acción: <strong>${action}</strong>` : ''}
+            `;
+            document.body.appendChild(directAccessInfo);
+        
+            if (action) pendingAction = action;
+          }
         }
+
             // ========================================
             //  FILTRO DE PRIORIDAD
             //  Muestra solo las incidencias según
