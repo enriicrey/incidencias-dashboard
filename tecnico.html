@@ -191,12 +191,10 @@
         }
 
         /* Stats Bar - Solo 3 estados reales */
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+       .stats-bar { display:grid; grid-template-columns: repeat(4, 1fr); gap:20px; margin-bottom:30px; }
+        @media (max-width: 900px){ .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px){ .stats-bar { grid-template-columns: 1fr; } }
+
 
         .stat-card {
             background: white;
