@@ -1970,13 +1970,13 @@
             id: "revisar_materiales",
             title: "📊 Revisar estado materiales solicitados",
             description: "Abrir Notion con los materiales de la incidencia.",
-            url: "open_notion_materiales" // marcador: abriremos la URL de la incidencia
+            urlKey: "materials_url"
           },
           {
             id: "revisar_historial",
             title: "🔍 Revisar historial del componente",
             description: "Abrir Notion con el historial de fallos.",
-            url: "open_notion_historial" // marcador
+            urlKey: "history_url"
           },
           {
             id: "derivar_departamento",
@@ -2029,6 +2029,7 @@
         }
 
         
+        // 2) Al seleccionar tarjeta, muestra botón que abre la URL específica si existe
         function selectAyuda(id, ev) {
           selectedAyuda = ayudaOptions.find(opt => opt.id === id);
           document.querySelectorAll('.ayuda-card').forEach(c => c.classList.remove('selected'));
@@ -2037,12 +2038,11 @@
           const extra = document.getElementById('ayudaExtraFields');
           if (selectedAyuda.fields) {
             extra.innerHTML = `<div class="ayuda-extra active">${selectedAyuda.fields}</div>`;
-          } else if (selectedAyuda.url) {
+          } else if (selectedAyuda.urlKey) {
             const inc = allIncidents.find(i => i.id === currentIncidentId);
-            const notionURL = inc?.url || '#';
-            // Abrimos directamente la ficha de la incidencia; si tuvieras URLs separadas, cámbialas aquí
+            const targetURL = inc?.[selectedAyuda.urlKey] || inc?.url || '#';
             extra.innerHTML = `<div class="ayuda-extra active">
-              <a href="${notionURL}" target="_blank" class="btn btn-info">🌐 Abrir en Notion</a>
+              <a href="${targetURL}" target="_blank" class="btn btn-info">🌐 Abrir en Notion</a>
             </div>`;
           } else {
             extra.innerHTML = '';
@@ -2053,11 +2053,12 @@
           if (!selectedAyuda) { alert("Selecciona una opción antes de continuar."); return; }
         
           const id = selectedAyuda.id;
-        
-          // Acciones que solo abren Notion
-          if (id === 'revisar_materiales' || id === 'revisar_historial') {
+            
+         // 1) Tarjetas que abren URL (materiales / historial / lo que añadas con urlKey)
+             if (selectedAyuda.urlKey) {
             const inc = allIncidents.find(i => i.id === currentIncidentId);
-            if (inc?.url) window.open(inc.url, '_blank');
+            const targetURL = inc?.[selectedAyuda.urlKey] || inc?.url;
+            if (targetURL) window.open(targetURL, '_blank');
             closeModal('ayudaModal');
             return;
           }
