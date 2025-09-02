@@ -658,6 +658,17 @@
         @media (max-width: 640px){
           .form-grid{ grid-template-columns: 1fr; }
         }
+        /* Chips unificados en el header (validaciones + notificaciones) */
+        .chips-stack{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+        .chip-sep{ height:2px; width:36px; background:var(--gray-200); border-radius:999px; }
+        .notif-chip{
+          display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px;
+          font-weight:700; border:1px solid var(--gray-200);
+        }
+        .notif-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
+        .notif-warn{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
+        .notif-bad{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+
     </style>
 </head>
 <body>
@@ -1159,7 +1170,7 @@
                   <div class="priority-badge priority-${priorityClass}">${priority}</div>
                   <div class="state-badge state-${state}">${getStateLabel(state)}</div>
                   ${renderSlaChipIfPending(incident, state)}
-                  ${renderPendingChips(incident)}
+                  ${renderHeaderChips(incident)}
                 </div>
               </div>
         
@@ -1168,7 +1179,6 @@
               </div>
         
               ${renderSeguimientoBanner(incident, state)}
-              ${renderNotificationBadges(incident)}
               ${renderActionButtonsByState(state, incident)}
             </div>
           `;
@@ -1553,6 +1563,133 @@
                 }
             }, 4000);
         }
+
+        // --- Parsear log y agrupar por categoría + request_id ---
+        function parseSolicitudesLog(logText = "") {
+          const lines = logText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          const out = []; // {when, cat, id, phase, meta}
+          for (const line of lines) {
+            const m = line.match(/^\[(.+?)\]\s+([A-Z]+)#([\w-]+)\|([A-Z]+)\|(.*)$/);
+            if (!m) continue;
+            const [, when, cat, reqId, phase, rest] = m;
+            out.push({ when, cat, reqId, phase, meta: rest || "" });
+          }
+          return out;
+        }
+        
+        function groupByRequest(logRows) {
+          // { "MATERIAL|MAT-001": {cat, id, last: {phase, when}, phases: [...] } }
+          const map = {};
+          for (const r of logRows) {
+            const key = `${r.cat}|${r.reqId}`;
+            if (!map[key]) map[key] = { cat: r.cat, id: r.reqId, phases: [] };
+            map[key].phases.push(r);
+          }
+          for (const k of Object.keys(map)) {
+            map[k].phases.sort((a,b)=> new Date(a.when)-new Date(b.when));
+            map[k].last = map[k].phases[map[k].phases.length - 1];
+          }
+          return map;
+        }
+        
+        // --- ¿Qué categorías tienen pendientes? ---
+        function getPendingCategoriesFromLog(logText="") {
+          const rows = parseSolicitudesLog(logText);
+          const grouped = groupByRequest(rows);
+          const pendingCats = new Set();
+          for (const k of Object.keys(grouped)) {
+            const { cat, last } = grouped[k];
+            if (last?.phase === "REQUEST") pendingCats.add(cat);
+          }
+          return pendingCats; // e.g. Set(["MATERIAL","APOYO"])
+        }
+        
+        // --- Construir notificaciones compactas desde el log ---
+        function buildNotificationsFromLog(incident) {
+          const log = incident["Solicitudes (log)"] || incident.solicitudes_log || "";
+          if (!log) return [];
+        
+          const rows = parseSolicitudesLog(log);
+          const grouped = groupByRequest(rows);
+        
+          // contadores por cat/fase
+          const counters = {
+            MATERIAL: { APPROVED: 0, REJECTED: 0 },
+            DERIVACION: { APPROVED: 0, REJECTED: 0 },
+            APOYO: { APPROVED: 0, REJECTED: 0 },
+          };
+        
+          for (const key of Object.keys(grouped)) {
+            const { cat, last } = grouped[key];
+            if (!counters[cat]) continue;
+            if (last.phase === "APPROVED") counters[cat].APPROVED++;
+            if (last.phase === "REJECTED") counters[cat].REJECTED++;
+          }
+        
+          const out = [];
+          // Materiales
+          if (counters.MATERIAL.APPROVED) out.push({ type: "material_approved", message: `🟢 Materiales aprobados (${counters.MATERIAL.APPROVED})` });
+          if (counters.MATERIAL.REJECTED) out.push({ type: "material_rejected", message: `🔴 Materiales rechazados (${counters.MATERIAL.REJECTED})` });
+          // Derivación
+          if (counters.DERIVACION.APPROVED) out.push({ type: "derivation_approved", message: `🟢 Derivaciones aprobadas (${counters.DERIVACION.APPROVED})` });
+          if (counters.DERIVACION.REJECTED) out.push({ type: "derivation_rejected", message: `🔴 Derivaciones rechazadas (${counters.DERIVACION.REJECTED})` });
+          // Apoyo
+          if (counters.APOYO.APPROVED) out.push({ type: "support_approved", message: `🟢 Apoyos aprobados (${counters.APOYO.APPROVED})` });
+          if (counters.APOYO.REJECTED) out.push({ type: "support_rejected", message: `🔴 Apoyos rechazados (${counters.APOYO.REJECTED})` });
+        
+          return out;
+        }
+        
+        // --- Chips de Validaciones Pendientes (robustos ante desfases) ---
+        function renderPendingChips(incident) {
+          // 1) Lo que dice Notion (campo multiselect)
+          const vpField = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
+          const notionSet = new Set(Array.isArray(vpField) ? vpField.map(s=>String(s).trim()) : []);
+        
+          // 2) Lo que dice el log (cálculo)
+          const log = incident["Solicitudes (log)"] || incident.solicitudes_log || "";
+          const pendingCats = getPendingCategoriesFromLog(log); // "MATERIAL","DERIVACION","APOYO"
+        
+          // Mapear categorías → etiqueta visible
+          const labelByCat = {
+            MATERIAL: "📦 Materiales",
+            DERIVACION: "🏢 Derivación de departamento",
+            APOYO: "👥 Apoyo segundo técnico",
+          };
+        
+          // Unificar: si el log dice pendiente, forzamos mostrar; si no, y Notion lo tiene, lo dejamos (por si log no recogió algo aún).
+          const chips = new Set();
+        
+          // desde log
+          pendingCats.forEach(cat => chips.add(labelByCat[cat]));
+          // desde notion
+          notionSet.forEach(lbl => chips.add(lbl));
+        
+          if (chips.size === 0) {
+            return `<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`;
+          }
+          return Array.from(chips).map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
+        }
+        
+        // --- Inyectar notificaciones si no vienen del backend ---
+        function renderNotificationBadges(incident) {
+          const notifs = (incident.active_notifications && incident.active_notifications.length)
+            ? incident.active_notifications
+            : buildNotificationsFromLog(incident);
+        
+          if (!notifs || notifs.length === 0) return "";
+          const color = (t)=>({
+            material_approved:'#22c55e', material_rejected:'#ef4444',
+            derivation_approved:'#22c55e', derivation_rejected:'#ef4444',
+            support_approved:'#22c55e', support_rejected:'#ef4444'
+          }[t] || '#6b7280');
+        
+          return `<div class="notification-badges">
+            ${notifs.map(n=> `<div class="notification-badge" style="background:${color(n.type)}">${n.message}</div>`).join("")}
+          </div>`;
+        }
+
+        
         // ===========================
         // VALIDACIONES PENDIENTES
         // ===========================
@@ -1658,7 +1795,54 @@
           return "";
         }
 
-
+        function renderHeaderChips(incident){
+          // 1) Validaciones (chips)
+          const v = getPendingValidations(incident);
+          const validChips = (v.length === 0)
+            ? [`<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`]
+            : v.map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`);
+        
+          // 2) Notificaciones (chips compactas)
+          const notifMap = {
+            // Materiales
+            material_approved: '🟢 Materiales autorizados',
+            material_rejected: '🔴 Materiales rechazados',
+            material_insufficient_stock: '📞 Stock insuficiente',
+            material_pending_supervisor: '🟡 Pendiente supervisor',
+        
+            // Derivación
+            derivation_approved: '✅ Derivación aprobada',
+            derivation_rejected: '❌ Derivación rechazada',
+            derivation_pending: '🟡 Derivación pendiente',
+        
+            // Apoyo técnico
+            support_approved: '👥 Apoyo aprobado',
+            support_rejected: '👥 Apoyo rechazado',
+            support_pending: '👥 Apoyo pendiente',
+        
+            // Otros
+            incident_closed: '✅ Cerrada por supervisor',
+            solution_rejected: '🔄 Solución rechazada'
+          };
+        
+          const notifClass = (t) =>
+            t.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
+            t.endsWith('rejected') ? 'notif-bad' :
+            'notif-warn';
+        
+          const notifs = Array.isArray(incident.active_notifications) ? incident.active_notifications : [];
+          // Muestra, por ejemplo, máximo 3 notificaciones recientes
+          const notifChips = notifs.slice(0,3).map(n =>
+            `<span class="notif-chip ${notifClass(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
+          );
+        
+          return `
+            <div class="chips-stack">
+              ${validChips.join(' ')}
+              ${notifChips.length ? `<div class="chip-sep"></div>${notifChips.join(' ')}` : ''}
+            </div>
+          `;
+        }
 
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
