@@ -78,6 +78,42 @@ export default async function handler(req, res) {
       ip_address: ip,
     };
 
+    // Normalización de campos desde el front (es -> en)
+    const norm = { ...data };
+    
+    // materiales: [{ nombre, cantidad, tipo, urgencia, justificacion }] -> materials_requested
+    if (Array.isArray(norm.materiales) && !norm.materials_requested) {
+      norm.materials_requested = norm.materiales.map(m => ({
+        name: m.nombre,
+        quantity: Number(m.cantidad) || 1,
+        type: m.tipo,
+        urgency: m.urgencia || 'normal',
+        justification: m.justificacion || ''
+      }));
+    }
+    
+    // para resolver: materials_used puede venir como string -> array
+    if (typeof norm.materials_used === 'string') {
+      norm.materials_used = norm.materials_used
+        .split(',').map(s => s.trim()).filter(Boolean)
+        .map(x => ({ materialName: x, quantity: 1 }));
+    }
+    
+    // descripción libre en varias acciones
+    if (norm.description && !norm.help_description) norm.help_description = norm.description;
+    if (norm.description && !norm.information_content) norm.information_content = norm.description;
+    
+    // alias de urgencia
+    if (!norm.urgency && norm.matUrgencia) norm.urgency = norm.matUrgencia;
+    
+    // asegurar booleans
+    if (typeof norm.read_only === 'string') norm.read_only = norm.read_only === 'true';
+    if (typeof norm.work_can_continue === 'string') norm.work_can_continue = norm.work_can_continue === 'true';
+    
+    // mover norm al objeto data que usa el switch
+    Object.assign(data, norm);
+
+
     // =========================
     // Switch de acciones
     // =========================
