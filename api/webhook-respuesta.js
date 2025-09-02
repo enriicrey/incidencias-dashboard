@@ -225,9 +225,50 @@ export default async function handler(req, res) {
     const raw = await makeResp.text();
     console.log('📥 Make Status:', makeResp.status, makeResp.statusText);
     console.log('📄 Make Body (log truncado):', raw.slice(0, 500) + (raw.length > 500 ? '…' : ''));
-
-    // Si Make devuelve "OK/Accepted", devolvemos éxito genérico
-    const trimmed = raw.trim();
+    
+    // Intenta parsear SIEMPRE, independientemente del Content-Type
+    const stripBOM = (s='') => s.replace(/^\uFEFF/, '');
+    const tryParse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+    
+    let candidate = stripBOM(raw).trim();
+    
+    // Caso “doble-encodeado”: JSON metido en una cadena (empieza y acaba con comillas)
+    if (candidate.startsWith('"') && candidate.endsWith('"')) {
+      const unwrapped = tryParse(candidate); // -> string con \n, \" …
+      if (typeof unwrapped === 'string') candidate = unwrapped.trim();
+    }
+    
+    // Primer intento de parseo
+    let parsed = tryParse(candidate);
+    
+    // Caso “envoltura” típica: { status, message, make_response: "<JSON string>" }
+    if (parsed && parsed.make_response && typeof parsed.make_response === 'string') {
+      const inner = tryParse(stripBOM(parsed.make_response).trim());
+      if (inner) parsed = inner; // prioriza el JSON “real”
+    }
+    
+    if (parsed) {
+      // Para listados, exige incidents[]
+      if (action === 'get_assigned_incidents') {
+        if (Array.isArray(parsed.incidents)) {
+          return res.status(200).json(parsed);
+        }
+        if (parsed.data && Array.isArray(parsed.data.incidents)) {
+          // normaliza si vino bajo data.incidents
+          return res.status(200).json({ ...parsed, incidents: parsed.data.incidents });
+        }
+        return res.status(502).json({
+          status: 'error',
+          message: 'Respuesta de Make JSON pero sin incidents[]',
+          raw: String(raw).slice(0, 500)
+        });
+      }
+      // Para acciones de mutación, reenvía el JSON tal cual
+      return res.status(200).json(parsed);
+    }
+    
+    // Si no hay JSON parseable pero el body es OK/Accepted en texto
+    const trimmed = candidate;
     if (trimmed === 'OK' || trimmed === 'Accepted') {
       const msgs = {
         'acepto': 'Incidencia aceptada correctamente',
@@ -249,51 +290,24 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString(),
       });
     }
-
-    // Si Content-Type indica JSON, parsea y reenvía tal cual
-    const isJSON = (makeResp.headers.get('content-type') || '').includes('application/json');
-    if (isJSON) {
-      try {
-        const payload = JSON.parse(raw);
-        return res.status(200).json(payload);
-      } catch (e) {
-        // Content-Type decía JSON pero no lo es — trata como error para acciones de listado
-        if (action === 'get_assigned_incidents') {
-          return res.status(502).json({
-            status: 'error',
-            message: 'Respuesta de Make inválida (JSON malformado)',
-            raw
-          });
-        }
-        // Para el resto, éxito genérico con contexto
-        return res.status(200).json({
-          status: 'success',
-          message: `Acción ${action} procesada (respuesta no JSON parseable)`,
-          action,
-          incident_id,
-          raw
-        });
-      }
-    }
-
-    // No es JSON. Decide según acción:
+    
+    // No es JSON: para listados, falla explícito; para mutaciones, éxito genérico con raw
     if (action === 'get_assigned_incidents') {
-      // Para el dashboard es mejor fallar explícitamente:
       return res.status(502).json({
         status: 'error',
         message: 'Respuesta de Make no es JSON (se esperaba incidents[])',
-        raw
+        raw: String(raw).slice(0, 500)
       });
     }
-
-    // Para otras acciones (mutaciones), éxito genérico con el raw completo
+    
     return res.status(200).json({
       status: 'success',
       message: `Acción ${action} procesada`,
       action,
       incident_id,
-      raw
+      raw: String(raw).slice(0, 1000)
     });
+
 
   } catch (error) {
     console.error('💥 Error en webhook-respuesta:', error);
