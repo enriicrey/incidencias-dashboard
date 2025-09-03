@@ -293,13 +293,6 @@
         /* ========================================
            INCIDENTS SECTION
         ======================================== */
-        .incidents-list {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
-
         .section-header {
             background: var(--gray-50);
             padding: 20px 30px;
@@ -702,7 +695,7 @@
         details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
         details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
         details > summary::-webkit-details-marker{ display:none; }
-        .detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
+        detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
         @media(min-width:640px){ .detail-grid{ grid-template-columns: 1fr 1fr; } }
         .muted{ color:#6b7280; }
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
@@ -1126,14 +1119,14 @@
 
 
         function filterByStatus(status, element) {
-            currentStatusFilter = status;
-            
-            // Actualizar estado activo
-            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
-            element.classList.add('active');
-            
-            renderIncidents();
+          currentStatusFilter = status;
+          document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+          if (element) element.classList.add('active');
+          // Nota: filtros visuales desactivados en esta versión.
+          // La lista se renderiza con el fetch directo y la función renderIncidents(incidents) nueva.
+          console.warn('filterByStatus(): filtros desactivados temporalmente.');
         }
+
 
         function updateStatistics() {
             const technicianEmail = currentTechnician?.email || '';
@@ -1156,85 +1149,6 @@
             document.getElementById('seguimientoCount').textContent = stats.seguimiento;
         }
 
-        // ========================================
-        //  RENDERIZADO DE INCIDENCIAS
-        // ========================================
-        function renderIncidents() {
-            const container = document.getElementById('incidentsContainer');
-            const technicianEmail = currentTechnician?.email || '';
-            
-            const relevantIncidents = allIncidents.filter(incident => {
-                const state = getIncidentRealState(incident, technicianEmail);
-                if (currentStatusFilter === 'all') {
-                    return ['pending', 'working', 'seguimiento'].includes(state);
-                }
-                return state === currentStatusFilter;
-            });
-
-            if (relevantIncidents.length === 0) {
-                container.innerHTML = `
-                    <div class="no-incidents">
-                        <div class="no-incidents-icon">📋</div>
-                        <h3>No hay incidencias</h3>
-                        <p>No tienes incidencias ${currentStatusFilter === 'all' ? '' : 'en estado ' + currentStatusFilter} asignadas</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const incidentsHTML = relevantIncidents.map(incident => renderIncidentCard(incident, technicianEmail)).join('');
-            container.innerHTML = incidentsHTML;
-            if (directIncidentId && !directScrollDone) {
-            const card = container.querySelector(`[data-incident-id="${directIncidentId}"]`);
-            if (card) {
-              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              card.style.border = '3px solid #17a2b8';
-              card.style.boxShadow = '0 0 15px rgba(23, 162, 184, 0.3)';
-              directScrollDone = true;
-            }
-          }
-        }
-
-        function renderIncidentCard(incident, technicianEmail) {
-          const state = getIncidentRealState(incident, technicianEmail);
-          const priorityClass = getPriorityClass(incident.priority);
-          const priority = cleanPriority(incident.priority);
-        const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
-        let currentOwner = null;
-        if (respText.trim()) {
-          const rows = parseRespLog(respText);
-          currentOwner = getCurrentOwnerByLevel(rows, parseInt(incident.escalation_level)||0);
-        }
-          return `
-            <div class="incident-card" data-incident-id="${incident.id}" data-priority="${priority}">
-              <div class="incident-header">
-                <div>
-                  <div class="incident-title">${incident.equipment || 'Equipo no especificado'}</div>
-                  <div class="incident-meta">
-                    <span>📍 ${incident.zone || 'Zona no especificada'}</span>
-                    <span>🆔 ${incident.id}</span>
-                    <span>📅 ${formatDate(getBestDate(incident))}</span>
-                  </div>
-                </div>
-        
-                <div class="incident-header-right">
-                  <div class="priority-badge priority-${priorityClass}">${priority}</div>
-                  <div class="state-badge state-${state}">${getStateLabel(state)}</div>
-                  ${renderSlaChipIfPending(incident, state)}
-                  ${currentOwner ? `<div class="sla-timer sla-good">👤 Titular L${parseInt(incident.escalation_level)||0}: ${currentOwner}</div>` : ""}
-                  ${renderHeaderChips(incident)}
-                </div>
-              </div>
-        
-              <div class="incident-description" style="margin-bottom: 12px;">
-                ${incident.description || 'Sin descripción disponible'}
-              </div>
-        
-              ${renderSeguimientoBanner(incident, state)}
-              ${renderActionButtonsByState(state, incident)}
-            </div>
-          `;
-        }
                 function abrirAyuda(id){ showAyudaModal(id); }
                 function abrirMateriales(id){ showMaterialesModal(id); }
                 function abrirResolver(id){ showResolverModal(id); }
@@ -2234,154 +2148,208 @@
           closeModal("materialesModal");
         }
 
-        // Contenedor NUEVO (grid 2 columnas)
-        const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
-        
-        // Spinner inicial
-        function showSpinner(){
-          incidentsContainer.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
-        }
-        
-        // Helpers
-        function computeSlaText(inc){
-          const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
-          const pick = arr[inc.escalation_level] || null;
-          if(!pick) return '';
-          const now = new Date();
-          const due = new Date(pick);
-          const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
-          const nivel = `en L${inc.escalation_level}`;
-          const fecha = due.toLocaleString();
-          return `${vencido} ${nivel} · ${fecha}`;
-        }
-        function computeSeguimiento(inc){
-          // tu regla: chip SEGUIMIENTO cuando pause=true o status !== 🚦 Escalado
-          return inc.escalation_paused || inc.status !== '🚦 Escalado';
-        }
-        function safe(v){ return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v; }
-        function dateVisible(inc){ return safe(inc.occurrence_date) || safe(inc.report_date) || ''; }
-        
-        // HTML de una tarjeta
-        function incidentCardHTML(inc){
-          const valPend = Array.isArray(inc.validaciones_pendientes) ? inc.validaciones_pendientes : [];
-          const l2Techs = Array.isArray(inc.l2_technicians) ? inc.l2_technicians : [];
-          const l2Resp  = Array.isArray(inc.l2_responses)   ? inc.l2_responses   : [];
-          const l2Line = l2Techs.length ? `${l2Techs.join(', ')} — ${l2Resp.join(', ')}` : 'Sin L2';
-        
-          const slaText = computeSlaText(inc);
-          const showSeg = computeSeguimiento(inc);
-        
-          const chipsHTML = valPend.length
-            ? valPend.map(t => `<span class="chip">${t}</span>`).join('')
-            : `<span class="chip">✓ Sin validaciones pendientes</span>`;
-        
-          return `
-          <div class="incident-card">
-            <div class="incident-header">
-              <div>
-                <div class="incident-title">${safe(inc.equipment)}</div>
-                <div class="incident-meta">
-                  <span>📍 ${safe(inc.zone)}</span>
-                  <span>🆔 ${safe(inc.id)}</span>
-                  <span>📅 ${dateVisible(inc)}</span>
-                </div>
-              </div>
-              <div class="chips">
-                <span class="chip priority">${safe(inc.priority)}</span>
-                ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
-                ${chipsHTML}
-              </div>
-            </div>
-        
-            <div class="desc">${safe(inc.description)}</div>
-        
-            <div class="incident-actions">
-              ${slaText ? `<span class="sla-pill">⏰ ${slaText}</span>` : ``}
-              <button class="btn-link js-toggle-desc">Ver más</button>
-              <a class="btn btn-primary" href="#">Solicitar asignación</a>
-            </div>
-        
-            <details>
-              <summary>Detalles</summary>
-              <div class="detail-grid">
-                <div>
-                  <div class="muted">Contactos</div>
-                  <div>👤 Supervisor: ${safe(inc.supervisor)} ${safe(inc.supervisor_phone) ? `(<a href="tel:${inc.supervisor_phone}">${inc.supervisor_phone}</a>)` : ``}</div>
-                  <div>🗣️ Reporta: ${safe(inc.reporter)} ${safe(inc.reporter_phone) ? `(<a href="tel:${inc.reporter_phone}">${inc.reporter_phone}</a>)` : ``}</div>
-                  <div>👷 Técnico asignado: ${safe(inc.assigned_technician)}</div>
-                  <div>📍 Encargado zona: ${safe(inc.zone_manager)} ${safe(inc.zone_manager_phone) ? `(<a href="tel:${inc.zone_manager_phone}">${inc.zone_manager_phone}</a>)` : ``}</div>
-                </div>
-        
-                <div>
-                  <div class="muted">Acciones</div>
-                  <div>${safe(inc.actions_taken) || 'Sin acciones'}</div>
-                  ${safe(inc.assignment_notes) ? `<div class="muted" style="margin-top:6px;">Notas asignación</div><div>${inc.assignment_notes}</div>` : ``}
-                </div>
-        
-                <div style="grid-column:1/-1;">
-                  <div class="muted">Historial de escalado</div>
-                  <div>🔹 L0: ${safe(inc.l0_technician)} — ${safe(inc.l0_response)} ${safe(inc.l0_acceptance_date) ? `(aceptado ${inc.l0_acceptance_date})` : ``} ${safe(inc.l0_rejection_date) ? `(rechazado ${inc.l0_rejection_date})` : ``}</div>
-                  <div>🔹 L1: ${safe(inc.l1_technician)} — ${safe(inc.l1_response)} ${safe(inc.l1_acceptance_date) ? `(aceptado ${inc.l1_acceptance_date})` : ``} ${safe(inc.l1_rejection_date) ? `(rechazado ${inc.l1_rejection_date})` : ``}</div>
-                  <div>🔹 L2: ${l2Line} ${safe(inc.l2_acceptance_date) ? `(aceptado ${inc.l2_acceptance_date})` : ``} ${safe(inc.l2_rejection_date) ? `(rechazado ${inc.l2_rejection_date})` : ``}</div>
-                  <div>🔹 L3: ${safe(inc.l3_technician)} — ${safe(inc.l3_response)}</div>
-                </div>
-        
-                ${safe(inc.solicitudes_log) ? `
-                  <div style="grid-column:1/-1;">
-                    <div class="muted">Solicitudes (log)</div>
-                    <div class="log">${inc.solicitudes_log}</div>
-                  </div>` : ``}
-        
-                ${safe(inc.respuestas_log) ? `
-                  <div style="grid-column:1/-1;">
-                    <div class="muted">Respuestas (log)</div>
-                    <div class="log">${inc.respuestas_log}</div>
-                  </div>` : ``}
-              </div>
-            </details>
-          </div>`;
-        }
-        
-        // Render de la lista
-        function renderIncidents(incidents){
-          incidentsContainer.innerHTML = ''; // limpia
-          incidents.forEach(inc => {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = incidentCardHTML(inc);
-            const card = wrapper.firstElementChild;
-        
-            // “Ver más” descripción
-            const btn = card.querySelector('.js-toggle-desc');
-            const desc = card.querySelector('.desc');
-            if(btn && desc){
-              btn.addEventListener('click', () => {
-                const expanded = desc.style.webkitLineClamp === 'unset';
-                if(expanded){
-                  desc.style.display='-webkit-box';
-                  desc.style.webkitLineClamp='3';
-                  btn.textContent='Ver más';
-                }else{
-                  desc.style.display='block';
-                  desc.style.webkitLineClamp='unset';
-                  btn.textContent='Ver menos';
-                }
-              });
-            }
-        
-            incidentsContainer.appendChild(card);
-          });
-        }
-        
-        // Llamada al backend (AJUSTA la URL si es distinta)
-        showSpinner();
-        fetch('/tecnico?list=assigned')
-          .then(r => r.json())
-          .then(data => renderIncidents(data.incidents || []))
-          .catch(err => {
-            console.error(err);
-            incidentsContainer.innerHTML = `<div class="loading-spinner">⚠️ Error cargando incidencias</div>`;
-          });
+        // Contenedor (grid 2 columnas)
+const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
 
+// Estado en memoria
+let allIncidents = [];
+let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
+let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'baja'
+
+// Spinner
+function showSpinner(){
+  incidentsContainer.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
+}
+
+// Helpers existentes (SLA / seguimiento / safe / fecha)
+function computeSlaText(inc){
+  const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
+  const pick = arr[inc.escalation_level] || null;
+  if(!pick) return '';
+  const now = new Date();
+  const due = new Date(pick);
+  const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
+  const nivel = `en L${inc.escalation_level}`;
+  const fecha = due.toLocaleString();
+  return `${vencido} ${nivel} · ${fecha}`;
+}
+function computeSeguimiento(inc){
+  // Tu regla: mostrar chip "SEGUIMIENTO" cuando pausa = true O status !== '🚦 Escalado'
+  return inc.escalation_paused || inc.status !== '🚦 Escalado';
+}
+function safe(v){ return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v; }
+function dateVisible(inc){ return safe(inc.occurrence_date) || safe(inc.report_date) || ''; }
+
+// Filtro por ESTADO (mapea tu semántica)
+function matchesStatus(inc, status){
+  switch(status){
+    case 'nueva':      return inc.status === '🆕 Nueva';
+    case 'asignada':   return inc.status === '🔄 Asignada';
+    case 'escalado':   // solo "Escalado" activo (no en pausa)
+      return inc.status === '🚦 Escalado' && !inc.escalation_paused;
+    case 'seguimiento': // derivado: pausa de escalado o no está en estado Escalado
+      return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
+    case 'all':
+    default:           return true;
+  }
+}
+
+// Filtro por PRIORIDAD (usa el emoji)
+function matchesPriority(inc, prio){
+  if(prio === 'all') return true;
+  const p = safe(inc.priority);
+  if(prio === 'critica') return p.startsWith('🔴');
+  if(prio === 'alta')    return p.startsWith('🟠');
+  if(prio === 'media')   return p.startsWith('🟡');
+  if(prio === 'baja')    return p.startsWith('🟢');
+  return true;
+}
+
+// Aplica filtros y re-render
+function applyFiltersAndRender(){
+  const list = allIncidents.filter(inc =>
+    matchesStatus(inc, currentStatusFilter) &&
+    matchesPriority(inc, currentPriorityFilter)
+  );
+  renderIncidents(list);
+}
+
+// Handlers para tus botones (HTML usa onclick="filterByStatus('nueva', this)" etc.)
+function filterByStatus(status, element){
+  currentStatusFilter = status;
+  document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+  if (element) element.classList.add('active');
+  applyFiltersAndRender();
+}
+function filterByPriority(prio, element){
+  currentPriorityFilter = prio;
+  document.querySelectorAll('.priority-filter').forEach(btn => btn.classList.remove('active'));
+  if (element) element.classList.add('active');
+  applyFiltersAndRender();
+}
+
+    // --------- RENDER NUEVO (no tocar) ----------
+    function incidentCardHTML(inc){
+      const valPend = Array.isArray(inc.validaciones_pendientes) ? inc.validaciones_pendientes : [];
+      const l2Techs = Array.isArray(inc.l2_technicians) ? inc.l2_technicians : [];
+      const l2Resp  = Array.isArray(inc.l2_responses)   ? inc.l2_responses   : [];
+      const l2Line = l2Techs.length ? `${l2Techs.join(', ')} — ${l2Resp.join(', ')}` : 'Sin L2';
+    
+      const slaText = computeSlaText(inc);
+      const showSeg = computeSeguimiento(inc);
+    
+      const chipsHTML = valPend.length
+        ? valPend.map(t => `<span class="chip">${t}</span>`).join('')
+        : `<span class="chip">✓ Sin validaciones pendientes</span>`;
+    
+      return `
+      <div class="incident-card">
+        <div class="incident-header">
+          <div>
+            <div class="incident-title">${safe(inc.equipment)}</div>
+            <div class="incident-meta">
+              <span>📍 ${safe(inc.zone)}</span>
+              <span>🆔 ${safe(inc.id)}</span>
+              <span>📅 ${dateVisible(inc)}</span>
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip priority">${safe(inc.priority)}</span>
+            ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
+            ${chipsHTML}
+          </div>
+        </div>
+    
+        <div class="desc">${safe(inc.description)}</div>
+    
+        <div class="incident-actions">
+          ${slaText ? `<span class="sla-pill">⏰ ${slaText}</span>` : ``}
+          <button class="btn-link js-toggle-desc">Ver más</button>
+          <a class="btn btn-primary" href="#">Solicitar asignación</a>
+        </div>
+    
+        <details>
+          <summary>Detalles</summary>
+          <div class="detail-grid">
+            <div>
+              <div class="muted">Contactos</div>
+              <div>👤 Supervisor: ${safe(inc.supervisor)} ${safe(inc.supervisor_phone) ? `(<a href="tel:${inc.supervisor_phone}">${inc.supervisor_phone}</a>)` : ``}</div>
+              <div>🗣️ Reporta: ${safe(inc.reporter)} ${safe(inc.reporter_phone) ? `(<a href="tel:${inc.reporter_phone}">${inc.reporter_phone}</a>)` : ``}</div>
+              <div>👷 Técnico asignado: ${safe(inc.assigned_technician)}</div>
+              <div>📍 Encargado zona: ${safe(inc.zone_manager)} ${safe(inc.zone_manager_phone) ? `(<a href="tel:${inc.zone_manager_phone}">${inc.zone_manager_phone}</a>)` : ``}</div>
+            </div>
+    
+            <div>
+              <div class="muted">Acciones</div>
+              <div>${safe(inc.actions_taken) || 'Sin acciones'}</div>
+              ${safe(inc.assignment_notes) ? `<div class="muted" style="margin-top:6px;">Notas asignación</div><div>${inc.assignment_notes}</div>` : ``}
+            </div>
+    
+            <div style="grid-column:1/-1;">
+              <div class="muted">Historial de escalado</div>
+              <div>🔹 L0: ${safe(inc.l0_technician)} — ${safe(inc.l0_response)} ${safe(inc.l0_acceptance_date) ? `(aceptado ${inc.l0_acceptance_date})` : ``} ${safe(inc.l0_rejection_date) ? `(rechazado ${inc.l0_rejection_date})` : ``}</div>
+              <div>🔹 L1: ${safe(inc.l1_technician)} — ${safe(inc.l1_response)} ${safe(inc.l1_acceptance_date) ? `(aceptado ${inc.l1_acceptance_date})` : ``} ${safe(inc.l1_rejection_date) ? `(rechazado ${inc.l1_rejection_date})` : ``}</div>
+              <div>🔹 L2: ${l2Line} ${safe(inc.l2_acceptance_date) ? `(aceptado ${inc.l2_acceptance_date})` : ``} ${safe(inc.l2_rejection_date) ? `(rechazado ${inc.l2_rejection_date})` : ``}</div>
+              <div>🔹 L3: ${safe(inc.l3_technician)} — ${safe(inc.l3_response)}</div>
+            </div>
+    
+            ${safe(inc.solicitudes_log) ? `
+              <div style="grid-column:1/-1;">
+                <div class="muted">Solicitudes (log)</div>
+                <div class="log">${inc.solicitudes_log}</div>
+              </div>` : ``}
+    
+            ${safe(inc.respuestas_log) ? `
+              <div style="grid-column:1/-1;">
+                <div class="muted">Respuestas (log)</div>
+                <div class="log">${inc.respuestas_log}</div>
+              </div>` : ``}
+          </div>
+        </details>
+      </div>`;
+    }
+    
+    function renderIncidents(incidents){
+      incidentsContainer.innerHTML = '';
+      incidents.forEach(inc => {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = incidentCardHTML(inc);
+        const card = wrapper.firstElementChild;
+    
+        // Toggle "ver más" para descripción
+        const btn = card.querySelector('.js-toggle-desc');
+        const desc = card.querySelector('.desc');
+        if(btn && desc){
+          btn.addEventListener('click', () => {
+            const expanded = desc.style.webkitLineClamp === 'unset';
+            if(expanded){
+              desc.style.display='-webkit-box';
+              desc.style.webkitLineClamp='3';
+              btn.textContent='Ver más';
+            }else{
+              desc.style.display='block';
+              desc.style.webkitLineClamp='unset';
+              btn.textContent='Ver menos';
+            }
+          });
+        }
+    
+        incidentsContainer.appendChild(card);
+      });
+    }
+    
+    // Carga inicial
+    showSpinner();
+    fetch('/tecnico?list=assigned')           // ⬅️ usa tu endpoint real
+      .then(r => r.json())
+      .then(data => {
+        allIncidents = (data && Array.isArray(data.incidents)) ? data.incidents : [];
+        applyFiltersAndRender();               // pinta con los filtros actuales
+      })
+      .catch(err => {
+        console.error(err);
+        incidentsContainer.innerHTML = `<div class="loading-spinner">⚠️ Error cargando incidencias</div>`;
+      });
     </script>
 </body>
 </html>
