@@ -771,22 +771,26 @@
                 <div class="filter-group">
                     <span class="filter-label">Prioridad:</span>
                     <div class="filter-buttons">
+                       <button class="filter-btn" onclick="filterByPriority('critica', this)">🔴 Crítica</button>
+                        <button class="filter-btn" onclick="filterByPriority('alta', this)">🟠 Alta</button>
+                        <button class="filter-btn" onclick="filterByPriority('media', this)">🟡 Media</button>
+                        <button class="filter-btn" onclick="filterByPriority('baja', this)">🟢 Baja</button>
                         <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
-                        <button class="filter-btn" onclick="filterByPriority('CRÍTICA', this)">Crítica</button>
-                        <button class="filter-btn" onclick="filterByPriority('ALTA', this)">Alta</button>
-                        <button class="filter-btn" onclick="filterByPriority('MEDIA', this)">Media</button>
-                        <button class="filter-btn" onclick="filterByPriority('BAJA', this)">Baja</button>
                     </div>
                 </div>
             </section>
 
             <!-- Incidents Section -->
-            <section class="incidents-section">
-                <div class="section-header">
-                    <h2>📋 Incidencias Asignadas</h2>
-                </div>
-                <div class="incidents-list"></div>
-            </section>
+           <section class="incidents-section">
+          <div class="section-header">
+            <h2>📋 Incidencias Asignadas</h2>
+          </div>
+        
+          <!-- 🔧 IMPORTANTE: id="incidentsContainer" -->
+          <div id="incidentsContainer" class="incidents-list">
+            <div class="loading-spinner">🔄 Cargando incidencias...</div>
+          </div>
+        </section>
         </main>
     </div>
 
@@ -1614,12 +1618,13 @@
         }
         
         // ¿Quién es el titular vigente de un nivel?
-        function getCurrentOwnerByLevel(respRows, level) {
-          const stack = new Map(); // email -> activo?
-          for (const r of respRows.filter(r => r.level === level)) {
-            if (r.ev === "ASSIGNED" || r.ev === "REASSIGN_TO") stack.set(r.email, true);
-            if (r.ev === "REASSIGN_FROM") stack.set(r.email, false);
-          }
+        function getCurrentOwnerByLevel(respRows, level){
+          // último asignado con phase ASSIGNED en ese nivel
+          const lastAssigned = respRows
+            .filter(r => r.level === level && r.phase === 'ASSIGNED')
+            .slice(-1)[0];
+          return lastAssigned ? lastAssigned.tech : null;
+        }
           // Devuelve el último ASSIGNED/REASSIGN_TO con activo=true
           const lastAssigned = [...respRows.filter(r => r.level === level && (r.ev === "ASSIGNED" || r.ev === "REASSIGN_TO"))]
             .reverse().find(r => stack.get(r.email));
@@ -1627,11 +1632,11 @@
         }
         
         // Último rechazo (motivo) por nivel, opcional
-        function getLastRejectReasonByLevel(respRows, level) {
-          const row = [...respRows.filter(r => r.level === level && r.ev.startsWith("REJECTED"))].pop();
-          if (!row) return null;
-          const parts = row.ev.split("::");
-          return parts[1] ? parts[1].trim() : (row.detail || null);
+    function getLastRejectReasonByLevel(respRows, level){
+          const lastRej = respRows
+            .filter(r => r.level === level && r.phase === 'REJECTED')
+            .slice(-1)[0];
+          return lastRej ? lastRej.reason : '';
         }
         
         // ¿Cómo va el técnico logueado en este nivel?
@@ -2157,9 +2162,10 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
 let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'baja'
 
 // Spinner
-function showSpinner(){
-  incidentsContainer.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
-}
+    function showSpinner(){
+      const el = document.getElementById('incidentsContainer');
+      if (el) el.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
+    }
 
 // Helpers existentes (SLA / seguimiento / safe / fecha)
 function computeSlaText(inc){
