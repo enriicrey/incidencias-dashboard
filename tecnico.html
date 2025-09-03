@@ -695,7 +695,7 @@
         details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
         details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
         details > summary::-webkit-details-marker{ display:none; }
-        detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
+        .detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
         @media(min-width:640px){ .detail-grid{ grid-template-columns: 1fr 1fr; } }
         .muted{ color:#6b7280; }
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
@@ -781,16 +781,16 @@
             </section>
 
             <!-- Incidents Section -->
-           <section class="incidents-section">
+            <section class="incidents-section">
           <div class="section-header">
             <h2>📋 Incidencias Asignadas</h2>
           </div>
         
-          <!-- 🔧 IMPORTANTE: id="incidentsContainer" -->
-          <div id="incidentsContainer" class="incidents-list">
+          <div id="incidentsContainer">
             <div class="loading-spinner">🔄 Cargando incidencias...</div>
           </div>
         </section>
+            
         </main>
     </div>
 
@@ -2115,8 +2115,7 @@
           closeModal("materialesModal");
         }
 
-        // Contenedor (grid 2 columnas)
-const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
+
 
 // Estado en memoria
 let allIncidents = [];
@@ -2129,85 +2128,80 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
       if (el) el.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
     }
 
-// Helpers existentes (SLA / seguimiento / safe / fecha)
-function computeSlaText(inc){
-  const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
-  const pick = arr[inc.escalation_level] || null;
-  if(!pick) return '';
-  const now = new Date();
-  const due = new Date(pick);
-  const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
-  const nivel = `en L${inc.escalation_level}`;
-  const fecha = due.toLocaleString();
-  return `${vencido} ${nivel} · ${fecha}`;
-}
-function computeSeguimiento(inc){
-  // Tu regla: mostrar chip "SEGUIMIENTO" cuando pausa = true O status !== '🚦 Escalado'
-  return inc.escalation_paused || inc.status !== '🚦 Escalado';
-}
-function safe(v){ return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v; }
-function dateVisible(inc){ return safe(inc.occurrence_date) || safe(inc.report_date) || ''; }
+    // Helpers existentes (SLA / seguimiento / safe / fecha)
+    function safe(v){
+      return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v;
+    }
+    function dateVisible(inc){
+      return safe(inc.occurrence_date) || safe(inc.report_date) || '';
+    }
+    function computeSlaText(inc){
+      const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
+      const pick = arr[inc.escalation_level] || null;
+      if(!pick) return '';
+      const now = new Date();
+      const due = new Date(pick);
+      const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
+      const nivel = `en L${inc.escalation_level}`;
+      const fecha = due.toLocaleString();
+      return `${vencido} ${nivel} · ${fecha}`;
+    }
+    function computeSeguimiento(inc){
+      // Regla que acordamos: chip “SEGUIMIENTO” cuando pausa=true O el estado no es "🚦 Escalado"
+      return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
+    }
 
 // Filtro por ESTADO (mapea tu semántica)
-function matchesStatus(inc, status){
-  switch(status){
-    case 'nueva':      return inc.status === '🆕 Nueva';
-    case 'asignada':   return inc.status === '🔄 Asignada';
-    case 'escalado':   // solo "Escalado" activo (no en pausa)
-      return inc.status === '🚦 Escalado' && !inc.escalation_paused;
-    case 'seguimiento': // derivado: pausa de escalado o no está en estado Escalado
-      return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
-    case 'all':
-    default:           return true;
-  }
-}
+    function matchesStatus(inc, status){
+      switch(status){
+        case 'nueva':      return inc.status === '🆕 Nueva';
+        case 'asignada':   return inc.status === '🔄 Asignada';
+        case 'escalado':   return (inc.status === '🚦 Escalado') && (inc.escalation_paused === false);
+        case 'seguimiento':return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
+        case 'all':
+        default:           return true;
+      }
+    }
+    function matchesPriority(inc, prio){
+      if (prio === 'all') return true;
+      const p = safe(inc.priority);
+      if (prio === 'critica') return p.startsWith('🔴');
+      if (prio === 'alta')    return p.startsWith('🟠');
+      if (prio === 'media')   return p.startsWith('🟡');
+      if (prio === 'baja')    return p.startsWith('🟢');
+      return true;
+    }
+    function applyFiltersAndRender(){
+      const list = allIncidents.filter(inc =>
+        matchesStatus(inc, currentStatusFilter) &&
+        matchesPriority(inc, currentPriorityFilter)
+      );
+      renderIncidents(list);
+    }
 
-// Filtro por PRIORIDAD (usa el emoji)
-function matchesPriority(inc, prio){
-  if(prio === 'all') return true;
-  const p = safe(inc.priority);
-  if(prio === 'critica') return p.startsWith('🔴');
-  if(prio === 'alta')    return p.startsWith('🟠');
-  if(prio === 'media')   return p.startsWith('🟡');
-  if(prio === 'baja')    return p.startsWith('🟢');
-  return true;
-}
-
-// Aplica filtros y re-render
-function applyFiltersAndRender(){
-  const list = allIncidents.filter(inc =>
-    matchesStatus(inc, currentStatusFilter) &&
-    matchesPriority(inc, currentPriorityFilter)
-  );
-  renderIncidents(list);
-}
-
-// Handlers para tus botones (HTML usa onclick="filterByStatus('nueva', this)" etc.)
-function filterByStatus(status, element){
-  currentStatusFilter = status;
-  document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
-  if (element) element.classList.add('active');
-  applyFiltersAndRender();
-}
-  // Normaliza emoji/texto a slug interno
-  function toPrioritySlug(input) {
-    const t = (input || '').toString().toUpperCase();
-    if (t.includes('🔴') || t.includes('CRÍTICA') || t.includes('CRITICA')) return 'critica';
-    if (t.includes('🟠') || t.includes('ALTA')) return 'alta';
-    if (t.includes('🟡') || t.includes('MEDIA')) return 'media';
-    if (t.includes('🟢') || t.includes('BAJA')) return 'baja';
-    return 'all';
-  }
-
-  function filterByPriority(priority, button) {
-    // botones activos
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    if (button) button.classList.add('active');
-
-    // guardamos slug normalizado y re-render
-    currentPriorityFilter = toPrioritySlug(priority);
-    applyFiltersAndRender();
-  }
+        // ---------- Handlers de botones de filtro (llamados desde el HTML con onclick) ----------
+        function filterByStatus(status, element){
+          currentStatusFilter = status;
+          document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+          if (element) element.classList.add('active');
+          applyFiltersAndRender();
+        }
+        function filterByPriority(priority, button) {
+          document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+          if (button) button.classList.add('active');
+          currentPriorityFilter = toPrioritySlug(priority);
+          applyFiltersAndRender();
+        }
+        
+      // Normaliza emoji/texto a slug interno
+        function toPrioritySlug(input) {
+          const t = (input || '').toString().toUpperCase();
+          if (t.includes('🔴') || t.includes('CRÍTICA') || t.includes('CRITICA')) return 'critica';
+          if (t.includes('🟠') || t.includes('ALTA')) return 'alta';
+          if (t.includes('🟡') || t.includes('MEDIA')) return 'media';
+          if (t.includes('🟢') || t.includes('BAJA')) return 'baja';
+          return 'all';
+        }
 
     // --------- RENDER NUEVO (no tocar) ----------
     function incidentCardHTML(inc){
@@ -2224,7 +2218,7 @@ function filterByStatus(status, element){
         : `<span class="chip">✓ Sin validaciones pendientes</span>`;
     
       return `
-      <div class="incident-card">
+      <div class="incident-card" data-incident-id="${safe(inc.id)}">
         <div class="incident-header">
           <div>
             <div class="incident-title">${safe(inc.equipment)}</div>
@@ -2244,52 +2238,34 @@ function filterByStatus(status, element){
         <div class="desc">${safe(inc.description)}</div>
     
         <div class="incident-actions">
-          ${slaText ? `<span class="sla-pill">⏰ ${slaText}</span>` : ``}
-          <button class="btn-link js-toggle-desc">Ver más</button>
-          <a class="btn btn-primary" href="#">Solicitar asignación</a>
+          ${slaText ? `<span class="sla-timer sla-warning">${slaText}</span>` : ``}
+          <button class="btn btn-success" onclick="handleAction('aceptar', '${safe(inc.id)}')">✅ Aceptar</button>
+          <button class="btn btn-danger"  onclick="handleAction('rechazar', '${safe(inc.id)}')">❌ Rechazar</button>
+          <button class="btn btn-warning" onclick="showResolverModal('${safe(inc.id)}')">🛠️ Resolver</button>
+          <button class="btn btn-primary" onclick="showMaterialesModal('${safe(inc.id)}')">📦 Materiales</button>
+          <a class="btn btn-info" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
         </div>
-    
-        <details>
-          <summary>Detalles</summary>
-          <div class="detail-grid">
-            <div>
-              <div class="muted">Contactos</div>
-              <div>👤 Supervisor: ${safe(inc.supervisor)} ${safe(inc.supervisor_phone) ? `(<a href="tel:${inc.supervisor_phone}">${inc.supervisor_phone}</a>)` : ``}</div>
-              <div>🗣️ Reporta: ${safe(inc.reporter)} ${safe(inc.reporter_phone) ? `(<a href="tel:${inc.reporter_phone}">${inc.reporter_phone}</a>)` : ``}</div>
-              <div>👷 Técnico asignado: ${safe(inc.assigned_technician)}</div>
-              <div>📍 Encargado zona: ${safe(inc.zone_manager)} ${safe(inc.zone_manager_phone) ? `(<a href="tel:${inc.zone_manager_phone}">${inc.zone_manager_phone}</a>)` : ``}</div>
-            </div>
-    
-            <div>
-              <div class="muted">Acciones</div>
-              <div>${safe(inc.actions_taken) || 'Sin acciones'}</div>
-              ${safe(inc.assignment_notes) ? `<div class="muted" style="margin-top:6px;">Notas asignación</div><div>${inc.assignment_notes}</div>` : ``}
-            </div>
-    
-            <div style="grid-column:1/-1;">
-              <div class="muted">Historial de escalado</div>
-              <div>🔹 L0: ${safe(inc.l0_technician)} — ${safe(inc.l0_response)} ${safe(inc.l0_acceptance_date) ? `(aceptado ${inc.l0_acceptance_date})` : ``} ${safe(inc.l0_rejection_date) ? `(rechazado ${inc.l0_rejection_date})` : ``}</div>
-              <div>🔹 L1: ${safe(inc.l1_technician)} — ${safe(inc.l1_response)} ${safe(inc.l1_acceptance_date) ? `(aceptado ${inc.l1_acceptance_date})` : ``} ${safe(inc.l1_rejection_date) ? `(rechazado ${inc.l1_rejection_date})` : ``}</div>
-              <div>🔹 L2: ${l2Line} ${safe(inc.l2_acceptance_date) ? `(aceptado ${inc.l2_acceptance_date})` : ``} ${safe(inc.l2_rejection_date) ? `(rechazado ${inc.l2_rejection_date})` : ``}</div>
-              <div>🔹 L3: ${safe(inc.l3_technician)} — ${safe(inc.l3_response)}</div>
-            </div>
-    
-            ${safe(inc.solicitudes_log) ? `
-              <div style="grid-column:1/-1;">
-                <div class="muted">Solicitudes (log)</div>
-                <div class="log">${inc.solicitudes_log}</div>
-              </div>` : ``}
-    
-            ${safe(inc.respuestas_log) ? `
-              <div style="grid-column:1/-1;">
-                <div class="muted">Respuestas (log)</div>
-                <div class="log">${inc.respuestas_log}</div>
-              </div>` : ``}
-          </div>
-        </details>
-      </div>`;
+      </div>
+      `;
     }
     
+    function renderIncidents(list){
+      const container = document.getElementById('incidentsContainer');
+      const data = Array.isArray(list) ? list : allIncidents;
+    
+      if (!data || data.length === 0) {
+        container.innerHTML = `
+          <div class="no-incidents">
+            <div class="no-incidents-icon">📋</div>
+            <h3>No hay incidencias</h3>
+            <p>No tienes incidencias ${currentStatusFilter==='all' ? '' : 'en el filtro seleccionado'}</p>
+          </div>`;
+        return;
+      }
+    
+      container.innerHTML = data.map(incidentCardHTML).join('');
+    }
+
     function renderIncidents(incidents){
       incidentsContainer.innerHTML = '';
       incidents.forEach(inc => {
@@ -2321,7 +2297,24 @@ function filterByStatus(status, element){
     
     // Carga inicial
     showSpinner();
- 
+     // Expone funciones usadas por HTML inline
+    window.loginWithPIN = loginWithPIN;
+    window.verifyPIN = verifyPIN;
+    window.showPINError = showPINError;
+    window.closePINModal = closePINModal;
+    
+    window.loadDashboard = loadDashboard;
+    window.refreshDashboard = refreshDashboard;
+    
+    window.filterByStatus = filterByStatus;
+    window.filterByPriority = filterByPriority;
+    
+    window.handleAction = handleAction;
+    window.showResolverModal = showResolverModal;
+    window.showMaterialesModal = showMaterialesModal;
+    window.showAyudaModal = showAyudaModal;
+    window.closeModal = closeModal;
+        
     </script>
 </body>
 </html>
