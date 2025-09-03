@@ -904,8 +904,6 @@
         //  VARIABLES GLOBALES
         // ========================================
         let currentTechnician = null;
-        let allIncidents = [];
-        let currentStatusFilter = 'all';
         let pendingAction = null;
         let selectedReason = null;
         let currentIncidentId = null;
@@ -2116,7 +2114,9 @@
         }
 
 
-
+// Contenedor (grid 2 columnas)
+const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
+        
 // Estado en memoria
 let allIncidents = [];
 let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
@@ -2170,13 +2170,6 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
       if (prio === 'media')   return p.startsWith('🟡');
       if (prio === 'baja')    return p.startsWith('🟢');
       return true;
-    }
-    function applyFiltersAndRender(){
-      const list = allIncidents.filter(inc =>
-        matchesStatus(inc, currentStatusFilter) &&
-        matchesPriority(inc, currentPriorityFilter)
-      );
-      renderIncidents(list);
     }
 
         // ---------- Handlers de botones de filtro (llamados desde el HTML con onclick) ----------
@@ -2266,34 +2259,73 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
       container.innerHTML = data.map(incidentCardHTML).join('');
     }
 
-    function renderIncidents(incidents){
-      incidentsContainer.innerHTML = '';
-      incidents.forEach(inc => {
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = incidentCardHTML(inc);
-        const card = wrapper.firstElementChild;
+    function renderIncidents(incidents) {
+      // Si existe el spinner viejo por id, límpialo
+      const legacy = document.getElementById('incidentsContainer');
+      if (legacy) legacy.innerHTML = '';
     
-        // Toggle "ver más" para descripción
+      incidentsContainer.innerHTML = '';
+      if (!Array.isArray(incidents) || incidents.length === 0) {
+        incidentsContainer.innerHTML = `
+          <div class="loading-spinner" style="padding:24px;">
+            ✅ No hay incidencias asignadas
+          </div>`;
+        return;
+      }
+    
+      const frag = document.createDocumentFragment();
+      incidents.forEach(inc => {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = incidentCardHTML(inc);
+        const card = wrap.firstElementChild;
+    
+        // Toggle "ver más" en descripción
         const btn = card.querySelector('.js-toggle-desc');
         const desc = card.querySelector('.desc');
-        if(btn && desc){
+        if (btn && desc) {
           btn.addEventListener('click', () => {
             const expanded = desc.style.webkitLineClamp === 'unset';
-            if(expanded){
-              desc.style.display='-webkit-box';
-              desc.style.webkitLineClamp='3';
-              btn.textContent='Ver más';
-            }else{
-              desc.style.display='block';
-              desc.style.webkitLineClamp='unset';
-              btn.textContent='Ver menos';
+            if (expanded) {
+              desc.style.display = '-webkit-box';
+              desc.style.webkitLineClamp = '3';
+              btn.textContent = 'Ver más';
+            } else {
+              desc.style.display = 'block';
+              desc.style.webkitLineClamp = 'unset';
+              btn.textContent = 'Ver menos';
             }
           });
         }
     
-        incidentsContainer.appendChild(card);
+        frag.appendChild(card);
       });
+    
+      incidentsContainer.appendChild(frag);
     }
+    
+    // ---------- Aplicar filtros y pintar ----------
+    function applyFiltersAndRender() {
+      const list = allIncidents.filter(inc =>
+        matchesStatus(inc, currentStatusFilter) &&
+        matchesPriority(inc, currentPriorityFilter)
+      );
+      renderIncidents(list);
+    }
+    
+    // ---------- Exponer filtros globales si los llamas desde HTML ----------
+    window.filterByStatus = function(status, element) {
+      currentStatusFilter = status;
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+      if (element) element.classList.add('active');
+      applyFiltersAndRender();
+    };
+    
+    window.filterByPriority = function(priority, button) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (button) button.classList.add('active');
+      currentPriorityFilter = toPrioritySlug(priority);
+      applyFiltersAndRender();
+    };
     
     // Carga inicial
     showSpinner();
