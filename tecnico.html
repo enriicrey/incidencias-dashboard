@@ -2190,6 +2190,8 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
            function incidentCardHTML(inc){
           const slaText = computeSlaText(inc);
           const showSeg = computeSeguimiento(inc);
+          const state = getIncidentRealState(inc, (currentTechnician?.email || '').toLowerCase());
+
         
           // Chips de validaciones (Notion + Log) y notificaciones desde log
           const validChipsHTML = renderPendingChips(inc);
@@ -2228,6 +2230,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
                 ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
                 ${validChipsHTML}
                 ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
+                <span class="chip">${safe(inc.assigned_technician) || 'Sin asignar'}</span>
               </div>
             </div>
         
@@ -2235,17 +2238,10 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
         
             <div class="incident-actions">
               ${slaText ? `<span class="sla-timer sla-warning">⏱️ ${slaText}</span>` : ``}
-              <button class="btn btn-success" onclick="aceptarIncidencia('${safe(inc.id)}')">✅ Aceptar</button>
-              <button class="btn btn-danger"  onclick="rechazarIncidencia('${safe(inc.id)}')">❌ Rechazar</button>
-        
-              <button class="btn btn-secondary" onclick="abrirAyuda('${safe(inc.id)}')">🛠️ Ayuda / Gestión</button>
-              <button class="btn btn-warning" onclick="abrirMateriales('${safe(inc.id)}')">📦 Materiales</button>
-        
-              <button class="btn btn-info" ${hasValidation(inc, VP.MATERIALES) ? 'disabled title="Pendiente validar materiales"' : ''}
-                      onclick="!this.disabled && abrirResolver('${safe(inc.id)}')">✅ Resolver</button>
-        
+              ${renderActionButtonsByState(state, inc)}
               <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
             </div>
+
         
             ${renderDetailsSection(inc)}
           </div>`;
