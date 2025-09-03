@@ -2233,7 +2233,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
                 <span class="chip">${safe(inc.assigned_technician) || 'Sin asignar'}</span>
               </div>
             </div>
-        
+             ${renderSeguimientoBanner(inc, state)}
             <div class="desc">${safe(inc.description)}</div>
         
             <div class="incident-actions">
