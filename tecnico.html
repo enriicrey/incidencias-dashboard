@@ -702,8 +702,15 @@
         
         /* Botón ligero */
         .btn-link{ background:#eef2ff; color:#3730a3; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; }
-
-
+        .filters-bar{ display:none !important; } /*borramos filtro prioridad */
+        .timeline{ list-style:none; margin:8px 0; padding:0; }
+        .timeline li{
+          display:grid; grid-template-columns: 110px 1fr; gap:10px;
+          padding:8px 10px; border-radius:8px; background:#f9fafb; margin-bottom:6px;
+          font-size:13px;
+        }
+        .timeline .t-time{ color:#6b7280; font-variant-numeric: tabular-nums; }
+        .timeline .t-body{ color:#374151; }
     </style>
 </head>
 <body>
@@ -763,23 +770,7 @@
                     <div class="stat-label">Seguimiento</div>
                 </div>
             </section>
-            <!-- ========================================
-                 FILTERS BAR - PRIORIDAD
-                 Barra para filtrar incidencias según nivel
-            ======================================== -->
-            <section class="filters-bar">
-                <div class="filter-group">
-                    <span class="filter-label">Prioridad:</span>
-                    <div class="filter-buttons">
-                       <button class="filter-btn" onclick="filterByPriority('critica', this)">🔴 Crítica</button>
-                        <button class="filter-btn" onclick="filterByPriority('alta', this)">🟠 Alta</button>
-                        <button class="filter-btn" onclick="filterByPriority('media', this)">🟡 Media</button>
-                        <button class="filter-btn" onclick="filterByPriority('baja', this)">🟢 Baja</button>
-                        <button class="filter-btn active" onclick="filterByPriority('all', this)">Todas</button>
-                    </div>
-                </div>
-            </section>
-
+      
             <!-- Incidents Section -->
             <section class="incidents-section">
           <div class="section-header">
@@ -1088,37 +1079,68 @@
         function getIncidentRealState(incident, technicianEmail) {
           const level = parseInt(incident.escalation_level) || 0;
         
-          // Preferir el log de respuestas
+          // 0) Si el SLA del nivel actual está vencido, el técnico ve la tarjeta en seguimiento.
+          const end = getSlaEndForLevel(incident, level);
+          const deadline = end ? Date.parse(end) : 0;
+          if (deadline && Date.now() > deadline) {
+            return 'seguimiento';
+          }
+        
+          // 1) Preferir "Respuestas (log)"
           const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
           if (respText.trim()) {
             const rows = parseRespLog(respText);
-            return getTechnicianStateByLevel(incident, rows, level, technicianEmail);
+        
+            // ¿quién es el propietario vigente del nivel actual?
+            const owner = rows
+              .filter(r => r.level === level && r.ev === 'ASSIGNED')
+              .slice(-1)[0]?.email?.toLowerCase();
+        
+            if (owner && owner === (technicianEmail || '').toLowerCase()) return 'working';
+        
+            const myEvents = rows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||'').toLowerCase());
+            const lastMine = myEvents[myEvents.length - 1];
+            if (lastMine?.ev?.startsWith('REJECTED') || lastMine?.ev === 'REASSIGN_FROM') return 'seguimiento';
+        
+            // Si no soy el titular y no he rechazado, quedo en seguimiento (estoy al tanto).
+            return 'seguimiento';
           }
         
-          // --- Fallback legado (sin log) ---
-          const now = new Date();
+          // 2) Fallback (campos legados)
+          const now = Date.now();
           const currentAssignments = [
             { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
             { level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end },
             { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end },
             { level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end }
           ];
-          const currentAssignment = currentAssignments.find(assign =>
-            assign.level === level &&
-            (assign.tech === technicianEmail || (assign.tech && String(assign.tech).includes(technicianEmail)))
+          const curr = currentAssignments.find(a =>
+            a.level === level &&
+            (a.tech === technicianEmail || (a.tech && String(a.tech).includes(technicianEmail)))
           );
-          if (currentAssignment) {
-            if (currentAssignment.response === 'acepto' || currentAssignment.response === '✅ Acepto') return 'working';
-            if (currentAssignment.response === '⭕ Sin Respuesta' && currentAssignment.sla) {
-              const slaDeadline = new Date(currentAssignment.sla);
-              if (now <= slaDeadline) return 'pending';
-            }
+          if (curr) {
+            const slaOk = curr.sla ? (Date.parse(curr.sla) - now) > 0 : false;
+            if (curr.response === 'acepto' || curr.response === '✅ Acepto') return 'working';
+            if (curr.response === '⭕ Sin Respuesta' && slaOk) return 'pending';
           }
-          const wasAssignedBefore = currentAssignments.some(assign =>
-            assign.tech === technicianEmail && assign.response && assign.response !== '⭕ Sin Respuesta'
-          );
-          return wasAssignedBefore ? 'seguimiento' : 'other';
+            // --- Seguimiento por vencimiento y cambio de nivel (no soy el titular del nivel actual) ---
+            const L = parseInt(incident.escalation_level)||0;
+            const slaEnd = getSlaEndForLevel(incident, L);
+            if (slaEnd && Date.now() > Date.parse(slaEnd)) {
+              // Si el dueño vigente del nivel actual no soy yo, lo veo en seguimiento
+              const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
+              if (respText.trim()){
+                const rows = parseRespLog(respText);
+                const owner = getCurrentOwnerByLevel(rows, L);
+                if (!owner || owner.toLowerCase() !== (technicianEmail||'').toLowerCase()){
+                  return 'seguimiento';
+                }
+              }
+            }
+            return 'seguimiento';
         }
+
+
 
         function updateStatistics() {
             const technicianEmail = currentTechnician?.email || '';
@@ -1394,7 +1416,7 @@
                 minute: '2-digit' 
             });
         }
-
+    
         function getPriorityClass(priority) {
             if (!priority) return 'baja';
             const p = priority.toLowerCase();
@@ -1504,6 +1526,15 @@
             map[k].last = map[k].phases[map[k].phases.length - 1];
           }
           return map;
+        }
+          function renderSlaPillInHeader(inc, state){
+          const L = getCurrentLevel(inc);
+          const end = getSlaEndForLevel(inc, L);
+          if (!end) return '';
+          const ms = Date.parse(end) - Date.now();
+          const cls = ms <= 0 ? 'sla-critical' : (ms <= 120*60000 ? 'sla-warning' : 'sla-good');
+          const label = ms <= 0 ? `SLA vencido en L${L}` : `SLA en L${L} · ${formatRemain(ms)}`;
+          return `<span class="sla-timer ${cls}">⏱️ ${label}</span>`;
         }
         
         // --- ¿Qué categorías tienen pendientes? ---
@@ -1620,12 +1651,12 @@
         }
         
         // ¿Quién es el titular vigente de un nivel?
-        function getCurrentOwnerByLevel(respRows, level){
-          // último asignado con phase ASSIGNED en ese nivel
+       function getCurrentOwnerByLevel(respRows, level){
+          // último evento ASSIGNED de ese nivel → titular vigente
           const lastAssigned = respRows
-            .filter(r => r.level === level && r.phase === 'ASSIGNED')
+            .filter(r => r.level === level && r.ev === 'ASSIGNED')
             .slice(-1)[0];
-          return lastAssigned ? lastAssigned.tech : null;
+          return lastAssigned ? lastAssigned.email : null;
         }
         
         // Último rechazo (motivo) por nivel, opcional
@@ -1796,66 +1827,29 @@
         function renderActionButtonsByState(state, incident) {
           const resolveDisabled = !canResolve(incident);
           const resolveTitle = resolveDisabled ? `title="Pendiente validar materiales"` : "";
+        
           if (state === "pending") {
             return `
-              <div class="incident-actions">
-                <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
-                <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
-              </div>`;
+              <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
+              <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
+            `;
           }
+        
           if (state === "working") {
             return `
-              <div class="incident-actions">
-                <button class="btn btn-secondary" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-                <button class="btn btn-warning" onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
-                <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
-                        onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                <button class="btn btn-dark" onclick="finTurno('${incident.id}')">🕐 Fin de turno</button>
-              </div>`;
+              <button class="btn btn-secondary" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+              <button class="btn btn-warning" onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+              <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
+                      onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
+              <button class="btn btn-dark" onclick="finTurno('${incident.id}')">🕐 Fin de turno</button>
+            `;
           }
-          if (state === "seguimiento") {
-            return `
-              <div class="incident-actions">
-                <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              </div>`;
-          }
-          return "";
-        }
-
-        function renderHeaderChips(incident){
-          // 1) Validaciones (chips) — robusto (Notion + Log)
-          const validChipsHTML = renderPendingChips(incident);
         
-          // 2) Notificaciones (chips compactas) — SIEMPRE desde el log
-          const notifMap = {
-            material_approved: '🟢 Materiales autorizados',
-            material_rejected: '🔴 Materiales rechazados',
-            derivation_approved: '✅ Derivación aprobada',
-            derivation_rejected: '❌ Derivación rechazada',
-            support_approved: '👥 Apoyo aprobado',
-            support_rejected: '👥 Apoyo rechazado',
-            incident_closed: '✅ Cerrada por supervisor',
-            solution_rejected: '🔄 Solución rechazada'
-          };
-        
-          const notifClass = (t) =>
-            t?.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
-            t?.endsWith('rejected') ? 'notif-bad' : 'notif-warn';
-        
-          const notifs = buildNotificationsFromLog(incident); // ✅ fuente única
-          const notifChips = (notifs || []).slice(0, 3).map(n =>
-            `<span class="notif-chip ${notifClass(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
-          );
-        
+          // seguimiento
           return `
-            <div class="chips-stack">
-              ${validChipsHTML}
-              ${notifChips.length ? `<div class="chip-sep"></div>${notifChips.join(' ')}` : ''}
-            </div>
+            <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
           `;
         }
-
-
 
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
@@ -2124,7 +2118,6 @@ const incidentsContainer = document.querySelector('.incidents-section .incidents
 // Estado en memoria
 let allIncidents = [];
 let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
-let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'baja'
 
 // Spinner
     function showSpinner(){
@@ -2155,25 +2148,19 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
       return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
     }
 
-// Filtro por ESTADO (mapea tu semántica)
-    function matchesStatus(inc, status){
-      switch(status){
-        case 'nueva':      return inc.status === '🆕 Nueva';
-        case 'asignada':   return inc.status === '🔄 Asignada';
-        case 'escalado':   return (inc.status === '🚦 Escalado') && (inc.escalation_paused === false);
-        case 'seguimiento':return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
-        case 'all':
-        default:           return true;
+    // Estado real calculado para *este* técnico
+    function computeCardState(inc){
+      try{
+        return getIncidentRealState(inc, currentTechnician?.email || '');
+      }catch(e){
+        // Fallback conservador
+        return 'seguimiento';
       }
     }
-    function matchesPriority(inc, prio){
-      if (prio === 'all') return true;
-      const p = safe(inc.priority);
-      if (prio === 'critica') return p.startsWith('🔴');
-      if (prio === 'alta')    return p.startsWith('🟠');
-      if (prio === 'media')   return p.startsWith('🟡');
-      if (prio === 'baja')    return p.startsWith('🟢');
-      return true;
+    
+    function matchesStatus(inc, status){
+      if (status === 'all') return true;
+      return computeCardState(inc) === status; // 'pending' | 'working' | 'seguimiento'
     }
 
         // ---------- Handlers de botones de filtro (llamados desde el HTML con onclick) ----------
@@ -2183,27 +2170,12 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
           if (element) element.classList.add('active');
           applyFiltersAndRender();
         }
-        function filterByPriority(priority, button) {
-          document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-          if (button) button.classList.add('active');
-          currentPriorityFilter = toPrioritySlug(priority);
-          applyFiltersAndRender();
-        }
-        
-      // Normaliza emoji/texto a slug interno
-        function toPrioritySlug(input) {
-          const t = (input || '').toString().toUpperCase();
-          if (t.includes('🔴') || t.includes('CRÍTICA') || t.includes('CRITICA')) return 'critica';
-          if (t.includes('🟠') || t.includes('ALTA')) return 'alta';
-          if (t.includes('🟡') || t.includes('MEDIA')) return 'media';
-          if (t.includes('🟢') || t.includes('BAJA')) return 'baja';
-          return 'all';
-        }
+    
 
     // --------- RENDER NUEVO (no tocar) ----------
            function incidentCardHTML(inc) {
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
-          const slaChip = renderSlaChipIfPending(inc, state);
+          const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const validChipsHTML = renderPendingChips(inc);
           const notifList = buildNotificationsFromLog(inc);
@@ -2287,43 +2259,59 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
         }
 
         
-        function renderContacts(inc) {
-          const fila = (label, val, phone=false) =>
-            `<div><strong>${label}:</strong> ${val ? (phone ? `<a href="tel:${val}">📞 ${val}</a>` : val) : '—'}</div>`;
+      function renderContacts(inc){
+          const tel = v => v ? ` <a href="tel:${v}" class="btn-link">${v}</a>` : ' —';
+          const row = (label, name, phone) =>
+            `<div><strong>${label}:</strong> ${safe(name) || '—'}${tel(safe(phone))}</div>`;
         
           return `
-            <div class="detail-grid">
-              <div>
-                ${fila('Supervisor', safe(inc.supervisor))}
-                ${fila('Tel.', safe(inc.supervisor_phone), true)}
-                ${fila('Encargado', safe(inc.zone_manager))}
-                ${fila('Tel.', safe(inc.zone_manager_phone), true)}
-              </div>
-              <div>
-                ${fila('Reporta', safe(inc.reporter))}
-                ${fila('Tel.', safe(inc.reporter_phone), true)}
-                ${fila('Asignado', safe(inc.assigned_technician))}
-              </div>
+          <div class="detail-grid">
+            <div>
+              ${row('Supervisor', inc.supervisor, inc.supervisor_phone)}
+              ${row('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
+              ${row('Técnico asignado', inc.assigned_technician, inc.assigned_technician_phone)}
             </div>
-          `;
+            <div>
+              ${row('Reporta', inc.reporter, inc.reporter_phone)}
+              <div><strong>Fecha ocurrencia:</strong> ${formatDate(inc.occurrence_date)}</div>
+              <div><strong>Fecha reporte:</strong> ${formatDate(inc.report_date)}</div>
+            </div>
+          </div>`;
         }
+
 
         
         function renderEscalationHistory(inc){
           const t = inc["Respuestas (log)"] || inc.respuestas_log || '';
           if(!t.trim()) return `<div class="muted">Sin historial</div>`;
-          // mostramos las 10 últimas líneas legibles
-          const lines = t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(-10);
-          return `<div class="log">${lines.join('\n')}</div>`;
+          const rows = parseRespLog(t).slice(-12);
+          const items = rows.map(r => {
+            const who = r.email;
+            const ev  = r.ev.replace('REJECTED::','Rechazado: ');
+            return `<li><span class="t-time">${r.when.toLocaleString()}</span>
+                    <span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
+          }).join('');
+          return `<ul class="timeline">${items}</ul>`;
         }
         
         function renderSolicitudesResumen(inc){
           const t = inc["Solicitudes (log)"] || inc.solicitudes_log || '';
           if(!t.trim()) return `<div class="muted">Sin solicitudes</div>`;
-          // solo mostramos las 10 últimas
-          const lines = t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(-10);
-          return `<div class="log">${lines.join('\n')}</div>`;
+          const rows = parseSolicitudesLog(t);        // ya la tienes
+          const grouped = groupByRequest(rows);       // ya la tienes
+          // Orden por fecha de último evento
+          const items = Object.values(grouped)
+            .sort((a,b)=> new Date(b.last.when)-new Date(a.last.when))
+            .slice(0,12)
+            .map(g => {
+              const badge = g.last.phase === 'APPROVED' ? '✅'
+                         : g.last.phase === 'REJECTED' ? '❌' : '⏳';
+              return `<li><span class="t-time">${new Date(g.last.when).toLocaleString()}</span>
+                      <span class="t-body">${badge} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
+            }).join('');
+          return `<ul class="timeline">${items}</ul>`;
         }
+
 
 
 
@@ -2371,17 +2359,17 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
     
     // ---------- Aplicar filtros y pintar ----------
     function applyFiltersAndRender() {
-          const list = allIncidents.filter(inc =>
-            matchesStatus(inc, currentStatusFilter) &&
-            matchesPriority(inc, currentPriorityFilter)
-          );
-          renderIncidents(list);
-        }
-
+      const tech = currentTechnician?.email || '';
+      const list = allIncidents.filter(inc => {
+        const st = getIncidentRealState(inc, tech);
+        if (currentStatusFilter === 'all') return true;
+        return st === currentStatusFilter;
+      });
+      renderIncidents(list);
+    }
     
-    // ---------- Exponer filtros globales si los llamas desde HTML ----------
-    window.filterByStatus = function(status, element) {
-      currentStatusFilter = status;
+    window.filterByStatus = function(status, element){
+      currentStatusFilter = status; // 'all' | 'pending' | 'working' | 'seguimiento'
       document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
       if (element) element.classList.add('active');
       applyFiltersAndRender();
@@ -2390,7 +2378,6 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
     window.filterByPriority = function(priority, button) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       if (button) button.classList.add('active');
-      currentPriorityFilter = toPrioritySlug(priority);
       applyFiltersAndRender();
     };
     
