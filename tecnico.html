@@ -1583,22 +1583,16 @@
         }
 
         function renderCurrentOwnerChip(inc){
-          const level = getCurrentLevel(inc);
-          const respText = inc["Respuestas (log)"] || inc.respuestas_log || "";
-          let owner = "";
-          if (respText.trim()){
-            const rows = parseRespLog(respText);
-            owner = getCurrentOwnerByLevel(rows, level) || "";
-          }
-          // Fallback por campos legacy si hiciera falta
-          if (!owner){
-            if (level === 0) owner = inc.l0_technician || "";
-            if (level === 1) owner = inc.l1_technician || "";
-            if (level === 2) owner = Array.isArray(inc.l2_technicians) ? inc.l2_technicians.join(", ") : (inc.l2_technicians || "");
-            if (level === 3) owner = inc.l3_technician || "";
-          }
-          if (!owner) return "";
-          return `<span class="chip">👤 Titular L${level}: ${safe(owner)}</span>`;
+          const level = parseInt(inc.escalation_level ?? 0, 10);
+          // Prioridad: valor mapeado al nivel actual, y si no, campos legacy
+          let owner = '';
+          if (level === 0) owner = inc.l0_technician || inc.assigned_technician || '';
+          if (level === 1) owner = inc.l1_technician || inc.assigned_technician || '';
+          if (level === 2) owner = Array.isArray(inc.l2_technicians) ? inc.l2_technicians.join(', ') : (inc.l2_technicians || inc.assigned_technician || '');
+          if (level === 3) owner = inc.l3_technician || inc.assigned_technician || '';
+        
+          const label = owner ? `👤 Titular L${level}: ${owner}` : `👤 Titular L${level}: —`;
+          return `<span class="chip">${label}</span>`;
         }
 
         // ==============================
@@ -2211,9 +2205,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
           const state = getIncidentRealState(inc, currentTechnician?.email || '');
           const slaText = computeSlaText(inc);
           const showSeg = computeSeguimiento(inc);
-          const state = getIncidentRealState(inc, (currentTechnician?.email || '').toLowerCase());
-
-        
+               
           // Chips de validaciones (Notion + Log) y notificaciones desde log
           const validChipsHTML = renderPendingChips(inc);
           const notifList = buildNotificationsFromLog(inc);
@@ -2247,14 +2239,14 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
                 </div>
               </div>
               <div class="chips-stack">
-                <span class="chip priority">${safe(inc.priority)}</span>
-                 ${renderCurrentOwnerChip(inc)}
-                ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
-                ${validChipsHTML}
-                ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
-                <span class="chip">${safe(inc.assigned_technician) || 'Sin asignar'}</span>
-              </div>
-            </div>
+                  <span class="chip priority">${safe(inc.priority)}</span>
+                  ${renderCurrentOwnerChip(inc)}
+                  ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
+                  ${validChipsHTML}
+                  ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
+                </div>
+                </div>
+               
              ${renderSeguimientoBanner(inc, state)}
             <div class="desc">${safe(inc.description)}</div>
         
