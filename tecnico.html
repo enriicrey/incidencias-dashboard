@@ -789,6 +789,7 @@
           <div id="incidentsContainer">
             <div class="loading-spinner">🔄 Cargando incidencias...</div>
           </div>
+         <div class="incidents-list"></div>
         </section>
             
         </main>
@@ -1067,7 +1068,7 @@
                 if (data.status === 'success' && data.incidents) {
                     allIncidents = data.incidents;
                     updateStatistics();
-                    renderIncidents();
+                    applyFiltersAndRender();
                 } else {
                     throw new Error(data.message || 'Error al cargar incidencias');
                 }
@@ -1118,17 +1119,6 @@
           );
           return wasAssignedBefore ? 'seguimiento' : 'other';
         }
-
-
-        function filterByStatus(status, element) {
-          currentStatusFilter = status;
-          document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
-          if (element) element.classList.add('active');
-          // Nota: filtros visuales desactivados en esta versión.
-          // La lista se renderiza con el fetch directo y la función renderIncidents(incidents) nueva.
-          console.warn('filterByStatus(): filtros desactivados temporalmente.');
-        }
-
 
         function updateStatistics() {
             const technicianEmail = currentTechnician?.email || '';
@@ -2232,10 +2222,11 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
     
         <div class="incident-actions">
           ${slaText ? `<span class="sla-timer sla-warning">${slaText}</span>` : ``}
-          <button class="btn btn-success" onclick="handleAction('aceptar', '${safe(inc.id)}')">✅ Aceptar</button>
-          <button class="btn btn-danger"  onclick="handleAction('rechazar', '${safe(inc.id)}')">❌ Rechazar</button>
+          <button class="btn btn-success" onclick="aceptarIncidencia('${safe(inc.id)}')">✅ Aceptar</button>
+          <button class="btn btn-danger"  onclick="rechazarIncidencia('${safe(inc.id)}')">❌ Rechazar</button>
           <button class="btn btn-warning" onclick="showResolverModal('${safe(inc.id)}')">🛠️ Resolver</button>
           <button class="btn btn-primary" onclick="showMaterialesModal('${safe(inc.id)}')">📦 Materiales</button>
+
           <a class="btn btn-info" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
         </div>
       </div>
