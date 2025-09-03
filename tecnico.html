@@ -1581,6 +1581,26 @@
           }
           return Array.from(chips).map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
         }
+
+        function renderCurrentOwnerChip(inc){
+          const level = getCurrentLevel(inc);
+          const respText = inc["Respuestas (log)"] || inc.respuestas_log || "";
+          let owner = "";
+          if (respText.trim()){
+            const rows = parseRespLog(respText);
+            owner = getCurrentOwnerByLevel(rows, level) || "";
+          }
+          // Fallback por campos legacy si hiciera falta
+          if (!owner){
+            if (level === 0) owner = inc.l0_technician || "";
+            if (level === 1) owner = inc.l1_technician || "";
+            if (level === 2) owner = Array.isArray(inc.l2_technicians) ? inc.l2_technicians.join(", ") : (inc.l2_technicians || "");
+            if (level === 3) owner = inc.l3_technician || "";
+          }
+          if (!owner) return "";
+          return `<span class="chip">👤 Titular L${level}: ${safe(owner)}</span>`;
+        }
+
         // ==============================
         // RESPUESTAS (log) - Helpers
         // Campo Notion: "Respuestas (log)"
@@ -2188,6 +2208,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
 
     // --------- RENDER NUEVO (no tocar) ----------
            function incidentCardHTML(inc){
+          const state = getIncidentRealState(inc, currentTechnician?.email || '');
           const slaText = computeSlaText(inc);
           const showSeg = computeSeguimiento(inc);
           const state = getIncidentRealState(inc, (currentTechnician?.email || '').toLowerCase());
@@ -2227,6 +2248,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
               </div>
               <div class="chips-stack">
                 <span class="chip priority">${safe(inc.priority)}</span>
+                 ${renderCurrentOwnerChip(inc)}
                 ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
                 ${validChipsHTML}
                 ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
@@ -2237,7 +2259,7 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
             <div class="desc">${safe(inc.description)}</div>
         
             <div class="incident-actions">
-              ${slaText ? `<span class="sla-timer sla-warning">⏱️ ${slaText}</span>` : ``}
+              ${renderSlaChipIfPending(inc, state)}
               ${renderActionButtonsByState(state, inc)}
               <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
             </div>
