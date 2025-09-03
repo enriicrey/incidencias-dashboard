@@ -293,7 +293,7 @@
         /* ========================================
            INCIDENTS SECTION
         ======================================== */
-        .incidents-section {
+        .incidents-list {
             background: white;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-sm);
@@ -322,15 +322,6 @@
         }
 
         /* Incident Cards */
-        .incident-card {
-            border-bottom: 1px solid #e5e7eb;
-            padding: 24px 30px;
-            transition: var(--transition);
-        }
-
-        .incident-card:hover { background: var(--gray-50); }
-        .incident-card:last-child { border-bottom: none; }
-
         .incident-header {
             display: flex;
             justify-content: space-between;
@@ -657,6 +648,69 @@
         .notif-warn{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
         .notif-bad{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
 
+        /* GRID 1 col (móvil) / 2 col (desktop) */
+        .incidents-list{
+          display:grid;
+          grid-template-columns:1fr;
+          gap:16px;
+          padding: 10px 14px 18px;
+        }
+        @media(min-width:1024px){
+          .incidents-list{ grid-template-columns:1fr 1fr; }
+        }
+        /* opcional: 3 columnas en pantallas muy anchas
+        @media(min-width:1600px){
+          .incidents-list{ grid-template-columns:1fr 1fr 1fr; }
+        }
+        */
+        
+        /* Tarjeta compacta (pasamos de "fila con separador" a "card") */
+        .incident-card{
+          border:1px solid #e5e7eb;
+          border-radius:12px;
+          padding:16px 18px;
+          margin:0;
+          background:#fff;
+          box-shadow: var(--shadow-sm);
+        }
+        .incident-card:hover{ background:#fafafa; }
+        /* Neutraliza la última-regla de tu lista por filas */
+        .incident-card:last-child{ border-bottom:1px solid #e5e7eb; }
+        
+        /* Densidad y micro-ajustes */
+        .incident-header{ margin-bottom:10px; }
+        .incident-title{ font-size:16px; margin-bottom:2px; }
+        .incident-meta{ gap:10px; font-size:12px; margin-bottom:10px; }
+        .incident-actions{ margin-top:12px; gap:8px; }
+        .btn{ padding:8px 12px; font-size:13px; }
+        
+        /* Chips y badges */
+        .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+        .chip{ background:#f3f4f6; border-radius:999px; padding:4px 10px; font-size:12px; white-space:nowrap; }
+        .priority{ font-weight:600; }
+        
+        /* SLA mini dentro de la tarjeta */
+        .sla-pill{ display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 10px; border-radius:10px; background:#FFF5E8; color:#9A5B00; }
+        
+        /* Descripción con truncado y “ver más” */
+        .desc{
+          margin:8px 0 10px; font-size:14px; color:#374151;
+          display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+        }
+        
+        /* Detalles colapsables nativos */
+        details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
+        details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
+        details > summary::-webkit-details-marker{ display:none; }
+        .detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
+        @media(min-width:640px){ .detail-grid{ grid-template-columns: 1fr 1fr; } }
+        .muted{ color:#6b7280; }
+        .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
+        
+        /* Botón ligero */
+        .btn-link{ background:#eef2ff; color:#3730a3; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; }
+
+
     </style>
 </head>
 <body>
@@ -738,9 +792,7 @@
                 <div class="section-header">
                     <h2>📋 Incidencias Asignadas</h2>
                 </div>
-                <div id="incidentsContainer">
-                    <div class="loading-spinner">🔄 Cargando incidencias...</div>
-                </div>
+                <div class="incidents-list"></div>
             </section>
         </main>
     </div>
@@ -2181,6 +2233,154 @@
           renderMaterialesList();
           closeModal("materialesModal");
         }
+
+        // Contenedor NUEVO (grid 2 columnas)
+        const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
+        
+        // Spinner inicial
+        function showSpinner(){
+          incidentsContainer.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
+        }
+        
+        // Helpers
+        function computeSlaText(inc){
+          const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
+          const pick = arr[inc.escalation_level] || null;
+          if(!pick) return '';
+          const now = new Date();
+          const due = new Date(pick);
+          const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
+          const nivel = `en L${inc.escalation_level}`;
+          const fecha = due.toLocaleString();
+          return `${vencido} ${nivel} · ${fecha}`;
+        }
+        function computeSeguimiento(inc){
+          // tu regla: chip SEGUIMIENTO cuando pause=true o status !== 🚦 Escalado
+          return inc.escalation_paused || inc.status !== '🚦 Escalado';
+        }
+        function safe(v){ return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v; }
+        function dateVisible(inc){ return safe(inc.occurrence_date) || safe(inc.report_date) || ''; }
+        
+        // HTML de una tarjeta
+        function incidentCardHTML(inc){
+          const valPend = Array.isArray(inc.validaciones_pendientes) ? inc.validaciones_pendientes : [];
+          const l2Techs = Array.isArray(inc.l2_technicians) ? inc.l2_technicians : [];
+          const l2Resp  = Array.isArray(inc.l2_responses)   ? inc.l2_responses   : [];
+          const l2Line = l2Techs.length ? `${l2Techs.join(', ')} — ${l2Resp.join(', ')}` : 'Sin L2';
+        
+          const slaText = computeSlaText(inc);
+          const showSeg = computeSeguimiento(inc);
+        
+          const chipsHTML = valPend.length
+            ? valPend.map(t => `<span class="chip">${t}</span>`).join('')
+            : `<span class="chip">✓ Sin validaciones pendientes</span>`;
+        
+          return `
+          <div class="incident-card">
+            <div class="incident-header">
+              <div>
+                <div class="incident-title">${safe(inc.equipment)}</div>
+                <div class="incident-meta">
+                  <span>📍 ${safe(inc.zone)}</span>
+                  <span>🆔 ${safe(inc.id)}</span>
+                  <span>📅 ${dateVisible(inc)}</span>
+                </div>
+              </div>
+              <div class="chips">
+                <span class="chip priority">${safe(inc.priority)}</span>
+                ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
+                ${chipsHTML}
+              </div>
+            </div>
+        
+            <div class="desc">${safe(inc.description)}</div>
+        
+            <div class="incident-actions">
+              ${slaText ? `<span class="sla-pill">⏰ ${slaText}</span>` : ``}
+              <button class="btn-link js-toggle-desc">Ver más</button>
+              <a class="btn btn-primary" href="#">Solicitar asignación</a>
+            </div>
+        
+            <details>
+              <summary>Detalles</summary>
+              <div class="detail-grid">
+                <div>
+                  <div class="muted">Contactos</div>
+                  <div>👤 Supervisor: ${safe(inc.supervisor)} ${safe(inc.supervisor_phone) ? `(<a href="tel:${inc.supervisor_phone}">${inc.supervisor_phone}</a>)` : ``}</div>
+                  <div>🗣️ Reporta: ${safe(inc.reporter)} ${safe(inc.reporter_phone) ? `(<a href="tel:${inc.reporter_phone}">${inc.reporter_phone}</a>)` : ``}</div>
+                  <div>👷 Técnico asignado: ${safe(inc.assigned_technician)}</div>
+                  <div>📍 Encargado zona: ${safe(inc.zone_manager)} ${safe(inc.zone_manager_phone) ? `(<a href="tel:${inc.zone_manager_phone}">${inc.zone_manager_phone}</a>)` : ``}</div>
+                </div>
+        
+                <div>
+                  <div class="muted">Acciones</div>
+                  <div>${safe(inc.actions_taken) || 'Sin acciones'}</div>
+                  ${safe(inc.assignment_notes) ? `<div class="muted" style="margin-top:6px;">Notas asignación</div><div>${inc.assignment_notes}</div>` : ``}
+                </div>
+        
+                <div style="grid-column:1/-1;">
+                  <div class="muted">Historial de escalado</div>
+                  <div>🔹 L0: ${safe(inc.l0_technician)} — ${safe(inc.l0_response)} ${safe(inc.l0_acceptance_date) ? `(aceptado ${inc.l0_acceptance_date})` : ``} ${safe(inc.l0_rejection_date) ? `(rechazado ${inc.l0_rejection_date})` : ``}</div>
+                  <div>🔹 L1: ${safe(inc.l1_technician)} — ${safe(inc.l1_response)} ${safe(inc.l1_acceptance_date) ? `(aceptado ${inc.l1_acceptance_date})` : ``} ${safe(inc.l1_rejection_date) ? `(rechazado ${inc.l1_rejection_date})` : ``}</div>
+                  <div>🔹 L2: ${l2Line} ${safe(inc.l2_acceptance_date) ? `(aceptado ${inc.l2_acceptance_date})` : ``} ${safe(inc.l2_rejection_date) ? `(rechazado ${inc.l2_rejection_date})` : ``}</div>
+                  <div>🔹 L3: ${safe(inc.l3_technician)} — ${safe(inc.l3_response)}</div>
+                </div>
+        
+                ${safe(inc.solicitudes_log) ? `
+                  <div style="grid-column:1/-1;">
+                    <div class="muted">Solicitudes (log)</div>
+                    <div class="log">${inc.solicitudes_log}</div>
+                  </div>` : ``}
+        
+                ${safe(inc.respuestas_log) ? `
+                  <div style="grid-column:1/-1;">
+                    <div class="muted">Respuestas (log)</div>
+                    <div class="log">${inc.respuestas_log}</div>
+                  </div>` : ``}
+              </div>
+            </details>
+          </div>`;
+        }
+        
+        // Render de la lista
+        function renderIncidents(incidents){
+          incidentsContainer.innerHTML = ''; // limpia
+          incidents.forEach(inc => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = incidentCardHTML(inc);
+            const card = wrapper.firstElementChild;
+        
+            // “Ver más” descripción
+            const btn = card.querySelector('.js-toggle-desc');
+            const desc = card.querySelector('.desc');
+            if(btn && desc){
+              btn.addEventListener('click', () => {
+                const expanded = desc.style.webkitLineClamp === 'unset';
+                if(expanded){
+                  desc.style.display='-webkit-box';
+                  desc.style.webkitLineClamp='3';
+                  btn.textContent='Ver más';
+                }else{
+                  desc.style.display='block';
+                  desc.style.webkitLineClamp='unset';
+                  btn.textContent='Ver menos';
+                }
+              });
+            }
+        
+            incidentsContainer.appendChild(card);
+          });
+        }
+        
+        // Llamada al backend (AJUSTA la URL si es distinta)
+        showSpinner();
+        fetch('/tecnico?list=assigned')
+          .then(r => r.json())
+          .then(data => renderIncidents(data.incidents || []))
+          .catch(err => {
+            console.error(err);
+            incidentsContainer.innerHTML = `<div class="loading-spinner">⚠️ Error cargando incidencias</div>`;
+          });
 
     </script>
 </body>
