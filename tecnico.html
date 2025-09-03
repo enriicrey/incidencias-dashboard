@@ -2201,14 +2201,14 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
         }
 
     // --------- RENDER NUEVO (no tocar) ----------
-           function incidentCardHTML(inc){
-          const state = getIncidentRealState(inc, currentTechnician?.email || '');
-          const slaText = computeSlaText(inc);
-          const showSeg = computeSeguimiento(inc);
-               
-          // Chips de validaciones (Notion + Log) y notificaciones desde log
+           function incidentCardHTML(inc) {
+          const state = getIncidentRealState(inc, currentTechnician?.email || "");
+          const slaChip = renderSlaChipIfPending(inc, state);
+          const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const validChipsHTML = renderPendingChips(inc);
           const notifList = buildNotificationsFromLog(inc);
+        
+          // Notificaciones → chips
           const notifMap = {
             material_approved: '🟢 Materiales autorizados',
             material_rejected: '🔴 Materiales rechazados',
@@ -2223,82 +2223,91 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
             t?.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
             t?.endsWith('rejected') ? 'notif-bad' : 'notif-warn'
           );
-          const notifChips = notifList.slice(0,3)
-            .map(n => `<span class="notif-chip ${notifChipCls(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`)
-            .join(' ');
+          const notifChips = notifList.map(n =>
+            `<span class="notif-chip ${notifChipCls(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
+          ).join(" ");
         
           return `
-          <div class="incident-card" data-incident-id="${safe(inc.id)}">
-            <div class="incident-header">
-              <div>
-                <div class="incident-title">${safe(inc.equipment)}</div>
-                <div class="incident-meta">
-                  <span>📍 ${safe(inc.zone)}</span>
-                  <span>🆔 ${safe(inc.id)}</span>
-                  <span>📅 ${dateVisible(inc)}</span>
+            <div class="incident-card" data-incident-id="${safe(inc.id)}">
+              ${seguimientoBanner}
+              <div class="incident-header">
+                <div>
+                  <div class="incident-title">${safe(inc.id)} — ${safe(inc.priority)}</div>
+                  <div class="incident-meta">
+                    <span>⚙️ ${safe(inc.equipment)}</span>
+                    <span>📍 ${safe(inc.zone)}</span>
+                    <span>📅 ${dateVisible(inc)}</span>
+                  </div>
+                </div>
+                <div class="incident-header-right">
+                  <span class="state-badge">${getStateLabel(state)}</span>
+                  ${slaChip || ""}
                 </div>
               </div>
-              <div class="chips-stack">
-                  <span class="chip priority">${safe(inc.priority)}</span>
-                  ${renderCurrentOwnerChip(inc)}
-                  ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
-                  ${validChipsHTML}
-                  ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
-                </div>
-                </div>
-               
-             ${renderSeguimientoBanner(inc, state)}
-            <div class="desc">${safe(inc.description)}</div>
         
-            <div class="incident-actions">
-              ${renderSlaChipIfPending(inc, state)}
-              ${renderActionButtonsByState(state, inc)}
-              <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
+              <div class="chips">
+                ${validChipsHTML}
+                ${notifChips}
+              </div>
+        
+              <div class="desc">${safe(inc.description)}</div>
+        
+              <div class="incident-actions">
+                ${renderActionButtonsByState(state, inc)}
+                <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
+              </div>
+        
+              ${renderDetailsSection(inc)}
             </div>
+          `;
+        }
+
+        function renderDetailsSection(inc) {
+          return `
+            <details>
+              <summary>📇 Contactos</summary>
+              ${renderContacts(inc)}
+            </details>
+            <details>
+              <summary>📝 Acciones tomadas y notas</summary>
+              <div class="detail-grid">
+                <div><div class="muted">Acciones tomadas</div><div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div></div>
+                <div><div class="muted">Notas de asignación</div><div class="log">${safe(inc.assignment_notes) || '—'}</div></div>
+              </div>
+            </details>
+            <details>
+              <summary>📈 Historial de escalado</summary>
+              ${renderEscalationHistory(inc)}
+            </details>
+            <details>
+              <summary>📦 Solicitudes recientes</summary>
+              ${renderSolicitudesResumen(inc)}
+            </details>
+          `;
+        }
 
         
-            ${renderDetailsSection(inc)}
-          </div>`;
-        }
-        function renderDetailsSection(inc){
-          return `
-          <details>
-            <summary>📇 Contacto y responsables</summary>
-            ${renderContacts(inc)}
-          </details>
-          <details>
-            <summary>📝 Acciones tomadas y notas</summary>
-            <div class="detail-grid">
-              <div><div class="muted">Acciones tomadas</div><div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div></div>
-              <div><div class="muted">Notas de asignación</div><div class="log">${safe(inc.assignment_notes) || '—'}</div></div>
-            </div>
-          </details>
-          <details>
-            <summary>📈 Historial de escalado</summary>
-            ${renderEscalationHistory(inc)}
-          </details>
-          <details>
-            <summary>📦 Solicitudes recientes</summary>
-            ${renderSolicitudesResumen(inc)}
-          </details>`;
-        }
+        function renderContacts(inc) {
+          const fila = (label, val, phone=false) =>
+            `<div><strong>${label}:</strong> ${val ? (phone ? `<a href="tel:${val}">📞 ${val}</a>` : val) : '—'}</div>`;
         
-        function renderContacts(inc){
-          const fila = (label, val) => `<div><strong>${label}:</strong> ${safe(val) || '—'}</div>`;
           return `
-          <div class="detail-grid">
-            <div>
-              ${fila('Técnico asignado', inc.assigned_technician)}
-              ${fila('Supervisor', inc.supervisor)} ${fila('Tel.', inc.supervisor_phone)}
-              ${fila('Encargado de zona', inc.zone_manager)} ${fila('Tel.', inc.zone_manager_phone)}
+            <div class="detail-grid">
+              <div>
+                ${fila('Supervisor', safe(inc.supervisor))}
+                ${fila('Tel.', safe(inc.supervisor_phone), true)}
+                ${fila('Encargado', safe(inc.zone_manager))}
+                ${fila('Tel.', safe(inc.zone_manager_phone), true)}
+              </div>
+              <div>
+                ${fila('Reporta', safe(inc.reporter))}
+                ${fila('Tel.', safe(inc.reporter_phone), true)}
+                ${fila('Asignado', safe(inc.assigned_technician))}
+              </div>
             </div>
-            <div>
-              ${fila('Reporta', inc.reporter)} ${fila('Tel.', inc.reporter_phone)}
-              ${fila('Fecha ocurrencia', formatDate(getBestDate({occurrence_date: inc.occurrence_date}) || ''))}
-              ${fila('Fecha reporte', formatDate(getBestDate({report_date: inc.report_date}) || ''))}
-            </div>
-          </div>`;
+          `;
         }
+
         
         function renderEscalationHistory(inc){
           const t = inc["Respuestas (log)"] || inc.respuestas_log || '';
@@ -2362,12 +2371,13 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
     
     // ---------- Aplicar filtros y pintar ----------
     function applyFiltersAndRender() {
-      const list = allIncidents.filter(inc =>
-        matchesStatus(inc, currentStatusFilter) &&
-        matchesPriority(inc, currentPriorityFilter)
-      );
-      renderIncidents(list);
-    }
+          const list = allIncidents.filter(inc =>
+            matchesStatus(inc, currentStatusFilter) &&
+            matchesPriority(inc, currentPriorityFilter)
+          );
+          renderIncidents(list);
+        }
+
     
     // ---------- Exponer filtros globales si los llamas desde HTML ----------
     window.filterByStatus = function(status, element) {
