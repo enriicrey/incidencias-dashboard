@@ -1625,11 +1625,6 @@
             .slice(-1)[0];
           return lastAssigned ? lastAssigned.tech : null;
         }
-          // Devuelve el último ASSIGNED/REASSIGN_TO con activo=true
-          const lastAssigned = [...respRows.filter(r => r.level === level && (r.ev === "ASSIGNED" || r.ev === "REASSIGN_TO"))]
-            .reverse().find(r => stack.get(r.email));
-          return lastAssigned?.email || null;
-        }
         
         // Último rechazo (motivo) por nivel, opcional
     function getLastRejectReasonByLevel(respRows, level){
@@ -1905,79 +1900,46 @@
           }
         }
 
-            // ========================================
-            //  FILTRO DE PRIORIDAD
-            //  Muestra solo las incidencias según
-            //  la prioridad seleccionada
-            // ========================================
-            function filterByPriority(priority, button) {
-                // Marcar botón activo
-                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-        
-                // Filtrar tarjetas de incidencias
-                const incidents = document.querySelectorAll('.incident-card');
-                incidents.forEach(card => {
-                    const prio = card.getAttribute('data-priority');
-                    if (priority === 'all' || prio === priority) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            }
 
         // ========================================
         //  AYUDA / GESTIÓN - TARJETAS EXPANDIBLES
         // ========================================
-                const ayudaOptions = [
-          {
-            id: "aportar_informacion",
-            title: "📝 Aportar información adicional",
+        const ayudaOptions = [
+          { id: "aportar_informacion", title: "📝 Aportar información adicional",
             description: "Agrega más detalles sobre la incidencia.",
             fields: `<textarea id="infoExtra" class="form-control" rows="3" placeholder="Describe la información adicional..."></textarea>`
           },
-          {
-            id: "revisar_materiales",
-            title: "📊 Revisar estado materiales solicitados",
-            description: "Abrir Notion con los materiales de la incidencia.",
-            urlKey: "materials_url"
-          },
-          {
-            id: "revisar_historial",
-            title: "🔍 Revisar historial del componente",
-            description: "Abrir Notion con el historial de fallos.",
-            urlKey: "history_url"
-          },
-          {
-            id: "derivar_departamento",
-            title: "🏢 Derivar a otro departamento",
-            description: "Transferir incidencia a otro departamento.",
-            fields: `
-              <label class="form-label">Departamento:</label>
-              <select id="departamentoSelect" class="form-control">
-                <option value="">-- Selecciona --</option>
-                <option value="mecanica">Mecánica</option>
-                <option value="electrica">Eléctrica</option>
-                <option value="it">IT</option>
-              </select>
-              <label class="form-label">Motivo:</label>
-              <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea>
-            `
-          },
-          {
-            id: "fin_de_turno",
-            title: "🕐 Fin de turno",
-            description: "Ceder incidencia al siguiente turno.",
-            fields: `<textarea id="detalleFinTurno" class="form-control" rows="3" placeholder="Detalles para el próximo técnico..."></textarea>`
-          },
-          {
-            id: "apoyo_segundo_tecnico",
-            title: "👥 Solicitar segundo técnico",
-            description: "Pide apoyo de otro técnico.",
-            fields: `<textarea id="detalleApoyo" class="form-control" rows="3" placeholder="Explica por qué necesitas apoyo..."></textarea>`
-          }
-        ];
+          { id: "revisar_materiales", title: "📊 Revisar estado materiales solicitados",
+        description: "Abrir Notion con los materiales de la incidencia.",
+        urlKey: "materials_url"
+      },
+      { id: "revisar_historial", title: "🔍 Revisar historial del componente",
+        description: "Abrir Notion con el historial de fallos.",
+        urlKey: "history_url"
+      },
+      { id: "derivar_departamento", title: "🏢 Derivar a otro departamento",
+        description: "Transferir incidencia a otro departamento.",
+        fields: `
+          <label class="form-label">Departamento:</label>
+          <select id="departamentoSelect" class="form-control">
+            <option value="">-- Selecciona --</option>
+            <option value="mecanica">Mecánica</option>
+            <option value="electrica">Eléctrica</option>
+            <option value="it">IT</option>
+          </select>
+          <label class="form-label">Motivo:</label>
+        <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea>
+        `
+      },
+      { id: "fin_de_turno", title: "🕐 Fin de turno",
+        description: "Ceder incidencia al siguiente turno.",
+        fields: `<textarea id="detalleFinTurno" class="form-control" rows="3" placeholder="Detalles para el próximo técnico..."></textarea>`
+      },
+      { id: "apoyo_segundo_tecnico", title: "👥 Solicitar segundo técnico",
+        description: "Pide apoyo de otro técnico.",
+        fields: `<textarea id="detalleApoyo" class="form-control" rows="3" placeholder="Explica por qué necesitas apoyo."></textarea>`
+      }
+    ];
         
         let selectedAyuda = null;
         
@@ -2227,12 +2189,25 @@ function filterByStatus(status, element){
   if (element) element.classList.add('active');
   applyFiltersAndRender();
 }
-function filterByPriority(prio, element){
-  currentPriorityFilter = prio;
-  document.querySelectorAll('.priority-filter').forEach(btn => btn.classList.remove('active'));
-  if (element) element.classList.add('active');
-  applyFiltersAndRender();
-}
+  // Normaliza emoji/texto a slug interno
+  function toPrioritySlug(input) {
+    const t = (input || '').toString().toUpperCase();
+    if (t.includes('🔴') || t.includes('CRÍTICA') || t.includes('CRITICA')) return 'critica';
+    if (t.includes('🟠') || t.includes('ALTA')) return 'alta';
+    if (t.includes('🟡') || t.includes('MEDIA')) return 'media';
+    if (t.includes('🟢') || t.includes('BAJA')) return 'baja';
+    return 'all';
+  }
+
+  function filterByPriority(priority, button) {
+    // botones activos
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    if (button) button.classList.add('active');
+
+    // guardamos slug normalizado y re-render
+    currentPriorityFilter = toPrioritySlug(priority);
+    applyFiltersAndRender();
+  }
 
     // --------- RENDER NUEVO (no tocar) ----------
     function incidentCardHTML(inc){
@@ -2346,16 +2321,7 @@ function filterByPriority(prio, element){
     
     // Carga inicial
     showSpinner();
-    fetch('/tecnico?list=assigned')           // ⬅️ usa tu endpoint real
-      .then(r => r.json())
-      .then(data => {
-        allIncidents = (data && Array.isArray(data.incidents)) ? data.incidents : [];
-        applyFiltersAndRender();               // pinta con los filtros actuales
-      })
-      .catch(err => {
-        console.error(err);
-        incidentsContainer.innerHTML = `<div class="loading-spinner">⚠️ Error cargando incidencias</div>`;
-      });
+ 
     </script>
 </body>
 </html>
