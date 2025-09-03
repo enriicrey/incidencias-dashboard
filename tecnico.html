@@ -2241,26 +2241,8 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
       </div>
       `;
     }
-    
-    function renderIncidents(list){
-      const container = document.getElementById('incidentsContainer');
-      const data = Array.isArray(list) ? list : allIncidents;
-    
-      if (!data || data.length === 0) {
-        container.innerHTML = `
-          <div class="no-incidents">
-            <div class="no-incidents-icon">📋</div>
-            <h3>No hay incidencias</h3>
-            <p>No tienes incidencias ${currentStatusFilter==='all' ? '' : 'en el filtro seleccionado'}</p>
-          </div>`;
-        return;
-      }
-    
-      container.innerHTML = data.map(incidentCardHTML).join('');
-    }
 
     function renderIncidents(incidents) {
-      // Si existe el spinner viejo por id, límpialo
       const legacy = document.getElementById('incidentsContainer');
       if (legacy) legacy.innerHTML = '';
     
@@ -2279,7 +2261,6 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
         wrap.innerHTML = incidentCardHTML(inc);
         const card = wrap.firstElementChild;
     
-        // Toggle "ver más" en descripción
         const btn = card.querySelector('.js-toggle-desc');
         const desc = card.querySelector('.desc');
         if (btn && desc) {
