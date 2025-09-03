@@ -2187,51 +2187,126 @@ let currentPriorityFilter = 'all'; // 'all' | 'critica' | 'alta' | 'media' | 'ba
         }
 
     // --------- RENDER NUEVO (no tocar) ----------
-    function incidentCardHTML(inc){
-      const valPend = Array.isArray(inc.validaciones_pendientes) ? inc.validaciones_pendientes : [];
-      const l2Techs = Array.isArray(inc.l2_technicians) ? inc.l2_technicians : [];
-      const l2Resp  = Array.isArray(inc.l2_responses)   ? inc.l2_responses   : [];
-      const l2Line = l2Techs.length ? `${l2Techs.join(', ')} — ${l2Resp.join(', ')}` : 'Sin L2';
-    
-      const slaText = computeSlaText(inc);
-      const showSeg = computeSeguimiento(inc);
-    
-      const chipsHTML = valPend.length
-        ? valPend.map(t => `<span class="chip">${t}</span>`).join('')
-        : `<span class="chip">✓ Sin validaciones pendientes</span>`;
-    
-      return `
-      <div class="incident-card" data-incident-id="${safe(inc.id)}">
-        <div class="incident-header">
-          <div>
-            <div class="incident-title">${safe(inc.equipment)}</div>
-            <div class="incident-meta">
-              <span>📍 ${safe(inc.zone)}</span>
-              <span>🆔 ${safe(inc.id)}</span>
-              <span>📅 ${dateVisible(inc)}</span>
+           function incidentCardHTML(inc){
+          const slaText = computeSlaText(inc);
+          const showSeg = computeSeguimiento(inc);
+        
+          // Chips de validaciones (Notion + Log) y notificaciones desde log
+          const validChipsHTML = renderPendingChips(inc);
+          const notifList = buildNotificationsFromLog(inc);
+          const notifMap = {
+            material_approved: '🟢 Materiales autorizados',
+            material_rejected: '🔴 Materiales rechazados',
+            derivation_approved: '✅ Derivación aprobada',
+            derivation_rejected: '❌ Derivación rechazada',
+            support_approved: '👥 Apoyo aprobado',
+            support_rejected: '👥 Apoyo rechazado',
+            incident_closed: '✅ Cerrada por supervisor',
+            solution_rejected: '🔄 Solución rechazada'
+          };
+          const notifChipCls = t => (
+            t?.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
+            t?.endsWith('rejected') ? 'notif-bad' : 'notif-warn'
+          );
+          const notifChips = notifList.slice(0,3)
+            .map(n => `<span class="notif-chip ${notifChipCls(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`)
+            .join(' ');
+        
+          return `
+          <div class="incident-card" data-incident-id="${safe(inc.id)}">
+            <div class="incident-header">
+              <div>
+                <div class="incident-title">${safe(inc.equipment)}</div>
+                <div class="incident-meta">
+                  <span>📍 ${safe(inc.zone)}</span>
+                  <span>🆔 ${safe(inc.id)}</span>
+                  <span>📅 ${dateVisible(inc)}</span>
+                </div>
+              </div>
+              <div class="chips-stack">
+                <span class="chip priority">${safe(inc.priority)}</span>
+                ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
+                ${validChipsHTML}
+                ${notifChips ? `<div class="chip-sep"></div>${notifChips}` : ``}
+              </div>
             </div>
-          </div>
-          <div class="chips">
-            <span class="chip priority">${safe(inc.priority)}</span>
-            ${showSeg ? `<span class="chip">👁️ SEGUIMIENTO</span>` : ``}
-            ${chipsHTML}
-          </div>
-        </div>
-    
-        <div class="desc">${safe(inc.description)}</div>
-    
-        <div class="incident-actions">
-          ${slaText ? `<span class="sla-timer sla-warning">${slaText}</span>` : ``}
-          <button class="btn btn-success" onclick="aceptarIncidencia('${safe(inc.id)}')">✅ Aceptar</button>
-          <button class="btn btn-danger"  onclick="rechazarIncidencia('${safe(inc.id)}')">❌ Rechazar</button>
-          <button class="btn btn-warning" onclick="showResolverModal('${safe(inc.id)}')">🛠️ Resolver</button>
-          <button class="btn btn-primary" onclick="showMaterialesModal('${safe(inc.id)}')">📦 Materiales</button>
+        
+            <div class="desc">${safe(inc.description)}</div>
+        
+            <div class="incident-actions">
+              ${slaText ? `<span class="sla-timer sla-warning">⏱️ ${slaText}</span>` : ``}
+              <button class="btn btn-success" onclick="aceptarIncidencia('${safe(inc.id)}')">✅ Aceptar</button>
+              <button class="btn btn-danger"  onclick="rechazarIncidencia('${safe(inc.id)}')">❌ Rechazar</button>
+        
+              <button class="btn btn-secondary" onclick="abrirAyuda('${safe(inc.id)}')">🛠️ Ayuda / Gestión</button>
+              <button class="btn btn-warning" onclick="abrirMateriales('${safe(inc.id)}')">📦 Materiales</button>
+        
+              <button class="btn btn-info" ${hasValidation(inc, VP.MATERIALES) ? 'disabled title="Pendiente validar materiales"' : ''}
+                      onclick="!this.disabled && abrirResolver('${safe(inc.id)}')">✅ Resolver</button>
+        
+              <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
+            </div>
+        
+            ${renderDetailsSection(inc)}
+          </div>`;
+        }
+        function renderDetailsSection(inc){
+          return `
+          <details>
+            <summary>📇 Contacto y responsables</summary>
+            ${renderContacts(inc)}
+          </details>
+          <details>
+            <summary>📝 Acciones tomadas y notas</summary>
+            <div class="detail-grid">
+              <div><div class="muted">Acciones tomadas</div><div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div></div>
+              <div><div class="muted">Notas de asignación</div><div class="log">${safe(inc.assignment_notes) || '—'}</div></div>
+            </div>
+          </details>
+          <details>
+            <summary>📈 Historial de escalado</summary>
+            ${renderEscalationHistory(inc)}
+          </details>
+          <details>
+            <summary>📦 Solicitudes recientes</summary>
+            ${renderSolicitudesResumen(inc)}
+          </details>`;
+        }
+        
+        function renderContacts(inc){
+          const fila = (label, val) => `<div><strong>${label}:</strong> ${safe(val) || '—'}</div>`;
+          return `
+          <div class="detail-grid">
+            <div>
+              ${fila('Técnico asignado', inc.assigned_technician)}
+              ${fila('Supervisor', inc.supervisor)} ${fila('Tel.', inc.supervisor_phone)}
+              ${fila('Encargado de zona', inc.zone_manager)} ${fila('Tel.', inc.zone_manager_phone)}
+            </div>
+            <div>
+              ${fila('Reporta', inc.reporter)} ${fila('Tel.', inc.reporter_phone)}
+              ${fila('Fecha ocurrencia', formatDate(getBestDate({occurrence_date: inc.occurrence_date}) || ''))}
+              ${fila('Fecha reporte', formatDate(getBestDate({report_date: inc.report_date}) || ''))}
+            </div>
+          </div>`;
+        }
+        
+        function renderEscalationHistory(inc){
+          const t = inc["Respuestas (log)"] || inc.respuestas_log || '';
+          if(!t.trim()) return `<div class="muted">Sin historial</div>`;
+          // mostramos las 10 últimas líneas legibles
+          const lines = t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(-10);
+          return `<div class="log">${lines.join('\n')}</div>`;
+        }
+        
+        function renderSolicitudesResumen(inc){
+          const t = inc["Solicitudes (log)"] || inc.solicitudes_log || '';
+          if(!t.trim()) return `<div class="muted">Sin solicitudes</div>`;
+          // solo mostramos las 10 últimas
+          const lines = t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(-10);
+          return `<div class="log">${lines.join('\n')}</div>`;
+        }
 
-          <a class="btn btn-info" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
-        </div>
-      </div>
-      `;
-    }
+
 
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
