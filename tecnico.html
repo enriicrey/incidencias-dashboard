@@ -238,13 +238,6 @@
         /* ========================================
            INCIDENTS SECTION
         ======================================== */
-       .section-header {
-          background: #fff;
-          margin: 0 0 8px 0;
-          border-radius: 12px;
-          box-shadow: var(--shadow-sm);
-        }
-
         .section-header h2 {
             font-size: 20px;
             font-weight: 700;
@@ -284,9 +277,6 @@
         @media (max-width: 640px){
           .inc-title-id { max-width: 220px; }
         }
-        
-        .sla-warning{ background:#fff7ed; }
-        .sla-critical{ background:#fee2e2; }
 
         .priority-badge {
             padding: 4px 12px;
@@ -331,6 +321,9 @@
           box-shadow:var(--shadow-sm);
           font-size:13px;
         }
+        .sla-warning{ background:#fff7ed; }
+        .sla-critical{ background:#fee2e2; }
+        
         .materials-badge{
           display:inline-block;
           padding:6px 10px;
@@ -483,13 +476,6 @@
 
         .reason-icon { font-size: 20px; margin-right: 12px; }
 
-       .no-incidents {
-          background: #fff;
-          border-radius: 12px;
-          box-shadow: var(--shadow-sm);
-          margin: 8px 16px 0;
-        }
-
         .no-incidents-icon { font-size: 48px; margin-bottom: 16px; }
 
         /* ========================================
@@ -593,8 +579,6 @@
         @media (max-width: 640px){
           .form-grid{ grid-template-columns: 1fr; }
         }
-        /* GRID 1 col (móvil) / 2 col (desktop) */
-      .incidents-section { margin-top: 8px; }
         
        /* Masonry definitivo */
        .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px; }
@@ -1900,6 +1884,7 @@
               <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
               <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
               <button class="btn btn-warning" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+              <a class="btn btn-primary" href="${safe(incident.url)}" target="_blank">🔗 Notion</a>
             </div>`;
         }
           if (state === "working") {
@@ -2114,12 +2099,12 @@
         document.addEventListener("DOMContentLoaded", loadAyudaOptions);
 
 
-        // ========================================
-        //  SOLICITAR MATERIALES - MULTIPLE
-        // ========================================
-        let materialesTemp = [];
+            // ========================================
+            //  SOLICITAR MATERIALES - MULTIPLE
+            // ========================================
+            let materialesTemp = [];
         
-        function agregarMaterial() {
+            function agregarMaterial() {
             const nombre = document.getElementById("matNombre").value.trim();
             const cantidad = document.getElementById("matCantidad").value;
             const tipo = document.getElementById("matTipo").value;
@@ -2181,14 +2166,14 @@
         }
 
 
-// Contenedor (grid 2 columnas)
-const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
-        
-// Estado en memoria
-let allIncidents = [];
-let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
-
-// Spinner
+    // Contenedor (grid 2 columnas)
+    const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
+            
+    // Estado en memoria
+    let allIncidents = [];
+    let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
+    
+    // Spinner
     function showSpinner(){
       const el = document.getElementById('incidentsContainer');
       if (el) el.innerHTML = `<div class="loading-spinner">🔄 Cargando incidencias...</div>`;
@@ -2200,21 +2185,6 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
     }
     function dateVisible(inc){
       return safe(inc.occurrence_date) || safe(inc.report_date) || '';
-    }
-    function computeSlaText(inc){
-      const arr = [inc.sla_l0_end, inc.sla_l1_backup_end, inc.sla_l2_equipo_end, inc.sla_l3_responsable_end];
-      const pick = arr[inc.escalation_level] || null;
-      if(!pick) return '';
-      const now = new Date();
-      const due = new Date(pick);
-      const vencido = now > due ? 'SLA vencido' : 'SLA en curso';
-      const nivel = `en L${inc.escalation_level}`;
-      const fecha = due.toLocaleString();
-      return `${vencido} ${nivel} · ${fecha}`;
-    }
-    function computeSeguimiento(inc){
-      // Regla que acordamos: chip “SEGUIMIENTO” cuando pausa=true O el estado no es "🚦 Escalado"
-      return inc.escalation_paused === true || inc.status !== '🚦 Escalado';
     }
 
     // Estado real calculado para *este* técnico
@@ -2242,7 +2212,7 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
     
 
     // --------- RENDER NUEVO (no tocar) ----------
-           function incidentCardHTML(inc) {
+        function incidentCardHTML(inc) {
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
@@ -2298,14 +2268,13 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
         
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
-                <a class="btn btn-primary" href="${safe(inc.url)}" target="_blank">🔗 Notion</a>
               </div>
         
               ${renderDetailsSection(inc)}
             </div>
           `;
         }
-
+        
         function renderDetailsSection(inc) {
           return `
             <details>
@@ -2330,7 +2299,6 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
           `;
         }
 
-        
       function renderContacts(inc){
           const tel = v => v ? ` <a href="tel:${v}" class="tel-link">${v}</a>` : ' —';
           const row = (label, name, phone) =>
@@ -2362,8 +2330,6 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
           </div>`;
                 }
 
-
-        
         function renderEscalationHistory(inc){
           const t = inc["Respuestas (log)"] || inc.respuestas_log || '';
           if(!t.trim()) return `<div class="muted">Sin historial</div>`;
@@ -2394,9 +2360,6 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
         }
-
-
-
 
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
@@ -2451,19 +2414,6 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
       renderIncidents(list);
     }
     
-    window.filterByStatus = function(status, element){
-      currentStatusFilter = status; // 'all' | 'pending' | 'working' | 'seguimiento'
-      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-      if (element) element.classList.add('active');
-      applyFiltersAndRender();
-    };
-    
-    window.filterByPriority = function(priority, button) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      if (button) button.classList.add('active');
-      applyFiltersAndRender();
-    };
-    
     // Carga inicial
     showSpinner();
      // Expone funciones usadas por HTML inline
@@ -2471,13 +2421,9 @@ let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' 
     window.verifyPIN = verifyPIN;
     window.showPINError = showPINError;
     window.closePINModal = closePINModal;
-    
     window.loadDashboard = loadDashboard;
     window.refreshDashboard = refreshDashboard;
-    
     window.filterByStatus = filterByStatus;
-    window.filterByPriority = filterByPriority;
-    
     window.handleAction = handleAction;
     window.showResolverModal = showResolverModal;
     window.showMaterialesModal = showMaterialesModal;
