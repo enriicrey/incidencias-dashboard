@@ -1,10 +1,12 @@
 {
   "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/**/*.js": { "runtime": "vercel-nodejs@4.0.0" }
+    "api/*.js": { "runtime": "nodejs20.x" }
   },
   "rewrites": [
     { "source": "/tecnico", "destination": "/tecnico.html" },
     { "source": "/supervisor", "destination": "/supervisor.html" }
   ]
 }
+
