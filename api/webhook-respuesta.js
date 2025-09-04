@@ -217,106 +217,126 @@ export default async function handler(req, res) {
     console.log('📡 Enviando a Make:', JSON.stringify(makePayload, null, 2));
 
     const makeResp = await fetch(process.env.MAKE_WEBHOOK_RESPUESTA, {
-      method: 'POST',                      // Make suele esperar POST
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(makePayload),
     });
-
-    const raw = await makeResp.text();
+    
+    // ---- NUEVO: utilidades de parseo tolerantes ----
+    const textRaw = await makeResp.text();
+    const stripBOM = (s='') => s.replace(/^\uFEFF/, '').trim();
+    const tryJSON = (s) => { try { return JSON.parse(s); } catch { return null; } };
+    
+    // Intenta “desdoblar” si vino doble-encodeado (string que adentro es JSON)
+    function unwrapIfQuotedJSON(s) {
+      if (s.startsWith('"') && s.endsWith('"')) {
+        const once = tryJSON(s);
+        if (typeof once === 'string') return once.trim();
+      }
+      return s;
+    }
+    
+    // Intenta extraer el primer bloque JSON válido de un body textual (HTML/logs)
+    function extractFirstJSON(s) {
+      s = stripBOM(s);
+      // 1) ¿es JSON directo?
+      let parsed = tryJSON(s);
+      if (parsed) return parsed;
+    
+      // 2) ¿está doble-encodeado?
+      s = unwrapIfQuotedJSON(s);
+      parsed = tryJSON(s);
+      if (parsed) return parsed;
+    
+      // 3) Buscar el primer bloque {...} o [...]
+      //    Nota: no es un parser perfecto, pero suele rescatar JSON en respuestas HTML/log.
+      const startIdx = s.search(/[{[]/);
+      if (startIdx >= 0) {
+        const candidate = s.slice(startIdx);
+        // Intenta truncar en el último cierre razonable
+        const lastCurly = candidate.lastIndexOf('}');
+        const lastBracket = candidate.lastIndexOf(']');
+        const endIdx = Math.max(lastCurly, lastBracket);
+        if (endIdx > 0) {
+          const slice = candidate.slice(0, endIdx + 1);
+          const p2 = tryJSON(slice);
+          if (p2) return p2;
+        }
+      }
+      return null;
+    }
+    
     console.log('📥 Make Status:', makeResp.status, makeResp.statusText);
-    console.log('📄 Make Body (log truncado):', raw.slice(0, 500) + (raw.length > 500 ? '…' : ''));
+    console.log('📄 Make Body (log truncado):', textRaw.slice(0, 500) + (textRaw.length > 500 ? '…' : ''));
     
-    // Intenta parsear SIEMPRE, independientemente del Content-Type
-    const stripBOM = (s='') => s.replace(/^\uFEFF/, '');
-    const tryParse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+    // ---------- LÓGICA DE RESPUESTA ----------
+    const parsed = extractFirstJSON(textRaw);
     
-    let candidate = stripBOM(raw).trim();
-    
-    // Caso “doble-encodeado”: JSON metido en una cadena (empieza y acaba con comillas)
-    if (candidate.startsWith('"') && candidate.endsWith('"')) {
-      const unwrapped = tryParse(candidate); // -> string con \n, \" …
-      if (typeof unwrapped === 'string') candidate = unwrapped.trim();
-    }
-    
-    // Primer intento de parseo
-    let parsed = tryParse(candidate);
-    
-    // Caso “envoltura” típica: { status, message, make_response: "<JSON string>" }
-    if (parsed && parsed.make_response && typeof parsed.make_response === 'string') {
-      const inner = tryParse(stripBOM(parsed.make_response).trim());
-      if (inner) parsed = inner; // prioriza el JSON “real”
-    }
-    
+    // Si logramos JSON:
     if (parsed) {
-      // Para listados, exige incidents[]
       if (action === 'get_assigned_incidents') {
+        // 1) Caso esperado: { incidents: [...] }
         if (Array.isArray(parsed.incidents)) {
-          return res.status(200).json(parsed);
+          return res.status(200).json({ status: 'success', incidents: parsed.incidents });
         }
+        // 2) Alternativas comunes
         if (parsed.data && Array.isArray(parsed.data.incidents)) {
-          // normaliza si vino bajo data.incidents
-          return res.status(200).json({ ...parsed, incidents: parsed.data.incidents });
+          return res.status(200).json({ status: 'success', incidents: parsed.data.incidents });
         }
+        // 3) Make devolvió directamente un array -> lo tratamos como incidents
+        if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) {
+          return res.status(200).json({ status: 'success', incidents: parsed });
+        }
+        // 4) No hay incidents[] en un JSON válido
         return res.status(502).json({
           status: 'error',
-          message: 'Respuesta de Make JSON pero sin incidents[]',
-          raw: String(raw).slice(0, 500)
+          message: 'Respuesta de Make es JSON pero no contiene incidents[]',
+          sampleKeys: Object.keys(parsed),
         });
       }
-      // Para acciones de mutación, reenvía el JSON tal cual
+    
+      // Acciones de mutación: devolver tal cual lo que haya (normalizado a success si aplica)
       return res.status(200).json(parsed);
     }
     
-    // Si no hay JSON parseable pero el body es OK/Accepted en texto
-    const trimmed = candidate;
-    if (trimmed === 'OK' || trimmed === 'Accepted') {
-      const msgs = {
-        'acepto': 'Incidencia aceptada correctamente',
-        'rechazo': 'Incidencia rechazada. Se escalará automáticamente',
-        'resolver': 'Incidencia resuelta exitosamente',
-        'solicitar_materiales': 'Solicitud de materiales enviada',
-        'derivar_departamento': 'Derivación solicitada al supervisor',
-        'ayuda': 'Solicitud de ayuda enviada',
-        'solicitar_asignacion': 'Solicitud de asignación enviada',
-        'aportar_informacion': 'Información aportada correctamente',
-        'validate_pin': 'PIN validado',
-        'get_assigned_incidents': 'Consulta ejecutada',
-      };
+    // Si NO hay JSON parseable:
+    if (action === 'get_assigned_incidents') {
+      // ¿Demo habilitado por ENV o query? (no se usa en producción si no lo activas)
+      const demoEnabled =
+        process.env.ALLOW_DEMO_INCIDENTS === '1' ||
+        String(req.query.demo || req.body?.demo || '') === '1';
+    
+      if (demoEnabled) {
+        return res.status(200).json({
+          status: 'success',
+          incidents: [], // Devuelve array vacío para no “hardcodear” datos. Puedes probar con tu payload de ejemplo si quieres.
+        });
+      }
+    
+      return res.status(502).json({
+        status: 'error',
+        message: 'Respuesta de Make no es JSON (se esperaba incidents[])',
+        http_status: makeResp.status,
+      });
+    }
+    
+    // Para mutaciones sin JSON (Make devolvió “OK” o texto):
+    const okText = stripBOM(textRaw);
+    if (/^(ok|accepted)$/i.test(okText)) {
       return res.status(200).json({
         status: 'success',
-        message: msgs[action] || `Acción ${action} procesada correctamente`,
+        message: 'Operación aceptada por Make',
         action,
         incident_id,
         timestamp: new Date().toISOString(),
       });
     }
     
-    // No es JSON: para listados, falla explícito; para mutaciones, éxito genérico con raw
-    if (action === 'get_assigned_incidents') {
-      return res.status(502).json({
-        status: 'error',
-        message: 'Respuesta de Make no es JSON (se esperaba incidents[])',
-        raw: String(raw).slice(0, 500)
-      });
-    }
-    
+    // Último recurso: éxito genérico con raw limitado
     return res.status(200).json({
       status: 'success',
-      message: `Acción ${action} procesada`,
+      message: `Acción ${action} procesada (sin JSON)`,
       action,
       incident_id,
-      raw: String(raw).slice(0, 1000)
+      raw: okText.slice(0, 500),
     });
-
-
-  } catch (error) {
-    console.error('💥 Error en webhook-respuesta:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? String(error?.stack || error) : String(error?.message || error),
-      action: (req.body && req.body.action) || (req.query && req.query.action) || 'unknown',
-      timestamp: new Date().toISOString()
-    });
-  }
-}
