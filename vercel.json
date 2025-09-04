@@ -1,11 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.js": { "runtime": "nodejs18.x" }
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
   },
-  "rewrites": [
-    { "source": "/tecnico", "destination": "/tecnico.html" },
-    { "source": "/supervisor", "destination": "/supervisor.html" }
+  "routes": [
+    { "src": "^/tecnico$", "dest": "/tecnico.html" },
+    { "src": "^/supervisor$", "dest": "/supervisor.html" },
+    { "handle": "filesystem" }
   ]
 }
 
