@@ -243,9 +243,7 @@
             font-weight: 700;
             color: var(--gray-800);
         }
-
-        .loading-spinner,
-
+        
         /* Encabezado de tarjeta */
         .incident-header {
             display: flex;
@@ -909,6 +907,7 @@
             // Mostrar modal PIN
             showPINModal(email);
         }
+        window.loginWithPIN ??= () => {};
 
         function showPINModal(email) {
             const modal = document.createElement('div');
@@ -1016,6 +1015,7 @@
                 showPINError('Error de conexión');
             }
         }
+        window.verifyPIN ??= () => {};
 
         function showPINError(message) {
             const pinError = document.getElementById('pinError');
@@ -1029,6 +1029,7 @@
                 modal.remove();
             }
         }
+        window.closePINModal ??= () => {};
 
         // ========================================
         //  CARGA DE DATOS
@@ -1682,11 +1683,15 @@
         }
         
         // Último rechazo (motivo) por nivel, opcional
-    function getLastRejectReasonByLevel(respRows, level){
-          const lastRej = respRows
-            .filter(r => r.level === level && r.phase === 'REJECTED')
-            .slice(-1)[0];
-          return lastRej ? lastRej.reason : '';
+        function getLastRejectReasonByLevel(respRows, level){
+          // Busca el último evento REJECTED::<motivo> en ese nivel
+          for (let i = respRows.length - 1; i >= 0; i--) {
+            const r = respRows[i];
+            if (r.level === level && typeof r.ev === 'string' && r.ev.startsWith('REJECTED::')) {
+              return r.ev.replace('REJECTED::','').trim();
+            }
+          }
+          return '';
         }
         
         // ¿Cómo va el técnico logueado en este nivel?
@@ -1908,7 +1913,9 @@
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
         // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
+        let incidentsContainer = null;
+        document.addEventListener('DOMContentLoaded', () => {
+          incidentsContainer = document.querySelector('.incidents-section .incidents-list');
             // Verificar si hay acceso directo por URL
             checkDirectAccess();
             
@@ -2165,9 +2172,6 @@
           closeModal("materialesModal");
         }
 
-
-    // Contenedor (grid 2 columnas)
-    const incidentsContainer = document.querySelector('.incidents-section .incidents-list');
             
     // Estado en memoria
     let allIncidents = [];
@@ -2429,6 +2433,17 @@
     window.showMaterialesModal = showMaterialesModal;
     window.showAyudaModal = showAyudaModal;
     window.closeModal = closeModal;
+    window.aceptarIncidencia = aceptarIncidencia;
+    window.rechazarIncidencia = rechazarIncidencia;
+    window.abrirAyuda = abrirAyuda;
+    window.abrirMateriales = abrirMateriales;
+    window.abrirResolver = abrirResolver;
+    window.solicitarAsignacion = solicitarAsignacion;
+    window.finTurno = finTurno;
+    window.confirmResolver = confirmResolver;
+    window.confirmAction = confirmAction;
+    window.selectReason = selectReason;
+
         
     </script>
 </body>
