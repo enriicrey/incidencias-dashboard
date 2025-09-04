@@ -184,26 +184,30 @@ module.exports = async function handler(req, res) {
     }
 
     const parsed = extractFirstJSON(textRaw);
-
-    if (parsed) {
-      if (data.action === 'get_assigned_incidents') {
-        if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents });
-        if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents });
-        if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed });
-        return res.status(502).json({ status: 'error', message: 'Respuesta de Make es JSON pero no contiene incidents[]' });
-      }
-      return res.status(200).json(parsed);
-    }
-
+   
     if (data.action === 'get_assigned_incidents') {
-      const demoEnabled =
-        process.env.ALLOW_DEMO_INCIDENTS === '1' ||
-        String(req.query.demo || req.body?.demo || '') === '1';
-
-      if (demoEnabled) {
-        return res.status(200).json({ status: 'success', incidents: [] });
+       if (!makeResp.ok || !parsed) {
+        const demoEnabled =
+          process.env.ALLOW_DEMO_INCIDENTS === '1' ||
+          String(req.query.demo || req.body?.demo || '') === '1';
+         
+          if (demoEnabled) {
+          return res.status(200).json({ status: 'success', incidents: [] });
+        }
+        return res.status(502).json({
+          status: 'error',
+          message: 'Servicio de incidencias no disponible'
+        });
       }
-      return res.status(502).json({ status: 'error', message: 'Respuesta de Make no es JSON (se esperaba incidents[])', http_status: makeResp.status });
+      
+      if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents });
+      if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents });
+      if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed });
+      return res.status(502).json({ status: 'error', message: 'Respuesta de Make es JSON pero no contiene incidents[]' });
+    }
+    
+    if (parsed) {
+      return res.status(200).json(parsed);
     }
 
     const okText = stripBOM(textRaw);
