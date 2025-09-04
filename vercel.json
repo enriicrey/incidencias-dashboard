@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/*.js": { "runtime": "nodejs20.x" }
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
   },
-  "rewrites": [
-    { "source": "/tecnico", "destination": "/tecnico.html" },
-    { "source": "/supervisor", "destination": "/supervisor.html" }
+  "routes": [
+    { "src": "^/tecnico$", "dest": "/tecnico.html" },
+    { "src": "^/supervisor$", "dest": "/supervisor.html" }
   ]
 }
-
