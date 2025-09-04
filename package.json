@@ -1,9 +1,10 @@
 {
   "name": "incidencias-dashboard",
   "private": true,
+  "version": "1.0.0",
+  "engines": { "node": ">=18" },
   "scripts": {
-    "build": "echo \"static\"",
-    "start": "vercel dev"
+    "vercel-build": "echo \"No build step\""
   }
 }
 
