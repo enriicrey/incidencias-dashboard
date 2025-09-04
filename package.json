@@ -2,7 +2,10 @@
   "name": "incidencias-dashboard",
   "private": true,
   "scripts": {
-    "build": "echo \"no build\"",
+    "build": "echo \"static\"",
     "start": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
