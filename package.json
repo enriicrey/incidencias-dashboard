@@ -1,10 +1,8 @@
 {
-  "name": "incidencias-xyz",
+  "name": "incidencias-dashboard",
   "private": true,
-  "type": "commonjs",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo \"static build\"",
+    "build": "echo \"no build\"",
     "start": "vercel dev"
   }
 }
