@@ -980,6 +980,8 @@
             if (resp.ok && data.status === 'success') {
               currentTechnician = data.technician;
               currentTechnician.authenticated = true;
+              document.getElementById('loginContainer').classList.add('hidden');
+              document.getElementById('dashboardContainer').classList.remove('hidden');
               closePINModal();
               loadDashboard();
               showNotification('✅ Acceso autorizado', 'success');
