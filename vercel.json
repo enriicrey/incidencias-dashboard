@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "routes": [
+  "rewrites": [
      { "source": "/tecnico", "destination": "/tecnico.html" },
     { "source": "/supervisor", "destination": "/supervisor.html" }
   ]
