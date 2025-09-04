@@ -1177,7 +1177,9 @@
         }
         
         function scrollToIncident(id){
-          const el = document.querySelector(\`.incident-card[data-incident-id="\${CSS.escape(id)}"]\`);
+          const el = document.querySelector(
+          `.incident-card[data-incident-id="${CSS.escape(id)}"]`
+        );
           if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
         }
 
