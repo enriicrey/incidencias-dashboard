@@ -1,5 +1,6 @@
 {
   "name": "sistema-incidencias-dashboard",
+  "private": true,
   "version": "1.0.0",
   "description": "Dashboard de respuesta técnica y control supervisorial para sistema de incidencias",
   "main": "index.js",
