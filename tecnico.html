@@ -973,7 +973,13 @@
                     })
                 });
 
-                const data = await response.json();
+                const raw = await response.text();
+                 let data;
+                try {
+                 data = JSON.parse(raw);
+                } catch {
+                   throw new Error(`Respuesta no-JSON del servidor (${response.status}): ${raw.slice(0,200)}`);
+                 }
                 
                 if (data.status === 'success') {
                     currentTechnician = {
@@ -1036,7 +1042,13 @@
 
             try {
                 const response = await fetch(`/api/webhook-respuesta?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`);
-                const data = await response.json();
+                const raw = await response.text();
+                 let data;
+                 try {
+                   data = JSON.parse(raw);
+                 } catch {
+                   throw new Error(`Respuesta no-JSON del servidor (${response.status}): ${raw.slice(0,200)}`);
+                 }
                 
                 if (data.status === 'success' && data.incidents) {
                     allIncidents = data.incidents;
