@@ -954,70 +954,40 @@
         }
 
         async function verifyPIN(email) {
-            const pin = document.getElementById('pinInput').value;
-            const pinError = document.getElementById('pinError');
-            
-            if (pin.length !== 4) {
-                showPINError('PIN debe tener 4 dígitos');
-                return;
+          const pin = document.getElementById('pinInput').value;
+          const pinError = document.getElementById('pinError');
+        
+          if (pin.length !== 4) { showPINError('PIN debe tener 4 dígitos'); return; }
+        
+          try {
+            const resp = await fetch('/api/webhook-respuesta', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'validate_pin', technician_email: email, pin })
+            });
+        
+            const raw = await resp.text(); // <-- primero texto
+            let data;
+            try { data = JSON.parse(raw); } catch { data = null; }
+        
+            if (!resp.ok) {
+              throw new Error(data?.message || `HTTP ${resp.status} · ${raw.slice(0,120)}`);
             }
-
-            try {
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'validate_pin',
-                        technician_email: email,
-                        pin: pin
-                    })
-                });
-
-                const raw = await response.text();
-                 let data;
-                try {
-                 data = JSON.parse(raw);
-                } catch {
-                   throw new Error(`Respuesta no-JSON del servidor (${response.status}): ${raw.slice(0,200)}`);
-                 }
-                
-                if (data.status === 'success') {
-                    currentTechnician = {
-                        email: email,
-                        name: data.technician?.name || formatNameFromEmail(email),
-                        department: data.technician?.department || 'Mtto-Mecánico',
-                        authenticated: true,
-                        pin: pin // Guardar PIN para futuras acciones
-                    };
-
-                    // Actualizar UI
-                    document.getElementById('technicianName').textContent = currentTechnician.name;
-                    document.getElementById('userEmail').textContent = email;
-                    document.getElementById('userRole').textContent = `${currentTechnician.department}`;
-                    
-                    // Cerrar modal PIN y login
-                    closePINModal();
-                    document.getElementById('loginContainer').classList.add('hidden');
-                    document.getElementById('dashboardContainer').classList.remove('hidden');
-                    
-                    // Si hay acción pendiente (acceso directo), ejecutarla
-                    if (pendingAction) {
-                        await handleAction(pendingAction, directIncidentId, pendingActionData);
-                        pendingAction = null;
-                        directIncidentId = null;
-                        pendingActionData = {};
-                    }
-                    
-                    // Cargar incidencias
-                    loadDashboard();
-                } else {
-                    showPINError(data.message || 'PIN incorrecto');
-                }
-            } catch (error) {
-                console.error('Error verificando PIN:', error);
-                showPINError('Error de conexión');
+            if (!data) {
+              throw new Error(`Respuesta no JSON: ${raw.slice(0,120)}`);
             }
+        
+            if (data.status === 'success') {
+              // ... (tu flujo de éxito)
+            } else {
+              showPINError(data.message || 'PIN incorrecto');
+            }
+          } catch (e) {
+            console.error('Error verificando PIN:', e);
+            showPINError(String(e.message || e));
+          }
         }
+
 
         function showPINError(message) {
             const pinError = document.getElementById('pinError');
