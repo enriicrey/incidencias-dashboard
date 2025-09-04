@@ -1,6 +1,6 @@
 // /api/webhook-respuesta.js
 module.exports = async function handler(req, res) {
-  // CORS (no hace daño si sirves same-origin)
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -10,8 +10,22 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ status: 'error', message: 'Solo se permite POST y GET' });
   }
 
+  // 🔽🔽🔽 AÑADE este helper para garantizar body JSON en Node (Vercel) 🔽🔽🔽
+  async function readJSONBody(req) {
+    if (req.method !== 'POST') return {};
+    if (req.body && typeof req.body === 'object') return req.body; // ya parseado
+    const raw = await new Promise((resolve, reject) => {
+      let data = '';
+      req.on('data', c => (data += c));
+      req.on('end', () => resolve(data));
+      req.on('error', reject);
+    });
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+
   try {
-    const data = req.method === 'POST' ? req.body : req.query;
+    const data = req.method === 'POST' ? (await readJSONBody(req)) : (req.query || {});
     const { action } = data || {};
     if (!action) {
       return res.status(400).json({ status: 'error', message: 'Falta parámetro action' });
