@@ -1,11 +1,7 @@
 {
-  "functions": {
-    "api/*.js": { "runtime": "nodejs18.x" }
-  },
+  "version": 2,
   "routes": [
-    { "src": "/tecnico", "dest": "/tecnico.html" },
-    { "src": "/supervisor", "dest": "/supervisor.html" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/$1" }
+    { "src": "^/tecnico$", "dest": "/tecnico.html" },
+    { "src": "^/supervisor$", "dest": "/supervisor.html" }
   ]
 }
