@@ -976,9 +976,12 @@
             const raw = await resp.text();
             let data;
             try { data = JSON.parse(raw); } catch { data = { status: 'error', message: raw.slice(0, 200) }; }
-        
             if (resp.ok && data.status === 'success') {
-              // ... continuar como ya tienes
+              currentTechnician = data.technician;
+              currentTechnician.authenticated = true;
+              closePINModal();
+              loadDashboard();
+              showNotification('✅ Acceso autorizado', 'success');
             } else {
               showPINError(data.message || 'PIN incorrecto');
             }
@@ -987,8 +990,6 @@
             showPINError('Error de conexión');
           }
         }
-
-
 
         function showPINError(message) {
             const pinError = document.getElementById('pinError');
