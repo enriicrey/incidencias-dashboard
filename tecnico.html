@@ -705,9 +705,7 @@
                 <label class="input-label" for="emailInput">Email corporativo</label>
                 <input type="email" id="emailInput" class="input-field" placeholder="tecnico@abc.xyz" autocomplete="email">
             </div>
-
-            <button class="verify-btn" onclick="loginWithPIN()">Acceder con PIN</button>
-
+            <button class="verify-btn" id="loginBtn" type="button">Acceder con PIN</button>
             <div id="loginError" class="error-message hidden">
                 Error de autenticación. Verifica tus credenciales.
             </div>
@@ -907,7 +905,6 @@
             // Mostrar modal PIN
             showPINModal(email);
         }
-        window.loginWithPIN ??= () => {};
 
         function showPINModal(email) {
             const modal = document.createElement('div');
@@ -1015,7 +1012,6 @@
                 showPINError('Error de conexión');
             }
         }
-        window.verifyPIN ??= () => {};
 
         function showPINError(message) {
             const pinError = document.getElementById('pinError');
@@ -1029,7 +1025,6 @@
                 modal.remove();
             }
         }
-        window.closePINModal ??= () => {};
 
         // ========================================
         //  CARGA DE DATOS
@@ -1916,13 +1911,15 @@
         let incidentsContainer = null;
         document.addEventListener('DOMContentLoaded', () => {
           incidentsContainer = document.querySelector('.incidents-section .incidents-list');
-            // Verificar si hay acceso directo por URL
-            checkDirectAccess();
-            
-            // Permitir login con Enter
-            document.getElementById('emailInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') loginWithPIN();
-            });
+          checkDirectAccess();
+        
+          const emailInput = document.getElementById('emailInput');
+          const loginBtn   = document.getElementById('loginBtn');
+        
+          emailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loginWithPIN();
+          });
+          loginBtn.addEventListener('click', loginWithPIN);
         });
 
         function checkDirectAccess() {
