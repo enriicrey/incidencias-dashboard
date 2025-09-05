@@ -197,32 +197,33 @@ module.exports = async function handler(req, res) {
       console.error('[Make webhook] body snippet:', snippet);
     }
     if (data.action === 'get_assigned_incidents') {
-       if (!makeResp.ok || !parsed) {
-        const demoEnabled =
-          process.env.ALLOW_DEMO_INCIDENTS === '1' ||
-          String(data.demo || '') === '1';
-         
-          if (demoEnabled) {
-          const demoIncidents = [
-            {
-              id: 'INC-DEMO-1',
-              priority: 'ALTA',
-              equipment: 'Generador principal',
-              zone: 'Zona A',
-              description: 'Falla en el generador (demo).',
-              report_date: '2024-01-10T10:00:00Z'
-            },
-            {
-              id: 'INC-DEMO-2',
-              priority: 'MEDIA',
-              equipment: 'Sensor de temperatura',
-              zone: 'Zona B',
-              description: 'Lecturas fuera de rango (demo).',
-              report_date: '2024-01-11T15:30:00Z'
-            }
-          ];
-          return res.status(200).json({ status: 'success', incidents: demoIncidents });
-        }
+    const demoEnabled =
+        process.env.ALLOW_DEMO_INCIDENTS === '1' ||
+        String(data.demo || '') === '1';
+
+      if (demoEnabled) {
+        const demoIncidents = [
+          {
+            id: 'INC-DEMO-1',
+            priority: 'ALTA',
+            equipment: 'Generador principal',
+            zone: 'Zona A',
+            description: 'Falla en el generador (demo).',
+            report_date: '2024-01-10T10:00:00Z',
+          },
+          {
+            id: 'INC-DEMO-2',
+            priority: 'MEDIA',
+            equipment: 'Sensor de temperatura',
+            zone: 'Zona B',
+            description: 'Lecturas fuera de rango (demo).',
+            report_date: '2024-01-11T15:30:00Z',
+          },
+        ];
+        return res.status(200).json({ status: 'success', incidents: demoIncidents });
+      }
+
+      if (!makeResp.ok || !parsed) {
         return res.status(502).json({
           status: 'error',
           message: 'Servicio de incidencias no disponible'
