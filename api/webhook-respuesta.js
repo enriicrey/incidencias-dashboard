@@ -275,7 +275,7 @@ module.exports = async function handler(req, res) {
       status: 'error',
       message: 'Error interno del servidor',
       error: process.env.NODE_ENV === 'development' ? String(err?.stack || err) : String(err?.message || err),
-      action: (req.body && req.body.action) || (req.query && req.query.action) || 'unknown',
+      action: (req.body && req.body.action) || 'unknown',
       timestamp: new Date().toISOString()
     });
   }
