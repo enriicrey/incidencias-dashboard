@@ -1100,7 +1100,14 @@
             showLoadingState();
 
             try {
-                const response = await fetch(`/api/webhook-respuesta?action=get_assigned_incidents&technician_email=${encodeURIComponent(currentTechnician.email)}`);
+                const response = await fetch('/api/webhook-respuesta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_assigned_incidents',
+                        technician_email: currentTechnician.email
+                    })
+                });
                 const raw = await response.text();
                  let data;
                  try {
