@@ -166,8 +166,25 @@
         .user-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tech-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .user-meta {
+            display: flex;
+            gap: 8px;
             font-size: 14px;
+            opacity: 0.9;
         }
 
         .refresh-button {
@@ -475,14 +492,14 @@
 
         .reason-icon { font-size: 20px; margin-right: 12px; }
 
-        .no-incidents-icon { font-size: 48px; margin-bottom: 16px; }
+        .no-incidents-icon { font-size: 48px; margin-bottom: 16px; color: var(--gray-400); }
 
         /* ========================================
            RESPONSIVE DESIGN
         ======================================== */
         @media (max-width: 768px) {
             .header-content { flex-direction: column; gap: 16px; }
-            .user-info { flex-direction: column; gap: 8px; }
+            .user-info { flex-direction: column; gap: 8px; align-items: flex-start; }
             .incident-header { flex-direction: column; gap: 12px; }
             .incident-actions { justify-content: center; }
             .modal { width: 95%; }
@@ -688,11 +705,55 @@
           background: var(--primary-color); color:#fff; font-weight:600;
         }
         
-        /* ==== Tarjetas/errores en blanco ==== */
-        .no-incidents, .loading-spinner, .error-card {
+         /* ==== Tarjetas/errores ==== */
+        .loading-spinner, .error-card {
           background:#fff; border-radius:12px; box-shadow:var(--shadow-sm);
         }
-        .error-card { padding: 24px; margin: 12px; }
+
+        .error-card {
+          background: #fee2e2;
+          color: var(--danger-dark);
+          border: 1px solid var(--danger-dark);
+          border-radius:12px;
+          box-shadow:var(--shadow-sm);
+          padding:24px;
+          margin:12px;
+          text-align:center;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .no-incidents {
+          background:#fff;
+          border-radius:12px;
+          box-shadow:var(--shadow-sm);
+          padding:24px;
+          margin:12px;
+          text-align:center;
+          color:var(--gray-600);
+        }
+        .no-incidents h3 {
+          font-size:20px;
+          margin-bottom:8px;
+          font-weight:600;
+        }
+        .no-incidents p {
+          font-size:14px;
+          color:var(--gray-500);
+        }
+
+        .retry-button {
+          background: var(--danger-color);
+          color: white;
+          padding: 12px 20px;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-top: 16px;
+          transition: var(--transition);
+        }
+
+        .retry-button:hover { background: var(--danger-dark); }
     </style>
 </head>
 <body>
@@ -720,10 +781,13 @@
             <div class="header-content">
                 <div class="logo">🔧 Dashboard Técnico - Sistema ABC.xyz</div>
                 <div class="user-info">
-                    <div id="technicianName">Cargando técnico...</div>
-                    <span id="userEmail">usuario@abc.xyz</span>
-                    <span>|</span>
-                    <span id="userRole">Técnico L0</span>
+                   <div class="user-details">
+                        <div id="technicianName" class="tech-name">Cargando técnico...</div>
+                        <div class="user-meta">
+                            <span id="userEmail">usuario@abc.xyz</span>
+                            <span id="userRole">Técnico L0</span>
+                        </div>
+                    </div>
                     <button class="refresh-button" onclick="refreshDashboard()">🔄 Actualizar</button>
                 </div>
             </div>
@@ -882,12 +946,28 @@
         let pendingAction = null;
         let selectedReason = null;
         let currentIncidentId = null;
+        
+         let loginEmail = '';
+
+        function updateTechnicianHeader(technician) {
+            const tech = technician || currentTechnician || {};
+            const nameEl = document.getElementById('technicianName');
+            const emailEl = document.getElementById('userEmail');
+            const roleEl = document.getElementById('userRole');
+
+            const email = tech.email || loginEmail || '';
+            const department = tech.department || tech.departamento || tech.role || '';
+
+            if (nameEl) nameEl.textContent = tech.name || tech.full_name || tech.nombre || '';
+            if (emailEl) emailEl.textContent = email;
+            if (roleEl) roleEl.textContent = department;
+        }
 
         // ========================================
         //  VARIABLES PARA ACCESO DIRECTO
         // ========================================
         let directIncidentId = null;
-        let directScrollDone = false; 
+        let directScrollDone = false;
         let pendingActionData = {};
 
         // ========================================
@@ -902,6 +982,7 @@
                 errorDiv.classList.remove('hidden');
                 return;
             }
+            loginEmail = email;
 
             // Mostrar modal PIN
             showPINModal(email);
@@ -978,8 +1059,10 @@
             let data;
             try { data = JSON.parse(raw); } catch { data = { status: 'error', message: raw.slice(0, 200) }; }
             if (resp.ok && data.status === 'success') {
-              currentTechnician = data.technician;
+              currentTechnician = data.technician || {};
               currentTechnician.authenticated = true;
+              if (!currentTechnician.email) currentTechnician.email = loginEmail;
+              updateTechnicianHeader(currentTechnician);
               document.getElementById('loginContainer').classList.add('hidden');
               document.getElementById('dashboardContainer').classList.remove('hidden');
               closePINModal();
@@ -1012,6 +1095,7 @@
         // ========================================
         async function loadDashboard() {
             if (!currentTechnician?.authenticated) return;
+             updateTechnicianHeader(currentTechnician);
 
             showLoadingState();
 
@@ -1029,6 +1113,7 @@
                     allIncidents = data.incidents;
                     updateStatistics();
                     applyFiltersAndRender();
+                    updateTechnicianHeader(currentTechnician);
                 } else {
                     throw new Error(data.message || 'Error al cargar incidencias');
                 }
@@ -1470,11 +1555,11 @@
 
         function showErrorState(errorMessage) {
             document.getElementById('incidentsContainer').innerHTML = `
-                <div class="no-incidents">
-                    <div class="no-incidents-icon">⚠️</div>
+                <div class="error-card">
+                    <div class="error-icon">❌</div>
                     <h3>Error al cargar datos</h3>
                     <p>${errorMessage}</p>
-                    <button class="btn btn-primary" onclick="loadDashboard()" style="margin-top: 16px;">
+                    <button class="retry-button" onclick="loadDashboard()">
                         🔄 Reintentar
                     </button>
                 </div>
@@ -2358,8 +2443,10 @@
       incidentsContainer.innerHTML = '';
       if (!Array.isArray(incidents) || incidents.length === 0) {
         incidentsContainer.innerHTML = `
-          <div class="loading-spinner" style="padding:24px;">
-            ✅ No hay incidencias asignadas
+          <div class="no-incidents">
+            <div class="no-incidents-icon">📭</div>
+            <h3>Sin incidencias</h3>
+            <p>No hay incidencias asignadas actualmente.</p>
           </div>`;
         return;
       }
