@@ -949,6 +949,19 @@
         
          let loginEmail = '';
 
+         async function callWebhook(action, data = {}) {
+            const payload = {
+                action,
+                technician_email: data.technician_email || currentTechnician?.email,
+                ...data
+            };
+            return fetch('/api/webhook-respuesta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
         function updateTechnicianHeader(technician) {
             const tech = technician || currentTechnician || {};
             const nameEl = document.getElementById('technicianName');
@@ -1045,14 +1058,9 @@
           }
         
           try {
-            const resp = await fetch('/api/webhook-respuesta', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'validate_pin',
-                technician_email: email,
-                pin
-              })
+            const resp = await callWebhook('validate_pin', {
+              technician_email: email,
+              pin
             });
         
             const raw = await resp.text();
@@ -1100,14 +1108,7 @@
             showLoadingState();
 
             try {
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'get_assigned_incidents',
-                        technician_email: currentTechnician.email
-                    })
-                });
+                const response = await callWebhook('get_assigned_incidents');
                 const raw = await response.text();
                  let data;
                  try {
@@ -1367,20 +1368,14 @@
             }
 
             const payload = {
-                action: action,
                 incident_id: incidentId,
-                technician_email: currentTechnician.email,
                 pin: currentTechnician.pin,  // ✅ Incluir PIN en todas las acciones
                 timestamp: new Date().toISOString(),
                 ...extraData
             };
 
             try {
-                const response = await fetch('/api/webhook-respuesta', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const response = await callWebhook(action, payload);
 
                 const data = await response.json();
                 
