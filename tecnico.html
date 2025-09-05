@@ -1118,8 +1118,9 @@
                     throw new Error(data.message || 'Error al cargar incidencias');
                 }
             } catch (error) {
-                console.error('Error cargando dashboard:', error);
-                showErrorState(error.message);
+                 const errorId = new Date().toISOString();
+                console.error('Error cargando dashboard:', error, 'ID:', errorId);
+                showErrorState(`${error.message} (ID: ${errorId}). Puedes intentar de nuevo.`);
             }
         }
 
