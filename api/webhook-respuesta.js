@@ -196,7 +196,25 @@ module.exports = async function handler(req, res) {
           String(req.query.demo || req.body?.demo || '') === '1';
          
           if (demoEnabled) {
-          return res.status(200).json({ status: 'success', incidents: [] });
+          const demoIncidents = [
+            {
+              id: 'INC-DEMO-1',
+              priority: 'ALTA',
+              equipment: 'Generador principal',
+              zone: 'Zona A',
+              description: 'Falla en el generador (demo).',
+              report_date: '2024-01-10T10:00:00Z'
+            },
+            {
+              id: 'INC-DEMO-2',
+              priority: 'MEDIA',
+              equipment: 'Sensor de temperatura',
+              zone: 'Zona B',
+              description: 'Lecturas fuera de rango (demo).',
+              report_date: '2024-01-11T15:30:00Z'
+            }
+          ];
+          return res.status(200).json({ status: 'success', incidents: demoIncidents });
         }
         return res.status(502).json({
           status: 'error',
