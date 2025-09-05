@@ -226,7 +226,7 @@ module.exports = async function handler(req, res) {
       console.error('[Make webhook] status:', makeResp.status);
       console.error('[Make webhook] body snippet:', snippet);
        return res
-        .status(makeResp.status)
+        .status(makeResp.ok ? 502 : makeResp.status)
         .json({
           status: 'error',
           make_status: makeResp.status,
@@ -258,13 +258,6 @@ module.exports = async function handler(req, res) {
           },
         ];
         return res.status(200).json({ status: 'success', incidents: demoIncidents });
-      }
-
-      if (!makeResp.ok || !parsed) {
-        return res.status(502).json({
-          status: 'error',
-          message: 'Servicio de incidencias no disponible'
-        });
       }
       
       if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents });
