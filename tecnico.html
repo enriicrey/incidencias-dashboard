@@ -953,6 +953,7 @@
             const payload = {
                 action,
                 technician_email: data.technician_email || currentTechnician?.email,
+                pin: data.pin || currentTechnician?.pin,
                 ...data
             };
             return fetch('/api/webhook-respuesta', {
@@ -1068,6 +1069,7 @@
             try { data = JSON.parse(raw); } catch { data = { status: 'error', message: raw.slice(0, 200) }; }
             if (resp.ok && data.status === 'success') {
               currentTechnician = data.technician || {};
+              currentTechnician.pin = pin;
               currentTechnician.authenticated = true;
               if (!currentTechnician.email) currentTechnician.email = loginEmail;
               updateTechnicianHeader(currentTechnician);
