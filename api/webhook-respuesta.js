@@ -1,4 +1,12 @@
 // /api/webhook-respuesta.js
+
+const MAKE_WEBHOOK_RESPUESTA = process.env.MAKE_WEBHOOK_RESPUESTA || '';
+const MAKE_WEBHOOK_REGEX = /^https:\/\/hook\.eu\d+\.make\.com\/.+/;
+const MAKE_WEBHOOK_VALID = MAKE_WEBHOOK_REGEX.test(MAKE_WEBHOOK_RESPUESTA);
+if (!MAKE_WEBHOOK_VALID) {
+  console.error('[webhook-respuesta] URL de webhook inválida:', MAKE_WEBHOOK_RESPUESTA);
+}
+
 module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,6 +16,9 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ status: 'error', message: 'Solo se permite POST y GET' });
+  }
+  if (!MAKE_WEBHOOK_VALID) {
+    return res.status(500).json({ status: 'error', message: 'Webhook no configurado correctamente en el servidor' });
   }
 
   // 🔽🔽🔽 AÑADE este helper para garantizar body JSON en Node (Vercel) 🔽🔽🔽
@@ -141,11 +152,7 @@ module.exports = async function handler(req, res) {
         makePayload = { ...makePayload, ...data };
     }
 
-    if (!process.env.MAKE_WEBHOOK_RESPUESTA) {
-      return res.status(500).json({ status: 'error', message: 'Webhook no configurado en el servidor' });
-    }
-
-    const makeResp = await fetch(process.env.MAKE_WEBHOOK_RESPUESTA, {
+     const makeResp = await fetch(MAKE_WEBHOOK_RESPUESTA, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(makePayload),
