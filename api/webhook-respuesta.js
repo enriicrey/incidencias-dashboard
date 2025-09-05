@@ -3,8 +3,12 @@
 const MAKE_WEBHOOK_RESPUESTA = process.env.MAKE_WEBHOOK_RESPUESTA || '';
 const MAKE_WEBHOOK_REGEX = /^https:\/\/hook\.eu\d+\.make\.com\/.+/;
 const MAKE_WEBHOOK_VALID = MAKE_WEBHOOK_REGEX.test(MAKE_WEBHOOK_RESPUESTA);
+
 if (!MAKE_WEBHOOK_VALID) {
-  console.error('[webhook-respuesta] URL de webhook inválida:', MAKE_WEBHOOK_RESPUESTA);
+   console.error(
+    '[webhook-respuesta] MAKE_WEBHOOK_RESPUESTA inválida:',
+    MAKE_WEBHOOK_RESPUESTA
+  );
 }
 
 module.exports = async function handler(req, res) {
@@ -18,7 +22,14 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ status: 'error', message: 'Solo se permite POST' });
   }
   if (!MAKE_WEBHOOK_VALID) {
-    return res.status(500).json({ status: 'error', message: 'Webhook no configurado correctamente en el servidor' });
+    console.error(
+      '[webhook-respuesta] MAKE_WEBHOOK_RESPUESTA inválida:',
+      MAKE_WEBHOOK_RESPUESTA
+    );
+    return res.status(500).json({
+      status: 'error',
+      message: 'Variable MAKE_WEBHOOK_RESPUESTA inválida. Debe seguir el formato https://hook.euX.make.com/...'
+    });
   }
 
   // 🔽🔽🔽 AÑADE este helper para garantizar body JSON en Node (Vercel) 🔽🔽🔽
