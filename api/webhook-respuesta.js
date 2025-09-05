@@ -211,6 +211,17 @@ module.exports = async function handler(req, res) {
     }
 
     const parsed = extractFirstJSON(textRaw);
+
+      if (
+      data.action === 'get_assigned_incidents' &&
+      makeResp.ok &&
+      !parsed &&
+      textRaw.trim().toLowerCase() === 'accepted'
+    ) {
+      console.info('[webhook-respuesta] Lista vacía por respuesta "Accepted"');
+      return res.status(200).json({ status: 'success', incidents: [] });
+    }
+     
     if (!makeResp.ok || !parsed) {
       console.error('[Make webhook] status:', makeResp.status);
       console.error('[Make webhook] body snippet:', snippet);
