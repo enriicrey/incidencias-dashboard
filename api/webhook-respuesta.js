@@ -10,12 +10,12 @@ if (!MAKE_WEBHOOK_VALID) {
 module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST' && req.method !== 'GET') {
-    return res.status(405).json({ status: 'error', message: 'Solo se permite POST y GET' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ status: 'error', message: 'Solo se permite POST' });
   }
   if (!MAKE_WEBHOOK_VALID) {
     return res.status(500).json({ status: 'error', message: 'Webhook no configurado correctamente en el servidor' });
@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const data = req.method === 'POST' ? (await readJSONBody(req)) : (req.query || {});
+    const data = await readJSONBody(req);
     const { action } = data || {};
     if (!action) {
       return res.status(400).json({ status: 'error', message: 'Falta parámetro action' });
@@ -200,7 +200,7 @@ module.exports = async function handler(req, res) {
        if (!makeResp.ok || !parsed) {
         const demoEnabled =
           process.env.ALLOW_DEMO_INCIDENTS === '1' ||
-          String(req.query.demo || req.body?.demo || '') === '1';
+          String(data.demo || '') === '1';
          
           if (demoEnabled) {
           const demoIncidents = [
