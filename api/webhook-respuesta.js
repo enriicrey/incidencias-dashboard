@@ -206,6 +206,13 @@ module.exports = async function handler(req, res) {
     if (!makeResp.ok || !parsed) {
       console.error('[Make webhook] status:', makeResp.status);
       console.error('[Make webhook] body snippet:', snippet);
+       return res
+        .status(makeResp.status)
+        .json({
+          status: 'error',
+          make_status: makeResp.status,
+          body_snippet: snippet,
+        });
     }
     if (data.action === 'get_assigned_incidents') {
     const demoEnabled =
