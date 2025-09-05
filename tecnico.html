@@ -1125,7 +1125,12 @@
                     applyFiltersAndRender();
                     updateTechnicianHeader(currentTechnician);
                 } else {
-                    throw new Error(data.message || 'Error al cargar incidencias');
+                    let msg = data.message || 'Error al cargar incidencias';
+                    const extras = [];
+                    if (data.make_status) extras.push(`make_status: ${data.make_status}`);
+                    if (data.body_snippet) extras.push(`body_snippet: ${data.body_snippet}`);
+                    if (extras.length) msg += ` (Detalles: ${extras.join(' | ')})`;
+                    throw new Error(msg);
                 }
             } catch (error) {
                 const errorId = new Date().toISOString();
