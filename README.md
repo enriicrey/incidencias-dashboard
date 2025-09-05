@@ -67,7 +67,9 @@ npm install
 ```bash
 MAKE_WEBHOOK_RESPUESTA=https://hook.eu2.make.com/webhook-respuesta
 MAKE_WEBHOOK_SUPERVISOR=https://hook.eu2.make.com/webhook-supervisor
+ALLOW_DEMO_INCIDENTS=1                  # opcional, habilita incidencias de ejemplo si Make falla
 ```
+> 💡 Define `ALLOW_DEMO_INCIDENTS=1` en entornos de prueba para que, si el webhook de Make.com no responde, la API devuelva incidencias de ejemplo y puedas usar el dashboard sin backend real.
 
 ### 3. Deploy en Vercel
 ```bash
