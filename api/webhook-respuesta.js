@@ -97,6 +97,7 @@ module.exports = async function handler(req, res) {
     switch (data.action) {
       case 'acepto':
       case 'rechazo':
+        makePayload.pin = data.pin || '';
         makePayload.reason = data.reason;
         makePayload.escalation_level = Number.isFinite(+data.escalation_level) ? +data.escalation_level : 0;
         break;
@@ -104,6 +105,7 @@ module.exports = async function handler(req, res) {
         if (!data.solution_description || !data.time_invested) {
           return res.status(400).json({ status: 'error', message: 'solution_description y time_invested son obligatorios' });
         }
+        makePayload.pin = data.pin || '';
         makePayload.solution_description = data.solution_description;
         makePayload.time_invested = data.time_invested;
         makePayload.preventive_actions = data.preventive_actions || '';
@@ -120,6 +122,7 @@ module.exports = async function handler(req, res) {
         if (!list.length) {
           return res.status(400).json({ status: 'error', message: 'materials_requested debe ser un array con al menos un material' });
         }
+        makePayload.pin = data.pin || '';
         makePayload.materials_requested = list;
         makePayload.work_can_continue = !!data.work_can_continue;
         makePayload.impact_if_delayed = data.impact_if_delayed || 'Sin impacto especificado';
@@ -131,6 +134,7 @@ module.exports = async function handler(req, res) {
         if (!data.target_department || !data.derivation_reason) {
           return res.status(400).json({ status: 'error', message: 'target_department y derivation_reason son obligatorios' });
         }
+        makePayload.pin = data.pin || '';
         makePayload.current_department = data.current_department || '';
         makePayload.target_department = data.target_department;
         makePayload.derivation_reason = data.derivation_reason;
@@ -140,15 +144,18 @@ module.exports = async function handler(req, res) {
         if (!data.help_type || !data.help_description) {
           return res.status(400).json({ status: 'error', message: 'help_type y help_description son obligatorios' });
         }
+        makePayload.pin = data.pin || '';
         makePayload.help_type = data.help_type;
         makePayload.help_description = data.help_description;
         makePayload.urgency = data.urgency || 'media';
         break;
       case 'solicitar_asignacion':
+        makePayload.pin = data.pin || '';
         makePayload.request_reason = data.request_reason || '';
         makePayload.request_justification = data.request_justification || '';
         break;
       case 'aportar_informacion':
+      makePayload.pin = data.pin || '';
         makePayload.information_type = data.information_type || '';
         makePayload.information_content = data.information_content || '';
         makePayload.attachments = Array.isArray(data.attachments) ? data.attachments : [];
@@ -157,6 +164,7 @@ module.exports = async function handler(req, res) {
         makePayload.pin = data.pin || '';
         break;
       case 'get_assigned_incidents':
+        makePayload.pin = data.pin || '';
         makePayload.read_only = (data.read_only === true || data.read_only === 'true');
         break;
       default:
