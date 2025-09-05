@@ -193,8 +193,8 @@ module.exports = async function handler(req, res) {
 
     const parsed = extractFirstJSON(textRaw);
     if (!makeResp.ok || !parsed) {
-      console.log('[Make webhook] status:', makeResp.status);
-      console.log('[Make webhook] body snippet:', snippet);
+     console.error('[Make webhook] status:', makeResp.status);
+      console.error('[Make webhook] body snippet:', snippet);
     }
     if (data.action === 'get_assigned_incidents') {
        if (!makeResp.ok || !parsed) {
