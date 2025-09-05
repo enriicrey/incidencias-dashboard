@@ -152,6 +152,7 @@ module.exports = async function handler(req, res) {
     });
 
     const textRaw = await makeResp.text();
+    const snippet = textRaw.slice(0, 500);
     const stripBOM = (s='') => s.replace(/^\uFEFF/, '').trim();
     const tryJSON = (s) => { try { return JSON.parse(s); } catch { return null; } };
     function unwrapIfQuotedJSON(s) {
@@ -184,7 +185,10 @@ module.exports = async function handler(req, res) {
     }
 
     const parsed = extractFirstJSON(textRaw);
-   
+    if (!makeResp.ok || !parsed) {
+      console.log('[Make webhook] status:', makeResp.status);
+      console.log('[Make webhook] body snippet:', snippet);
+    }
     if (data.action === 'get_assigned_incidents') {
        if (!makeResp.ok || !parsed) {
         const demoEnabled =
