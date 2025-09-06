@@ -1397,7 +1397,13 @@
                 
                 function aceptarIncidencia(id){ handleAction('acepto', id); }
                 function rechazarIncidencia(id){ showReasonModal('rechazo', id); }
-                function solicitarAsignacion(id){ handleAction('solicitar_asignacion', id); }
+                async function solicitarAsignacion(id){
+                  const nota = prompt('Ingresa una nota para la solicitud:') || '';
+                  await handleAction('solicitar_asignacion', id, {
+                    request_reason: 'Solicitud de asignación',
+                    request_justification: nota.trim()
+                  });
+                }
 
 
         // ========================================
