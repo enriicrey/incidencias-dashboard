@@ -1586,10 +1586,10 @@
                 'resolver': 'Incidencia resuelta. Pendiente cierre supervisor',
                 'solicitar_materiales': 'Solicitud de materiales enviada al supervisor',
                 'derivar_departamento': 'Solicitud de derivación enviada al supervisor',
-                'fin_de_turno': 'Incidencia transferida al siguiente turno',
+                'dejar_incidencia': 'Incidencia dejada para otro turno o departamento',
                 'solicitar_apoyo': 'Solicitud de apoyo enviada al supervisor',
                 'solicitar_asignacion': 'Solicitud de asignación enviada',
-                'aportar_informacion': 'Información adicional registrada'
+                'notes': 'Notas agregadas a la incidencia'
             };
             return messages[action] || `Acción ${action} procesada correctamente`;
         }
@@ -2015,6 +2015,7 @@
                 <button class="btn btn-warning"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
+                 <button class="btn btn-dark" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
                 <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
               </div>`;
           }
@@ -2079,35 +2080,35 @@
         //  AYUDA / GESTIÓN - TARJETAS EXPANDIBLES
         // ========================================
         const ayudaOptions = [
-          { id: "aportar_informacion", title: "📝 Aportar información adicional",
+          { id: "notes", title: "📝 Aportar notas",
             description: "Agrega más detalles sobre la incidencia.",
             fields: `<textarea id="infoExtra" class="form-control" rows="3" placeholder="Describe la información adicional..."></textarea>`
           },
-          { id: "revisar_materiales", title: "📊 Revisar estado materiales solicitados",
-        description: "Abrir Notion con los materiales de la incidencia.",
-        urlKey: "materials_url"
-      },
-      { id: "revisar_historial", title: "🔍 Revisar historial del componente",
-        description: "Abrir Notion con el historial de fallos.",
-        urlKey: "history_url"
-      },
-      { id: "derivar_departamento", title: "🏢 Derivar a otro departamento",
+          { id: "derivar_departamento", title: "🏢 Derivar a otro departamento",
         description: "Transferir incidencia a otro departamento.",
         fields: `
           <label class="form-label">Departamento:</label>
           <select id="departamentoSelect" class="form-control">
             <option value="">-- Selecciona --</option>
-            <option value="mecanica">Mecánica</option>
-            <option value="electrica">Eléctrica</option>
-            <option value="it">IT</option>
+            <option value="operaciones">🏭 Operaciones</option>
+            <option value="mtto_mecanico">🔧 Mtto-Mecánico</option>
+            <option value="mtto_electrico">⚡ Mtto-Eléctrico</option>
           </select>
           <label class="form-label">Motivo:</label>
-        <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea>
-        `
+        <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea> `
       },
-      { id: "fin_de_turno", title: "🕐 Fin de turno",
-        description: "Ceder incidencia al siguiente turno.",
-        fields: `<textarea id="detalleFinTurno" class="form-control" rows="3" placeholder="Detalles para el próximo técnico..."></textarea>`
+        { id: "dejar_incidencia", title: "🕐 Dejar incidencia",
+        description: "Ceder incidencia al siguiente turno o departamento.",
+        fields: `
+          <label class="form-label">Motivo:</label>
+          <select id="dejarIncidenciaReason" class="form-control">
+            <option value="">-- Selecciona --</option>
+            <option value="fin_turno">Fin de turno</option>
+            <option value="derivar_incidencia">Derivar incidencia</option>
+          </select>
+          <label class="form-label">Detalles:</label>
+          <textarea id="dejarIncidenciaDetalles" class="form-control" rows="3" placeholder="Detalles..."></textarea>
+        `
       },
       { id: "apoyo_segundo_tecnico", title: "👥 Solicitar segundo técnico",
         description: "Pide apoyo de otro técnico.",
@@ -2126,11 +2127,11 @@
             </div>
           `).join('');
         }
-        function finTurno(id){
+        function dejarIncidencia(id){
           showAyudaModal(id);
-          // preselecciona la tarjeta de “fin_de_turno”
+          // preselecciona la tarjeta de “dejar_incidencia”
           setTimeout(() => {
-            const card = document.querySelector('.ayuda-card[data-id="fin_de_turno"]');
+            const card = document.querySelector('.ayuda-card[data-id="dejar_incidencia"]');
             if (card) { card.click(); }
           }, 0);
         }
@@ -2161,8 +2162,8 @@
         
           const id = selectedAyuda.id;
             
-         // 1) Tarjetas que abren URL (materiales / historial / lo que añadas con urlKey)
-             if (selectedAyuda.urlKey) {
+        // 1) Tarjetas que abren URL (si existieran con urlKey)
+          if (selectedAyuda.urlKey) {
             const inc = allIncidents.find(i => i.id === currentIncidentId);
             const targetURL = inc?.[selectedAyuda.urlKey] || inc?.url;
             if (targetURL) window.open(targetURL, '_blank');
@@ -2170,9 +2171,9 @@
             return;
           }
         
-          if (id === 'aportar_informacion') {
+           if (id === 'notes') {
             const info = (document.getElementById('infoExtra')?.value || '').trim();
-            handleAction('aportar_informacion', currentIncidentId, {
+            handleAction('notes', currentIncidentId, {
               description: info
             });
             closeModal('ayudaModal');
@@ -2184,9 +2185,8 @@
             const motivo = (document.getElementById('motivoDerivacion')?.value || '').trim();
             if (!depto) { alert('Selecciona el departamento destino'); return; }
             handleAction('derivar_departamento', currentIncidentId, {
-              help_type: 'derivar_departamento',
               target_department: depto,
-              description: motivo
+              derivation_reason: motivo
             });
             closeModal('ayudaModal');
             return;
@@ -2195,26 +2195,29 @@
           if (id === 'apoyo_segundo_tecnico') {
             const motivo = (document.getElementById('detalleApoyo')?.value || '').trim();
             handleAction('solicitar_apoyo', currentIncidentId, {
-              help_type: 'apoyo_segundo_tecnico',
               description: motivo
             });
             closeModal('ayudaModal');
             return;
           }
         
-          if (id === 'fin_de_turno') {
-            const detalle = (document.getElementById('detalleFinTurno')?.value || '').trim();
-            // Validación de “últimos 15 minutos de turno”
-            const now = new Date();
-            const h = now.getHours(), m = now.getMinutes();
-            const nearEnd = (h===13 && m>=45) || (h===21 && m>=45) || (h===5 && m>=45);
-            if (!nearEnd) {
-              alert('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h');
-              return;
+          if (id === 'dejar_incidencia') {
+            const reason = document.getElementById('dejarIncidenciaReason')?.value;
+            const details = (document.getElementById('dejarIncidenciaDetalles')?.value || '').trim();
+            if (!reason) { alert('Selecciona un motivo'); return; }
+            if (reason === 'fin_turno') {
+              // Validación de “últimos 15 minutos de turno”
+              const now = new Date();
+              const h = now.getHours(), m = now.getMinutes();
+              const nearEnd = (h===13 && m>=45) || (h===21 && m>=45) || (h===5 && m>=45);
+              if (!nearEnd) {
+                alert('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h');
+                return;
+              }
             }
-            handleAction('fin_de_turno', currentIncidentId, {
-              help_type: 'fin_de_turno',
-              description: detalle
+              handleAction('dejar_incidencia', currentIncidentId, {
+              reason,
+              details
             });
             closeModal('ayudaModal');
             return;
@@ -2558,7 +2561,7 @@
     window.abrirMateriales = abrirMateriales;
     window.abrirResolver = abrirResolver;
     window.solicitarAsignacion = solicitarAsignacion;
-    window.finTurno = finTurno;
+    window.dejarIncidencia = dejarIncidencia;
     window.confirmResolver = confirmResolver;
     window.confirmAction = confirmAction;
     window.selectReason = selectReason;
