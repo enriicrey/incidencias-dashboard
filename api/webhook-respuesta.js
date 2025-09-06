@@ -253,6 +253,8 @@ module.exports = async function handler(req, res) {
             zone: 'Zona A',
             description: 'Falla en el generador (demo).',
             report_date: '2024-01-10T10:00:00Z',
+            materials_url: 'https://example.com/materials/inc-demo-1',
+            history_url: 'https://example.com/history/inc-demo-1',
             solicitudes_log: [
               "[2024-01-10T11:00:00Z] MATERIAL#MAT-001|REQUEST|Cable de repuesto",
               "[2024-01-10T11:20:00Z] MATERIAL#MAT-001|APPROVED|Supervisor"
@@ -270,6 +272,8 @@ module.exports = async function handler(req, res) {
             zone: 'Zona B',
             description: 'Lecturas fuera de rango (demo).',
             report_date: '2024-01-11T15:30:00Z',
+            materials_url: 'https://example.com/materials/inc-demo-2',
+            history_url: 'https://example.com/history/inc-demo-2',
             solicitudes_log: [
               "[2024-01-11T16:00:00Z] APOYO#SUP-001|REQUEST|Revisión remota"
             ],
