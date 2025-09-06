@@ -471,6 +471,9 @@
         .modal-header {
             padding: 24px 30px 20px;
             border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .modal-title {
@@ -478,6 +481,18 @@
             font-weight: 700;
             color: var(--gray-800);
         }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--gray-500);
+            transition: var(--transition);
+        }
+
+        .modal-close:hover { color: var(--gray-700); }
 
         .modal-body { padding: 24px 30px; }
 
@@ -490,6 +505,11 @@
         }
 
         .form-group { margin-bottom: 20px; }
+
+        .no-link {
+            color: var(--gray-500);
+            margin: 8px 0;
+        }
 
         .form-label {
             display: block;
@@ -918,6 +938,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="modalTitle">❌ Motivo del Rechazo</h3>
+                <button class="modal-close" onclick="closeModal('reasonModal')">×</button>
             </div>
             <div class="modal-body">
                 <div id="reasonOptions"></div>
@@ -938,6 +959,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>🔧 Resolver Incidencia</h3>
+                <button class="modal-close" onclick="closeModal('resolverModal')">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -961,6 +983,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>🔗 Recursos</h3>
+                <button class="modal-close" onclick="closeModal('recursosModal')">×</button>
             </div>
             <div class="modal-body">
                 <div id="recursosList" class="recursos-list"></div>
@@ -976,6 +999,7 @@
     <div class="modal large-modal">
         <div class="modal-header">
             <h3>📦 Solicitar Materiales</h3>
+            <button class="modal-close" onclick="closeModal('materialesModal')">×</button>
         </div>
         <div class="modal-body">
             <!-- Formulario de nuevo material -->
@@ -1012,6 +1036,7 @@
             <div class="modal large-modal">
                 <div class="modal-header">
                     <h3>🛠️ Ayuda y Gestión</h3>
+                    <button class="modal-close" onclick="closeModal('ayudaModal')">×</button>
                 </div>
                 <div class="modal-body">
                     <!-- Opciones principales como tarjetas -->
@@ -1028,19 +1053,6 @@
                 </div>
             </div>
         </div>
-    
-     <!-- Modal de Recursos -->
-    <div id="recursosModal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>📚 Recursos</h3>
-            </div>
-            <div class="modal-body recursos-options" id="recursosOptions"></div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('recursosModal')">Cerrar</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         // ========================================
@@ -1440,21 +1452,40 @@
             document.getElementById('ayudaModal').classList.remove('hidden');
         }
         
-         function showRecursosModal(incidentId) {
+        function showRecursosModal(incidentId) {
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId);
             if (!inc) return;
             const state = getIncidentRealState(inc, currentTechnician?.email || "");
             const list = document.getElementById('recursosList');
-            const links = [];
-            if (inc.url) links.push({ title: "🔗 Incidencia", url: inc.url });
-            if (state === "working") {
-                if (inc.materials_url) links.push({ title: "📊 Estado de materiales", url: inc.materials_url });
-                if (inc.history_url) links.push({ title: "🔍 Historial del componente", url: inc.history_url });
-            } else {
-                if (inc.history_url) links.push({ title: "🔍 Historial del componente", url: inc.history_url });
+            const items = [];
+
+            if (inc.url) {
+                items.push(`<div><a href="${inc.url}" target="_blank" class="btn btn-primary">🔗 Incidencia</a></div>`);
             }
-            list.innerHTML = links.map(l => `<div><a href="${l.url}" target="_blank" class="btn btn-primary">${l.title}</a></div>`).join('');
+            if (state === "working") {
+                if (inc.materials_url) {
+                    items.push(`<div><a href="${inc.materials_url}" target="_blank" class="btn btn-primary">📊 Estado de materiales</a></div>`);
+                } else {
+                    items.push(`<div class="no-link">⚠️ Estado de materiales no disponible</div>`);
+                }
+                if (inc.history_url) {
+                    items.push(`<div><a href="${inc.history_url}" target="_blank" class="btn btn-primary">🔍 Historial del componente</a></div>`);
+                } else {
+                    items.push(`<div class="no-link">⚠️ Historial del componente no disponible</div>`);
+                }
+            } else {
+                 if (inc.history_url) {
+                    items.push(`<div><a href="${inc.history_url}" target="_blank" class="btn btn-primary">🔍 Historial del componente</a></div>`);
+                } else {
+                    items.push(`<div class="no-link">⚠️ Historial del componente no disponible</div>`);
+                }
+            }
+            if (!items.length) {
+                items.push('<div class="no-link">No hay recursos disponibles</div>');
+            }
+
+            list.innerHTML = items.join('');
             document.getElementById('recursosModal').classList.remove('hidden');
         }
 
@@ -1730,7 +1761,9 @@
 
         // --- Parsear log y agrupar por categoría + request_id ---
         function parseSolicitudesLog(logText = "") {
-          const lines = logText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (Array.isArray(logText)) logText = logText.join("\n");
+          if (!logText) return [];
+          const lines = String(logText).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const out = []; // {when, cat, id, phase, meta}
           for (const line of lines) {
             const m = line.match(/^\[(.+?)\]\s+([A-Z]+)#([\w-]+)\|([A-Z]+)\|(.*)$/);
@@ -2260,13 +2293,14 @@
           if (selectedAyuda.urlKey) {
             const inc = allIncidents.find(i => i.id === currentIncidentId);
             const targetURL = inc?.[selectedAyuda.urlKey] || inc?.url;
-            if (targetURL) window.open(targetURL, '_blank');
-            closeModal('ayudaModal');
-            return;
-          }
-        
-           if (id === 'notes') {
+           if (targetURL) window.open(targetURL, '_blank');
+           closeModal('ayudaModal');
+           return;
+         }
+
+          if (id === 'notes') {
             const info = (document.getElementById('infoExtra')?.value || '').trim();
+            if (!info) { alert('Debes ingresar una nota antes de continuar.'); return; }
             handleAction('notes', currentIncidentId, {
               description: info
             });
@@ -2577,7 +2611,9 @@
                 }
 
         function renderEscalationHistory(inc){
-          const t = inc["Respuestas (log)"] || inc.respuestas_log || '';
+          let t = inc["Respuestas (log)"] || inc.respuestas_log || '';
+          if (Array.isArray(t)) t = t.join("\n");
+          t = String(t || '');
           if(!t.trim()) return `<div class="muted">Sin historial</div>`;
           const rows = parseRespLog(t).slice(-12);
           const items = rows.map(r => {
