@@ -236,6 +236,14 @@ module.exports = async function handler(req, res) {
         process.env.ALLOW_DEMO_INCIDENTS === '1' ||
         String(data.demo || '') === '1';
 
+       const normalizeLogs = (inc = {}) => {
+        if (Array.isArray(inc.solicitudes_log)) inc.solicitudes_log = inc.solicitudes_log.join("\n");
+        if (Array.isArray(inc["Solicitudes (log)"])) inc["Solicitudes (log)"] = inc["Solicitudes (log)"].join("\n");
+        if (Array.isArray(inc.respuestas_log)) inc.respuestas_log = inc.respuestas_log.join("\n");
+        if (Array.isArray(inc["Respuestas (log)"])) inc["Respuestas (log)"] = inc["Respuestas (log)"].join("\n");
+        return inc;
+      };
+
       if (demoEnabled) {
         const demoIncidents = [
           {
@@ -245,6 +253,15 @@ module.exports = async function handler(req, res) {
             zone: 'Zona A',
             description: 'Falla en el generador (demo).',
             report_date: '2024-01-10T10:00:00Z',
+            solicitudes_log: [
+              "[2024-01-10T11:00:00Z] MATERIAL#MAT-001|REQUEST|Cable de repuesto",
+              "[2024-01-10T11:20:00Z] MATERIAL#MAT-001|APPROVED|Supervisor"
+            ],
+            respuestas_log: [
+              "[2024-01-10T10:05:00Z] RESP#L1#jorge@empresa.com|ASSIGNED|",
+              "[2024-01-10T10:30:00Z] RESP#L1#jorge@empresa.com|REJECTED::Sin capacidad",
+              "[2024-01-10T10:40:00Z] RESP#L2#maria@empresa.com|ASSIGNED|"
+            ]
           },
           {
             id: 'INC-DEMO-2',
@@ -253,14 +270,22 @@ module.exports = async function handler(req, res) {
             zone: 'Zona B',
             description: 'Lecturas fuera de rango (demo).',
             report_date: '2024-01-11T15:30:00Z',
+            solicitudes_log: [
+              "[2024-01-11T16:00:00Z] APOYO#SUP-001|REQUEST|Revisión remota"
+            ],
+            respuestas_log: [
+              "[2024-01-11T15:35:00Z] RESP#L1#ana@empresa.com|ASSIGNED|",
+              "[2024-01-11T16:10:00Z] RESP#L1#ana@empresa.com|NO_RESPONSE|",
+              "[2024-01-11T16:20:00Z] RESP#L2#carlos@empresa.com|ASSIGNED|"
+            ]
           },
         ];
-        return res.status(200).json({ status: 'success', incidents: demoIncidents });
+        return res.status(200).json({ status: 'success', incidents: demoIncidents.map(normalizeLogs) });
       }
       
-      if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents });
-      if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents });
-      if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed });
+      if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents.map(normalizeLogs) });
+      if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents.map(normalizeLogs) });
+      if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed.map(normalizeLogs) });
       return res.status(502).json({ status: 'error', message: 'Respuesta de Make es JSON pero no contiene incidents[]' });
     }
     
