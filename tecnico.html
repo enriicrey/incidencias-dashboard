@@ -635,27 +635,26 @@
         .priority{ font-weight:600; }
         
         /* Descripción y detalles */
-        .desc{
+        .section-title{
+          display:block; margin:8px 0 4px;
+          font-size:13px; font-weight:600;
+        }
+        .section-text,
+        .actions-taken{
           margin:8px 0 10px; font-size:14px; color:#374151;
           overflow-wrap:anywhere; word-break:break-word;
-          display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
         }
-         .desc.expanded{
-          display:block; -webkit-line-clamp:unset;
-        }
-        .desc-toggle{
-          background:none; border:0; padding:0; color:#2563eb; cursor:pointer;
-          font-size:13px; text-decoration:underline;
-        }
-         .actions-taken{
-          margin:8px 0 10px; font-size:13px; color:#374151;
-        }
-        .actions-taken .muted{ display:block; margin-bottom:4px; }
         details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
         details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
         details > summary::-webkit-details-marker{ display:none; }
-        .detail-grid{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:8px; font-size:13px; color:#374151;}
-        @media(min-width:640px){ .detail-grid{ grid-template-columns: 1fr 1fr; } }
+        .detail-grid{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:12px;
+          margin-top:8px;
+          font-size:13px;
+          color:#374151;
+        }
         .muted{ color:#6b7280; }
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
         
@@ -700,6 +699,7 @@
         /* fuerza que las etiquetas del bloque contactos no colisionen con el teléfono */
         .contact-row {
           display: flex;
+          flex-wrap: wrap;
           align-items: baseline;
           gap: 8px;
         }
@@ -710,6 +710,14 @@
         .contact-row .value {
           flex: 1 1 auto;
           min-width: 0;             /* habilita ellipsis dentro */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .contacts-block .group-title{
+          font-weight:600;
+          margin-bottom:4px;
         }
         
         /* ==== Pulido de contenedor y alineaciones ==== */
@@ -2466,14 +2474,11 @@
                 ${notifChips}
               </div>
         
-              <div class="desc">${safe(inc.description)}</div>
+              <div class="section-title">Descripción incidencia</div>
+              <div class="section-text">${safe(inc.description)}</div>
 
-              <button class="desc-toggle js-toggle-desc">Ver más</button>
-    
-              <div class="actions-taken">
-                <div class="muted">Acciones tomadas</div>
-                <div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div>
-              </div>
+              <div class="section-title">Acciones tomadas</div>
+              <div class="actions-taken">${safe(inc.actions_taken) || 'Sin acciones'}</div>
         
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
@@ -2490,10 +2495,9 @@
               <summary>📇 Contactos</summary>
               ${renderContacts(inc)}
             </details>
-          <details>
+            <details>
               <summary>📝 Notas</summary>
               ${renderNotesSection(inc)}
-              </div>
             </details>
             <details>
               <summary>📈 Historial de escalado</summary>
@@ -2512,7 +2516,8 @@
             `<div><strong>${label}:</strong> ${safe(name) || '—'}${tel(safe(phone))}</div>`;
         return `
           <div class="detail-grid contacts-block">
-            <div>
+            <div class="contact-group">
+              <div class="group-title">Equipo técnico</div>
               <div class="contact-row">
                 <span class="label">Supervisor:</span>
                 <span class="value">${safe(inc.supervisor) || '—'} ${inc.supervisor_phone ? `· <a href="tel:${safe(inc.supervisor_phone)}" class="tel-link">${safe(inc.supervisor_phone)}</a>` : ''}</span>
@@ -2526,7 +2531,8 @@
                 <span class="value">${safe(inc.assigned_technician) || '—'} ${inc.assigned_technician_phone ? `· <a href="tel:${safe(inc.assigned_technician_phone)}" class="tel-link">${safe(inc.assigned_technician_phone)}</a>` : ''}</span>
               </div>
             </div>
-            <div>
+              <div class="contact-group">
+              <div class="group-title">Reportante</div>
               <div class="contact-row">
                 <span class="label">Reporta:</span>
                 <span class="value">${safe(inc.reporter) || '—'} ${inc.reporter_phone ? `· <a href="tel:${safe(inc.reporter_phone)}" class="tel-link">${safe(inc.reporter_phone)}</a>` : ''}</span>
@@ -2590,16 +2596,6 @@
         const wrap = document.createElement('div');
         wrap.innerHTML = incidentCardHTML(inc);
         const card = wrap.firstElementChild;
-    
-        const btn = card.querySelector('.js-toggle-desc');
-        const desc = card.querySelector('.desc');
-        if (btn && desc) {
-          btn.addEventListener('click', () => {
-            desc.classList.toggle('expanded');
-            const expanded = desc.classList.contains('expanded');
-            btn.textContent = expanded ? 'Ver menos' : 'Ver más';
-          });
-        }
     
         frag.appendChild(card);
       });
