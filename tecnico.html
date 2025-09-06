@@ -372,10 +372,15 @@
 
         /* Botones */
         .incident-actions {
+            margin-top: 16px;
+            display: flex;
+        }
+
+        .incident-actions .action-buttons {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            margin-top: 16px;
+            align-items: center;
         }
 
         .btn {
@@ -392,6 +397,9 @@
             gap: 6px;
         }
 
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+
         .btn-success { background: var(--success-color); color: white; }
         .btn-success:hover { background: var(--success-dark); }
 
@@ -401,17 +409,38 @@
         .btn-warning { background: var(--warning-color); color: white; }
         .btn-warning:hover { background: var(--warning-dark); }
 
-        .btn-primary { background: var(--primary-color); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-
-        .btn-purple { background: var(--purple-color); color: white; }
-        .btn-purple:hover { background: var(--purple-dark); }
-
         .btn-info { background: var(--info-color); color: white; }
         .btn-secondary { background: #6b7280; color: white; }
         
         .btn-dark { background:#111827; color:#fff; }
         .btn-dark:hover { background:#0b1220; }
+
+        .btn-purple { background: var(--purple-color); color: white; }
+        .btn-purple:hover { background: var(--purple-dark); }
+
+        .btn-accept { background: var(--success-color); color: white; }
+        .btn-accept:hover { background: var(--success-dark); }
+
+        .btn-reject { background: var(--danger-color); color: white; }
+        .btn-reject:hover { background: var(--danger-dark); }
+
+        .btn-help { background: #6b7280; color: white; }
+        .btn-help:hover { background: #4b5563; }
+
+        .btn-resource { background: var(--primary-color); color: white; }
+        .btn-resource:hover { background: var(--primary-dark); }
+
+        .btn-material { background: var(--warning-color); color: white; }
+        .btn-material:hover { background: var(--warning-dark); }
+
+        .btn-resolve { background: var(--info-color); color: white; }
+        .btn-resolve:hover { background: var(--info-dark); }
+
+        .btn-drop { background: #111827; color: #fff; }
+        .btn-drop:hover { background: #0b1220; }
+
+        .btn-followup { background: var(--purple-color); color: white; }
+        .btn-followup:hover { background: var(--purple-dark); }
 
         /* ========================================
            MODAL COMPONENTS
@@ -627,7 +656,8 @@
         /* Densidad y micro-ajustes */
         .incident-title{ font-size:16px; margin-bottom:2px; }
         .incident-meta{ gap:10px; font-size:12px; margin-bottom:10px; }
-        .incident-actions{ margin-top:12px; gap:8px; }
+        .incident-actions{ margin-top:12px; }
+        .incident-actions .action-buttons{ gap:8px; }
         .btn{ padding:8px 12px; font-size:13px; }
         
         /* Chips y badges */
@@ -2059,33 +2089,36 @@
         function renderActionButtonsByState(state, incident) {
           const resolveDisabled = !canResolve(incident);
           const resolveTitle = resolveDisabled ? `title="Pendiente validar materiales"` : "";
+
+          const wrapStart = `<div class="incident-actions"><div class="action-buttons">`;
+          const wrapEnd = `</div></div>`;
         
           if (state === "pending") {
           return `
-            <div class="incident-actions">
-              <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
-              <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
-              <button class="btn btn-warning" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
-            </div>`;
+             ${wrapStart}
+              <button class="btn btn-accept" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
+              <button class="btn btn-reject" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
+              <button class="btn btn-help" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+              <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+            ${wrapEnd}`;
         }
           if (state === "working") {
             return `
-              <div class="incident-actions">
-                <button class="btn btn-secondary" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-                <button class="btn btn-warning"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
-                <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
+               ${wrapStart}
+                <button class="btn btn-help" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+                <button class="btn btn-material"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-resolve" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                 <button class="btn btn-dark" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
-                <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
-              </div>`;
+                <button class="btn btn-drop" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
+                <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+              ${wrapEnd}`;
           }
           // seguimiento
           return `
-            <div class="incident-actions">
-              <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
-            </div>`;
+            ${wrapStart}
+              <button class="btn btn-followup" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
+              <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+            ${wrapEnd}`;
         }
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
