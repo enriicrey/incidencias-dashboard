@@ -276,6 +276,11 @@
           gap:6px;
           align-items:flex-end;
         }
+        .new-badges{ display:flex; gap:4px; }
+        .badge{ padding:2px 6px; border-radius:999px; font-size:12px; font-weight:600; color:white; }
+        .badge-notes{ background:#3b82f6; }
+        .badge-escalations{ background:#f59e0b; }
+        .badge-solicitudes{ background:#10b981; }
         .incident-title {
           display: flex;
           align-items: center;
@@ -632,8 +637,20 @@
         /* Descripción y detalles */
         .desc{
           margin:8px 0 10px; font-size:14px; color:#374151;
+          overflow-wrap:anywhere; word-break:break-word;
           display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
         }
+         .desc.expanded{
+          display:block; -webkit-line-clamp:unset;
+        }
+        .desc-toggle{
+          background:none; border:0; padding:0; color:#2563eb; cursor:pointer;
+          font-size:13px; text-decoration:underline;
+        }
+         .actions-taken{
+          margin:8px 0 10px; font-size:13px; color:#374151;
+        }
+        .actions-taken .muted{ display:block; margin-bottom:4px; }
         details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
         details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
         details > summary::-webkit-details-marker{ display:none; }
@@ -651,6 +668,19 @@
         }
         .timeline .t-time{ color:#6b7280; font-variant-numeric: tabular-nums; }
         .timeline .t-body{ color:#374151; }
+        .timeline li.note-item{ grid-template-columns:140px 1fr; }
+        .note-sup{ background:#FEF3C7; }
+        .note-tech{ background:#DBEAFE; }
+        .note-legend{ display:flex; gap:8px; font-size:12px; margin-bottom:6px; }
+        .note-legend span{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; }
+        .timeline li.level-0{ border-left:4px solid #6366f1; }
+        .timeline li.level-1{ border-left:4px solid #3b82f6; }
+        .timeline li.level-2{ border-left:4px solid #f59e0b; }
+        .timeline li.level-3{ border-left:4px solid #ef4444; }
+        .timeline li.phase-approved{ background:#eafaf1; border-left:4px solid #10b981; }
+        .timeline li.phase-rejected{ background:#fdecea; border-left:4px solid #ef4444; }
+        .timeline li.phase-request, .timeline li.phase-pending{ background:#fffbea; border-left:4px solid #f59e0b; }
+        
         /* --- CONTACTOS: enlaces de teléfono sin “pill” y sin solapes --- */
         .contacts-block a,
         .contact-link,
@@ -887,6 +917,21 @@
             </div>
         </div>
     </div>
+    
+     <!-- Modal de Recursos -->
+    <div id="recursosModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔗 Recursos</h3>
+            </div>
+            <div class="modal-body">
+                <div id="recursosList" class="recursos-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('recursosModal')">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal de Solicitar Materiales -->
     <div id="materialesModal" class="modal-overlay hidden">
@@ -969,6 +1014,7 @@
         let currentIncidentId = null;
         
          let loginEmail = '';
+         let lastSeen = new Date(localStorage.getItem('lastSeen') || Date.now());
 
          async function callWebhook(action, data = {}) {
             const payload = {
@@ -1145,6 +1191,8 @@
                     updateStatistics();
                     applyFiltersAndRender();
                     updateTechnicianHeader(currentTechnician);
+                    lastSeen = new Date();
+                    localStorage.setItem('lastSeen', lastSeen.toISOString());
                 } else {
                     let msg = data.message || 'Error al cargar incidencias';
                     const extras = [];
@@ -1354,18 +1402,21 @@
             document.getElementById('ayudaModal').classList.remove('hidden');
         }
         
-        function showRecursosModal(incidentId) {
+         function showRecursosModal(incidentId) {
             currentIncidentId = incidentId;
-            const incident = allIncidents.find(inc => inc.id === incidentId) || {};
-            const state = getIncidentRealState(incident, currentTechnician?.email || '');
-            const container = document.getElementById('recursosOptions');
-            const options = [];
-            options.push(`<button class="btn btn-primary" onclick="window.open('${safe(incident.url)}','_blank')">📄 Página de la incidencia</button>`);
-            options.push(`<button class="btn btn-secondary" onclick="window.open('${safe(incident.history_url)}','_blank')">📖 Historial del componente</button>`);
-            if (state === 'working') {
-                options.push(`<button class="btn btn-warning" onclick="window.open('${safe(incident.materials_url)}','_blank')">📦 Estado de materiales solicitados</button>`);
+            const inc = allIncidents.find(i => i.id === incidentId);
+            if (!inc) return;
+            const state = getIncidentRealState(inc, currentTechnician?.email || "");
+            const list = document.getElementById('recursosList');
+            const links = [];
+            if (inc.url) links.push({ title: "🔗 Incidencia", url: inc.url });
+            if (state === "working") {
+                if (inc.materials_url) links.push({ title: "📊 Estado de materiales", url: inc.materials_url });
+                if (inc.history_url) links.push({ title: "🔍 Historial del componente", url: inc.history_url });
+            } else {
+                if (inc.history_url) links.push({ title: "🔍 Historial del componente", url: inc.history_url });
             }
-            container.innerHTML = options.join('');
+            list.innerHTML = links.map(l => `<div><a href="${l.url}" target="_blank" class="btn btn-primary">${l.title}</a></div>`).join('');
             document.getElementById('recursosModal').classList.remove('hidden');
         }
 
@@ -1870,12 +1921,14 @@
           const rows = parseNotesLog(t).slice(-20);
           const items = rows.map(r => {
             const who = r.role === 'SUP' ? '👩‍💼 Supervisor' : '🔧 Técnico';
-            return `<li class="note-item" style="display:grid;grid-template-columns:140px 1fr;gap:10px;background:#f9fafb;border-radius:8px;padding:8px;margin-bottom:6px;">
+            const roleClass = r.role === 'SUP' ? 'note-sup' : 'note-tech';
+            return `<li class="note-item ${roleClass}">
               <span class="t-time">${r.when.toLocaleString()}</span>
               <span class="t-body">${who} — ${r.email}<br>${r.text}</span>
             </li>`;
           }).join('');
-          return `<ul class="timeline">${items}</ul>`;
+          const legend = `<div class="note-legend"><span class="note-sup">👩‍💼 Supervisor</span><span class="note-tech">🔧 Técnico</span></div>`;
+          return `${legend}<ul class="timeline">${items}</ul>`;
         }
 
 
@@ -2005,7 +2058,7 @@
               <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
               <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
               <button class="btn btn-warning" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
             </div>`;
         }
           if (state === "working") {
@@ -2016,14 +2069,14 @@
                 <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
                  <button class="btn btn-dark" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
-                <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
+                <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
               </div>`;
           }
           // seguimiento
           return `
             <div class="incident-actions">
               <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <button class="btn btn-secondary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
             </div>`;
         }
         // ========================================
@@ -2333,6 +2386,24 @@
           if (element) element.classList.add('active');
           applyFiltersAndRender();
         }
+         function countNewItems(inc){
+          const ref = lastSeen;
+          let notes = 0, escalados = 0, solicitudes = 0;
+
+          const nlog = inc["Comentarios (log)"] || inc.comentarios_log || '';
+          if(nlog){
+            notes = parseNotesLog(nlog).filter(r=>r.when>ref).length;
+          }
+          const elog = inc["Respuestas (log)"] || inc.respuestas_log || '';
+          if(elog){
+            escalados = parseRespLog(elog).filter(r=>r.when>ref).length;
+          }
+          const slog = inc["Solicitudes (log)"] || inc.solicitudes_log || '';
+          if(slog){
+            solicitudes = parseSolicitudesLog(slog).filter(r=> new Date(r.when)>ref && r.phase==='REQUEST').length;
+          }
+          return {notes, escalados, solicitudes};
+        }
     
 
     // --------- RENDER NUEVO (no tocar) ----------
@@ -2342,6 +2413,12 @@
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const validChipsHTML = renderPendingChips(inc);
           const notifList = buildNotificationsFromLog(inc);
+          const news = countNewItems(inc);
+          const badges = [];
+          if(news.notes) badges.push(`<span class="badge badge-notes">📝 ${news.notes}</span>`);
+          if(news.escalados) badges.push(`<span class="badge badge-escalations">📈 ${news.escalados}</span>`);
+          if(news.solicitudes) badges.push(`<span class="badge badge-solicitudes">📦 ${news.solicitudes}</span>`);
+          const badgesHTML = badges.length ? `<div class="new-badges">${badges.join('')}</div>` : '';
         
           // Notificaciones → chips
           const notifMap = {
@@ -2378,6 +2455,7 @@
                   </div>
                 </div>
                 <div class="incident-header-right">
+                 ${badgesHTML}
                   <span class="state-badge">${getStateLabel(state)}</span>
                   ${slaChip || ""}
                 </div>
@@ -2389,6 +2467,13 @@
               </div>
         
               <div class="desc">${safe(inc.description)}</div>
+
+              <button class="desc-toggle js-toggle-desc">Ver más</button>
+    
+              <div class="actions-taken">
+                <div class="muted">Acciones tomadas</div>
+                <div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div>
+              </div>
         
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
@@ -2405,11 +2490,9 @@
               <summary>📇 Contactos</summary>
               ${renderContacts(inc)}
             </details>
-           <details>
-              <summary>📝 Acciones tomadas y notas</summary>
-              <div class="detail-grid">
-                <div><div class="muted">Acciones tomadas</div><div class="log">${safe(inc.actions_taken) || 'Sin acciones'}</div></div>
-                <div><div class="muted">Notas y mensajes</div>${renderNotesSection(inc)}</div>
+          <details>
+              <summary>📝 Notas</summary>
+              ${renderNotesSection(inc)}
               </div>
             </details>
             <details>
@@ -2461,7 +2544,8 @@
           const items = rows.map(r => {
             const who = r.email;
             const ev  = r.ev.replace('REJECTED::','Rechazado: ');
-            return `<li><span class="t-time">${r.when.toLocaleString()}</span>
+            const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
+            return `<li class="level-${r.level} ${phase}"><span class="t-time">${r.when.toLocaleString()}</span>
                     <span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
           }).join('');
           return `<ul class="timeline">${items}</ul>`;
@@ -2479,7 +2563,8 @@
             .map(g => {
               const badge = g.last.phase === 'APPROVED' ? '✅'
                          : g.last.phase === 'REJECTED' ? '❌' : '⏳';
-              return `<li><span class="t-time">${new Date(g.last.when).toLocaleString()}</span>
+              const phaseCls = `phase-${g.last.phase.toLowerCase()}`;
+              return `<li class="${phaseCls}"><span class="t-time">${new Date(g.last.when).toLocaleString()}</span>
                       <span class="t-body">${badge} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
@@ -2510,16 +2595,9 @@
         const desc = card.querySelector('.desc');
         if (btn && desc) {
           btn.addEventListener('click', () => {
-            const expanded = desc.style.webkitLineClamp === 'unset';
-            if (expanded) {
-              desc.style.display = '-webkit-box';
-              desc.style.webkitLineClamp = '3';
-              btn.textContent = 'Ver más';
-            } else {
-              desc.style.display = 'block';
-              desc.style.webkitLineClamp = 'unset';
-              btn.textContent = 'Ver menos';
-            }
+            desc.classList.toggle('expanded');
+            const expanded = desc.classList.contains('expanded');
+            btn.textContent = expanded ? 'Ver menos' : 'Ver más';
           });
         }
     
@@ -2554,12 +2632,14 @@
     window.showResolverModal = showResolverModal;
     window.showMaterialesModal = showMaterialesModal;
     window.showAyudaModal = showAyudaModal;
+    window.showRecursosModal = showRecursosModal;
     window.closeModal = closeModal;
     window.aceptarIncidencia = aceptarIncidencia;
     window.rechazarIncidencia = rechazarIncidencia;
     window.abrirAyuda = abrirAyuda;
     window.abrirMateriales = abrirMateriales;
     window.abrirResolver = abrirResolver;
+    window.abrirRecursos = abrirRecursos;
     window.solicitarAsignacion = solicitarAsignacion;
     window.dejarIncidencia = dejarIncidencia;
     window.confirmResolver = confirmResolver;
