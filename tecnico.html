@@ -2540,6 +2540,11 @@
 
               <div class="section-title">Acciones tomadas</div>
               <div class="actions-taken">${safe(inc.actions_taken) || 'Sin acciones'}</div>
+
+              ${safe(inc.assignment_notes) ? `
+                <div class="section-title">Nota</div>
+                <div class="section-text">${safe(inc.assignment_notes)}</div>
+              ` : ''}
         
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
