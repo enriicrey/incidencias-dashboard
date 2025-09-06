@@ -154,11 +154,9 @@ module.exports = async function handler(req, res) {
         makePayload.request_reason = data.request_reason || '';
         makePayload.request_justification = data.request_justification || '';
         break;
-      case 'aportar_informacion':
-      makePayload.pin = data.pin || '';
-        makePayload.information_type = data.information_type || '';
-        makePayload.information_content = data.information_content || '';
-        makePayload.attachments = Array.isArray(data.attachments) ? data.attachments : [];
+      case 'notes':
+        makePayload.pin = data.pin || '';
+        makePayload.description = data.description || '';
         break;
       case 'validate_pin':
         makePayload.pin = data.pin || '';
