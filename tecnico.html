@@ -544,6 +544,14 @@
             display: block;
         }
         /* ========================================
+           MODAL DE RECURSOS
+        ======================================== */
+        .recursos-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        /* ========================================
            MODAL SOLICITAR MATERIALES
            Permite gestionar múltiples materiales
         ======================================== */
@@ -937,6 +945,19 @@
                 </div>
             </div>
         </div>
+    
+     <!-- Modal de Recursos -->
+    <div id="recursosModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📚 Recursos</h3>
+            </div>
+            <div class="modal-body recursos-options" id="recursosOptions"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('recursosModal')">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ========================================
@@ -1274,6 +1295,7 @@
                 function abrirAyuda(id){ showAyudaModal(id); }
                 function abrirMateriales(id){ showMaterialesModal(id); }
                 function abrirResolver(id){ showResolverModal(id); }
+                function abrirRecursos(id){ showRecursosModal(id); }
                 
                 function aceptarIncidencia(id){ handleAction('acepto', id); }
                 function rechazarIncidencia(id){ showReasonModal('rechazo', id); }
@@ -1330,6 +1352,21 @@
         function showAyudaModal(incidentId) {
             currentIncidentId = incidentId;
             document.getElementById('ayudaModal').classList.remove('hidden');
+        }
+        
+        function showRecursosModal(incidentId) {
+            currentIncidentId = incidentId;
+            const incident = allIncidents.find(inc => inc.id === incidentId) || {};
+            const state = getIncidentRealState(incident, currentTechnician?.email || '');
+            const container = document.getElementById('recursosOptions');
+            const options = [];
+            options.push(`<button class="btn btn-primary" onclick="window.open('${safe(incident.url)}','_blank')">📄 Página de la incidencia</button>`);
+            options.push(`<button class="btn btn-secondary" onclick="window.open('${safe(incident.history_url)}','_blank')">📖 Historial del componente</button>`);
+            if (state === 'working') {
+                options.push(`<button class="btn btn-warning" onclick="window.open('${safe(incident.materials_url)}','_blank')">📦 Estado de materiales solicitados</button>`);
+            }
+            container.innerHTML = options.join('');
+            document.getElementById('recursosModal').classList.remove('hidden');
         }
 
         function closeModal(modalId) {
@@ -1968,7 +2005,7 @@
               <button class="btn btn-success" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
               <button class="btn btn-danger" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
               <button class="btn btn-warning" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-              <a class="btn btn-primary" href="${safe(incident.url)}" target="_blank">🔗 Notion</a>
+              <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
             </div>`;
         }
           if (state === "working") {
@@ -1977,16 +2014,15 @@
                 <button class="btn btn-secondary" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
                 <button class="btn btn-warning"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-info" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
-                        onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                <button class="btn btn-dark" onclick="finTurno('${incident.id}')">🕐 Fin de turno</button>
-                <a class="btn btn-primary" href="${safe(incident.url)}" target="_blank">🔗 Notion</a>
+                onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
+                <button class="btn btn-primary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
               </div>`;
           }
           // seguimiento
           return `
             <div class="incident-actions">
               <button class="btn btn-primary" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <a class="btn btn-secondary" href="${safe(incident.url)}" target="_blank">🔗 Notion</a>
+              <button class="btn btn-secondary" onclick="abrirRecursos('${incident.id}')">📚 Recursos</button>
             </div>`;
         }
         // ========================================
