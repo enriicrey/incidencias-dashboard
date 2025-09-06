@@ -245,14 +245,21 @@ module.exports = async function handler(req, res) {
       };
 
       if (demoEnabled) {
+        const now = Date.now();
+        const inMinutes = (m) => new Date(now + m * 60000).toISOString();
         const demoIncidents = [
           {
-            id: 'INC-DEMO-1',
+            id: 'INC-PENDIENTE',
+            status: 'Pendiente',
             priority: 'ALTA',
             equipment: 'Generador principal',
             zone: 'Zona A',
-            description: 'Falla en el generador (demo).',
-            report_date: '2024-01-10T10:00:00Z',
+            description: 'Falla pendiente con SLA cercano.',
+            report_date: new Date(now - 3600000).toISOString(),
+            escalation_level: 1,
+            l1_technician: 'tecnico@empresa.com',
+            l1_response: '⭕ Sin Respuesta',
+            sla_l1_backup_end: inMinutes(30),
             materials_url: 'https://example.com/materials/inc-demo-1',
             history_url: 'https://example.com/history/inc-demo-1',
             solicitudes_log: [
@@ -266,12 +273,17 @@ module.exports = async function handler(req, res) {
             ]
           },
           {
-            id: 'INC-DEMO-2',
+            id: 'INC-SEGUIMIENTO',
+            status: 'En seguimiento',
             priority: 'MEDIA',
             equipment: 'Sensor de temperatura',
             zone: 'Zona B',
-            description: 'Lecturas fuera de rango (demo).',
-            report_date: '2024-01-11T15:30:00Z',
+            description: 'Incidencia con SLA recientemente vencido.',
+            report_date: new Date(now - 7200000).toISOString(),
+            escalation_level: 1,
+            l1_technician: 'tecnico@empresa.com',
+            l1_response: '✅ Acepto',
+            sla_l1_backup_end: inMinutes(-10),
             materials_url: 'https://example.com/materials/inc-demo-2',
             history_url: 'https://example.com/history/inc-demo-2',
             solicitudes_log: [
@@ -282,6 +294,19 @@ module.exports = async function handler(req, res) {
               "[2024-01-11T16:10:00Z] RESP#L1#ana@empresa.com|NO_RESPONSE|",
               "[2024-01-11T16:20:00Z] RESP#L2#carlos@empresa.com|ASSIGNED|"
             ]
+          },
+           {
+            id: 'INC-TRABAJANDO',
+            status: 'Trabajando',
+            priority: 'BAJA',
+            equipment: 'UPS Secundaria',
+            zone: 'Zona C',
+            description: 'Incidencia en curso con SLA lejano.',
+            report_date: new Date(now - 1800000).toISOString(),
+            escalation_level: 1,
+            l1_technician: 'tecnico@empresa.com',
+            l1_response: '✅ Acepto',
+            sla_l1_backup_end: inMinutes(24 * 60),
           },
         ];
         return res.status(200).json({ status: 'success', incidents: demoIncidents.map(normalizeLogs) });
