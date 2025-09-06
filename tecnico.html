@@ -1451,41 +1451,35 @@
             currentIncidentId = incidentId;
             document.getElementById('ayudaModal').classList.remove('hidden');
         }
+
+        function renderResourceLinks(inc, state, asButtons = false) {
+            const wrap = content => `<div>${content}</div>`;
+            const cls = asButtons ? 'btn btn-primary' : '';
+            const links = [];
+            if (inc.url) links.push(wrap(`<a href="${inc.url}" target="_blank" class="${cls}">🔗 Incidencia</a>`));
+            if (state === "working") {
+                links.push(inc.materials_url
+                    ? wrap(`<a href="${inc.materials_url}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
+                    : wrap('⚠️ Estado de materiales no disponible'));
+                links.push(inc.history_url
+                    ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
+                    : wrap('⚠️ Historial del componente no disponible'));
+            } else {
+                links.push(inc.history_url
+                    ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
+                    : wrap('⚠️ Historial del componente no disponible'));
+            }
+            if (!links.length) links.push(wrap('⚠️ Recursos no disponibles'));
+            return links.join('');
+        }
         
         function showRecursosModal(incidentId) {
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId);
             if (!inc) return;
             const state = getIncidentRealState(inc, currentTechnician?.email || "");
-            const list = document.getElementById('recursosList');
-            const items = [];
 
-            if (inc.url) {
-                items.push(`<div><a href="${inc.url}" target="_blank" class="btn btn-primary">🔗 Incidencia</a></div>`);
-            }
-            if (state === "working") {
-                if (inc.materials_url) {
-                    items.push(`<div><a href="${inc.materials_url}" target="_blank" class="btn btn-primary">📊 Estado de materiales</a></div>`);
-                } else {
-                    items.push(`<div class="no-link">⚠️ Estado de materiales no disponible</div>`);
-                }
-                if (inc.history_url) {
-                    items.push(`<div><a href="${inc.history_url}" target="_blank" class="btn btn-primary">🔍 Historial del componente</a></div>`);
-                } else {
-                    items.push(`<div class="no-link">⚠️ Historial del componente no disponible</div>`);
-                }
-            } else {
-                 if (inc.history_url) {
-                    items.push(`<div><a href="${inc.history_url}" target="_blank" class="btn btn-primary">🔍 Historial del componente</a></div>`);
-                } else {
-                    items.push(`<div class="no-link">⚠️ Historial del componente no disponible</div>`);
-                }
-            }
-            if (!items.length) {
-                items.push('<div class="no-link">No hay recursos disponibles</div>');
-            }
-
-            list.innerHTML = items.join('');
+            document.getElementById('recursosList').innerHTML = renderResourceLinks(inc, state, true);
             document.getElementById('recursosModal').classList.remove('hidden');
         }
 
@@ -2551,12 +2545,12 @@
                 ${renderActionButtonsByState(state, inc)}
               </div>
         
-              ${renderDetailsSection(inc)}
+               ${renderDetailsSection(inc, state)}
             </div>
           `;
         }
         
-        function renderDetailsSection(inc) {
+        function renderDetailsSection(inc, state) {
           return `
             <details>
               <summary>📇 Contactos</summary>
@@ -2573,6 +2567,10 @@
             <details>
               <summary>📦 Solicitudes recientes</summary>
               ${renderSolicitudesResumen(inc)}
+            </details>
+            <details>
+              <summary>🔗 Recursos</summary>
+              ${renderResourceLinks(inc, state)}
             </details>
           `;
         }
