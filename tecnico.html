@@ -277,6 +277,7 @@
           align-items:flex-end;
         }
         .new-badges{ display:flex; gap:4px; }
+        .resource-icons{ display:flex; gap:4px; }
         .badge{ padding:2px 6px; border-radius:999px; font-size:12px; font-weight:600; color:white; }
         .badge-notes{ background:#3b82f6; }
         .badge-escalations{ background:#f59e0b; }
@@ -330,9 +331,10 @@
           font-size: 12px;
           font-weight: 700;
         }
-        .sla-timer{ font-size:12px; padding:4px 8px; border-radius:8px; }
-        .sla-good{ background:#eef2ff; }
-         .seguimiento-banner{
+        .sla-timer{ font-size:14px; padding:6px 12px; border-radius:8px; background:#e5e7eb; color:#111827; }
+        .sla-good{ background:#bfdbfe; color:#1e3a8a; }
+        .seguimiento-banner{
+          display:inline-block;
           margin-top:10px;
           padding:10px 12px;
           border-radius:10px;
@@ -342,8 +344,8 @@
           box-shadow:var(--shadow-sm);
           font-size:13px;
         }
-        .sla-warning{ background:#fff7ed; }
-        .sla-critical{ background:#fee2e2; }
+        .sla-warning{ background:#fed7aa; color:#7c2d12; }
+        .sla-critical{ background:#fecaca; color:#991b1b; }
         
         .materials-badge{
           display:inline-block;
@@ -372,22 +374,23 @@
 
         /* Botones */
         .incident-actions {
-            margin-top: 16px;
+            margin-top: auto;
             display: flex;
+            justify-content: flex-end;
         }
 
         .incident-actions .action-buttons {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
             align-items: center;
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 8px 12px;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
@@ -598,9 +601,9 @@
             display: block;
         }
         /* ========================================
-           MODAL DE RECURSOS
+           MODAL DE REFERENCIAS
         ======================================== */
-        .recursos-options {
+        .referencias-options {
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -661,7 +664,8 @@
        /* Masonry definitivo */
        .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px; }
         .incident-card{
-          display:block;
+          display:flex;
+          flex-direction:column;
           break-inside:avoid-column;
           margin:0 0 16px;
           border:1px solid #e5e7eb;
@@ -676,9 +680,8 @@
         /* Densidad y micro-ajustes */
         .incident-title{ font-size:16px; margin-bottom:2px; }
         .incident-meta{ gap:10px; font-size:12px; margin-bottom:10px; }
-        .incident-actions{ margin-top:12px; }
+        .incident-actions{ margin-top:auto; }
         .incident-actions .action-buttons{ gap:8px; }
-        .btn{ padding:8px 12px; font-size:13px; }
         
         /* Chips y badges */
         .chip{ background:#f3f4f6; border-radius:999px; padding:4px 10px; font-size:12px; white-space:nowrap; }
@@ -978,18 +981,18 @@
         </div>
     </div>
     
-     <!-- Modal de Recursos -->
-    <div id="recursosModal" class="modal-overlay hidden">
+    <!-- Modal de Referencias -->
+    <div id="referenciasModal" class="modal-overlay hidden">
         <div class="modal">
             <div class="modal-header">
-                <h3>🔗 Recursos</h3>
-                <button class="modal-close" onclick="closeModal('recursosModal')">×</button>
+                <h3>📚 Referencias</h3>
+                <button class="modal-close" onclick="closeModal('referenciasModal')">×</button>
             </div>
             <div class="modal-body">
-                <div id="recursosList" class="recursos-list"></div>
+                <div id="referenciasList" class="referencias-list"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('recursosModal')">Cerrar</button>
+                <button class="btn btn-secondary" onclick="closeModal('referenciasModal')">Cerrar</button>
             </div>
         </div>
     </div>
@@ -1393,7 +1396,7 @@
                 function abrirAyuda(id){ showAyudaModal(id); }
                 function abrirMateriales(id){ showMaterialesModal(id); }
                 function abrirResolver(id){ showResolverModal(id); }
-                function abrirRecursos(id){ showRecursosModal(id); }
+                function abrirReferencias(id){ showReferenciasModal(id); }
                 
                 function aceptarIncidencia(id){ handleAction('acepto', id); }
                 function rechazarIncidencia(id){ showReasonModal('rechazo', id); }
@@ -1458,7 +1461,7 @@
             document.getElementById('ayudaModal').classList.remove('hidden');
         }
 
-        function renderResourceLinks(inc, state, asButtons = false) {
+        function renderReferenceLinks(inc, state, asButtons = false) {
             const wrap = content => `<div>${content}</div>`;
             const cls = asButtons ? 'btn btn-primary' : '';
             const links = [];
@@ -1475,18 +1478,18 @@
                     ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
                     : wrap('⚠️ Historial del componente no disponible'));
             }
-            if (!links.length) links.push(wrap('⚠️ Recursos no disponibles'));
+            if (!links.length) links.push(wrap('⚠️ Referencias no disponibles'));
             return links.join('');
         }
         
-        function showRecursosModal(incidentId) {
+        function showReferenciasModal(incidentId) {
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId);
             if (!inc) return;
             const state = getIncidentRealState(inc, currentTechnician?.email || "");
 
-            document.getElementById('recursosList').innerHTML = renderResourceLinks(inc, state, true);
-            document.getElementById('recursosModal').classList.remove('hidden');
+            document.getElementById('referenciasList').innerHTML = renderReferenceLinks(inc, state, true);
+            document.getElementById('referenciasModal').classList.remove('hidden');
         }
 
         function closeModal(modalId) {
@@ -1762,6 +1765,7 @@
         // --- Parsear log y agrupar por categoría + request_id ---
         function parseSolicitudesLog(logText = "") {
           if (Array.isArray(logText)) logText = logText.join("\n");
+          if (typeof logText !== "string") logText = String(logText);
           if (!logText) return [];
           const lines = String(logText).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const out = []; // {when, cat, id, phase, meta}
@@ -2121,7 +2125,7 @@
         // ===== Botones por estado (usar SIEMPRE esta) =====
         function renderActionButtonsByState(state, incident) {
           const resolveDisabled = !canResolve(incident);
-          const resolveTitle = resolveDisabled ? `title="Pendiente validar materiales"` : "";
+          const resolveTitle = resolveDisabled ? `title="Pendiente validar materiales"` : `title="Resolver incidencia"`;
 
           const wrapStart = `<div class="incident-actions"><div class="action-buttons">`;
           const wrapEnd = `</div></div>`;
@@ -2129,28 +2133,28 @@
           if (state === "pending") {
           return `
              ${wrapStart}
-              <button class="btn btn-accept" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
-              <button class="btn btn-reject" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
-              <button class="btn btn-help" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-              <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+              <button class="btn btn-accept" title="Aceptar incidencia" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
+              <button class="btn btn-reject" title="Rechazar incidencia" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
+              <button class="btn btn-help" title="Solicitar ayuda" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+              <button class="btn btn-resource" title="Ver referencias" onclick="abrirReferencias('${incident.id}')">📚 Referencias</button>
             ${wrapEnd}`;
         }
           if (state === "working") {
             return `
                ${wrapStart}
-                <button class="btn btn-help" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
-                <button class="btn btn-material"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-help" title="Solicitar ayuda" onclick="abrirAyuda('${incident.id}')">🛠️ Ayuda</button>
+                <button class="btn btn-material" title="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-resolve" ${resolveDisabled ? "disabled" : ""} ${resolveTitle}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                <button class="btn btn-drop" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
-                <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+                <button class="btn btn-drop" title="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
+                <button class="btn btn-resource" title="Ver referencias" onclick="abrirReferencias('${incident.id}')">📚 Referencias</button>
               ${wrapEnd}`;
           }
           // seguimiento
           return `
             ${wrapStart}
-              <button class="btn btn-followup" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <button class="btn btn-resource" onclick="abrirRecursos('${incident.id}')">🔗 Recursos</button>
+              <button class="btn btn-followup" title="Solicitar asignación" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
+              <button class="btn btn-resource" title="Ver referencias" onclick="abrirReferencias('${incident.id}')">📚 Referencias</button>
             ${wrapEnd}`;
         }
         // ========================================
@@ -2513,10 +2517,13 @@
           const notifChips = notifList.map(n =>
             `<span class="notif-chip ${notifChipCls(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
           ).join(" ");
+          const resourceIcons = [];
+          if (inc.assignment_notes && inc.assignment_notes !== '{{emptystring}}') resourceIcons.push('📝');
+          if (inc.materials_url && inc.materials_url !== '{{emptystring}}') resourceIcons.push('📦');
+          const resourceIconsHTML = resourceIcons.length ? `<div class="resource-icons">${resourceIcons.join('')}</div>` : '';
         
           return `
             <div class="incident-card" data-incident-id="${safe(inc.id)}">
-              ${seguimientoBanner}
               <div class="incident-header">
                 <div>
                  <div class="incident-title">
@@ -2530,11 +2537,14 @@
                   </div>
                 </div>
                 <div class="incident-header-right">
+                 ${resourceIconsHTML}
                  ${badgesHTML}
                   <span class="state-badge">${getStateLabel(state)}</span>
                   ${slaChip || ""}
                 </div>
               </div>
+
+               ${seguimientoBanner}
         
               <div class="chips">
                 ${validChipsHTML}
@@ -2580,8 +2590,8 @@
               ${renderSolicitudesResumen(inc)}
             </details>
             <details>
-              <summary>🔗 Recursos</summary>
-              ${renderResourceLinks(inc, state)}
+              <summary>📚 Referencias</summary>
+              ${renderReferenceLinks(inc, state)}
             </details>
           `;
         }
@@ -2706,14 +2716,14 @@
     window.showResolverModal = showResolverModal;
     window.showMaterialesModal = showMaterialesModal;
     window.showAyudaModal = showAyudaModal;
-    window.showRecursosModal = showRecursosModal;
+    window.showReferenciasModal = showReferenciasModal;
     window.closeModal = closeModal;
     window.aceptarIncidencia = aceptarIncidencia;
     window.rechazarIncidencia = rechazarIncidencia;
     window.abrirAyuda = abrirAyuda;
     window.abrirMateriales = abrirMateriales;
     window.abrirResolver = abrirResolver;
-    window.abrirRecursos = abrirRecursos;
+    window.abrirReferencias = abrirReferencias;
     window.solicitarAsignacion = solicitarAsignacion;
     window.dejarIncidencia = dejarIncidencia;
     window.confirmResolver = confirmResolver;
