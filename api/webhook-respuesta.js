@@ -237,10 +237,22 @@ module.exports = async function handler(req, res) {
         String(data.demo || '') === '1';
 
        const normalizeLogs = (inc = {}) => {
-        if (Array.isArray(inc.solicitudes_log)) inc.solicitudes_log = inc.solicitudes_log.join("\n");
-        if (Array.isArray(inc["Solicitudes (log)"])) inc["Solicitudes (log)"] = inc["Solicitudes (log)"].join("\n");
-        if (Array.isArray(inc.respuestas_log)) inc.respuestas_log = inc.respuestas_log.join("\n");
-        if (Array.isArray(inc["Respuestas (log)"])) inc["Respuestas (log)"] = inc["Respuestas (log)"].join("\n");
+        const fields = [
+          'solicitudes_log',
+          'Solicitudes (log)',
+          'respuestas_log',
+          'Respuestas (log)'
+        ];
+        for (const field of fields) {
+          let val = inc[field];
+          if (Array.isArray(val)) val = val.join("\n");
+          if (val === undefined || val === null || val === "") {
+            val = "{{emptystring}}";
+          } else if (typeof val !== "string") {
+            val = String(val);
+          }
+          inc[field] = val;
+        }
         return inc;
       };
 
