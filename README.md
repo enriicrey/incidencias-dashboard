@@ -81,8 +81,12 @@ npm run deploy
 ```
 
 ## 🔧 Configuración Make.com
+Para asegurar que los campos de log (`Solicitudes (log)`, `Respuestas (log)` y `Notas (log)`) se envíen siempre como texto y sigan el formato esperado, configura los módulos de Make para:
 
-Para asegurar que los campos de log (`Solicitudes (log)` y `Respuestas (log)`) se envíen siempre como texto, configura los módulos de Make para:
+- Construir cada línea con el Text Aggregator siguiendo el patrón:
+  - Solicitudes: `[{{formatDate(now;"YYYY-MM-DDTHH:mm:ssZ")}}] MATERIAL#MAT-001|REQUEST|pieza X`
+  - Respuestas: `[{{formatDate(now;"YYYY-MM-DDTHH:mm:ssZ")}}] RESP#L1#tecnico@example.com|ASSIGNED|`
+  - Notas: `[{{formatDate(now;"YYYY-MM-DDTHH:mm:ssZ")}}] NOTE#tecnico@example.com|TECH|mensaje`
 
 - Unir las líneas con `join(array; "\n")`.
 - Usar `{{emptystring}}` cuando el arreglo esté vacío.
