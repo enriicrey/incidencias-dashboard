@@ -255,6 +255,15 @@ module.exports = async function handler(req, res) {
           }
           inc[key] = val;
         }
+         if (!("solicitudes_log" in inc) && inc["Solicitudes (log)"]) {
+          inc.solicitudes_log = inc["Solicitudes (log)"];
+        }
+        if (!("respuestas_log" in inc) && inc["Respuestas (log)"]) {
+          inc.respuestas_log = inc["Respuestas (log)"];
+        }
+        ["solicitudes_log", "respuestas_log"].forEach(k => {
+          if (inc[k] === undefined || inc[k] === null || inc[k] === "") inc[k] = "{{emptystring}}";
+        });
         return inc;
       };
 
