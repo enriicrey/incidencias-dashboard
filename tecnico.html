@@ -1790,11 +1790,14 @@
 
         // --- Parsear log y agrupar por categoría + request_id ---
         function parseSolicitudesLog(logText = "") {
-          if (!logText) return [];
-          if (Array.isArray(logText)) logText = logText.join("\n");
-          if (typeof logText !== "string") logText = String(logText);
-          if (!logText) return [];
-          const lines = String(logText).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (Array.isArray(logText)) {
+            logText = logText.join("\n");
+          } else if (logText === null || logText === undefined) {
+            logText = "";
+          }
+          const text = String(logText);
+          if (!text.trim()) return [];
+          const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const out = []; // {when, cat, id, phase, meta}
           for (const line of lines) {
             const m = line.match(/^\[(.+?)\]\s+([A-Z]+)#([\w-]+)\|([A-Z]+)\|(.*)$/);
