@@ -270,6 +270,11 @@ module.exports = async function handler(req, res) {
 
       const normalizeIncident = (inc = {}) => {
         normalizeLogs(inc);
+
+      if (inc.assignment_notes === undefined || inc.assignment_notes === null || inc.assignment_notes === '') {
+          inc.assignment_notes = '{{emptystring}}';
+        }
+         
         const lvl = parseInt(inc.escalation_level, 10) || 0;
         ['l1', 'l2', 'l3'].forEach((prefix, idx) => {
           if (lvl < idx + 1) {
@@ -292,6 +297,14 @@ module.exports = async function handler(req, res) {
           statuses.forEach(st => {
             for (let level = 0; level <= 3; level++) {
               const base = baseOffsets[st] + level * 5;
+              const sLogs = [];
+              const rLogs = [];
+              for (let l = 0; l <= level; l++) {
+                sLogs.push(`[${inMinutes(base - 15 - (level - l) * 5)}] MATERIAL#MAT-00${l}|REQUEST|Pieza-${l}`);
+                sLogs.push(`[${inMinutes(base - 5 - (level - l) * 5)}] MATERIAL#MAT-00${l}|APPROVED|Gestión`);
+                rLogs.push(`[${inMinutes(base - 10 - (level - l) * 5)}] RESP#L${l}#tech@empresa.com|ASSIGNED|`);
+                rLogs.push(`[${inMinutes(base - 2 - (level - l) * 5)}] RESP#L${l}#tech@empresa.com|ACCEPTED|`);
+              }
               demoIncidents.push({
                 id: `INC-${st.replace(/\s+/g, "").toUpperCase()}-L${level}`,
                 status: st,
@@ -307,8 +320,8 @@ module.exports = async function handler(req, res) {
                 materials: `Pieza-${level} (${level + 1}); Herramienta-${level} (${level + 2})`,
                 notes: `Nota ejemplo L${level}`,
                 assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`,
-                solicitudes_log: `[${inMinutes(base-15)}] MATERIAL#MAT-00${level}|REQUEST|Pieza-${level}\n[${inMinutes(base-5)}] MATERIAL#MAT-00${level}|APPROVED|Gestión`,
-                respuestas_log: `[${inMinutes(base-10)}] RESP#L${level}#tech@empresa.com|ASSIGNED|\n[${inMinutes(base-2)}] RESP#L${level}#tech@empresa.com|ACCEPTED|`,
+                solicitudes_log: sLogs.join("\n") || "{{emptystring}}",
+                respuestas_log: rLogs.join("\n") || "{{emptystring}}",
                 materials_url: `https://example.com/materials/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
                 history_url: `https://example.com/history/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`
               });
