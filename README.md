@@ -88,8 +88,9 @@ Para asegurar que los campos de log (`Solicitudes (log)`, `Respuestas (log)` y `
   - Respuestas: `[{{formatDate(now;"YYYY-MM-DDTHH:mm:ssZ")}}] RESP#L1#tecnico@example.com|ASSIGNED|`
   - Notas: `[{{formatDate(now;"YYYY-MM-DDTHH:mm:ssZ")}}] NOTE#tecnico@example.com|TECH|mensaje`
 
-- Unir las líneas con `join(array; "\n")`.
-- Usar `{{emptystring}}` cuando el arreglo esté vacío.
+- Para `solicitudes_log` y `respuestas_log`, acumula todos los eventos desde L0 hasta el nivel actual y luego únelos con `join(array; "\n")`.
+- Usar `{{emptystring}}` cuando no haya registros y también en los campos de niveles que no se utilicen (`l1_*`, `l2_*`, `l3_*`).
+- Reservar `assignment_notes` únicamente para comentarios del técnico o supervisor; no registrar aquí aceptaciones o rechazos.
 
 Esto evita que lleguen como arrays o valores `null`.
 
