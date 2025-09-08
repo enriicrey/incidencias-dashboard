@@ -349,14 +349,15 @@
         .sla-good{ background:#16a34a; color:#ffffff; }
         .seguimiento-banner{
           display:block;
-          margin:8px 0;
+          margin:0 0 10px;
           padding:8px 12px;
           border-radius:10px;
           border:1px solid var(--gray-200);
           background:#fff7ed;
           color:#7c2d12;
           box-shadow:var(--shadow-sm);
-          font-size:12px;
+          font-size:14px;
+          font-weight:600;
         }
         .sla-warning{ background:#d97706; color:#ffffff; }
         .sla-critical{ background:#dc2626; color:#ffffff; }
@@ -440,30 +441,6 @@
 
         .btn-purple { background: var(--purple-color); color: white; }
         .btn-purple:hover { background: var(--purple-dark); }
-
-        .btn-accept { background: var(--success-color); color: white; }
-        .btn-accept:hover { background: var(--success-dark); }
-
-        .btn-reject { background: var(--danger-color); color: white; }
-        .btn-reject:hover { background: var(--danger-dark); }
-
-        .btn-help { background: #6b7280; color: white; }
-        .btn-help:hover { background: #4b5563; }
-
-        .btn-resource { background: var(--primary-color); color: white; }
-        .btn-resource:hover { background: var(--primary-dark); }
-
-        .btn-material { background: var(--warning-color); color: white; }
-        .btn-material:hover { background: var(--warning-dark); }
-
-        .btn-resolve { background: var(--info-color); color: white; }
-        .btn-resolve:hover { background: var(--info-dark); }
-
-        .btn-drop { background: #111827; color: #fff; }
-        .btn-drop:hover { background: #0b1220; }
-
-        .btn-followup { background: var(--purple-color); color: white; }
-        .btn-followup:hover { background: var(--purple-dark); }
 
         /* ========================================
            MODAL COMPONENTS
@@ -1300,6 +1277,24 @@
         // ========================================
         function getIncidentRealState(incident, technicianEmail) {
           const level = parseInt(incident.escalation_level) || 0;
+
+          // Si algún nivel inferior ya fue aceptado, no consultamos niveles superiores
+          for (let prev = 0; prev < level; prev++) {
+            let resp, tech;
+            if (prev === 2) {
+              resp = incident.l2_responses;
+              tech = incident.l2_technicians;
+            } else {
+              resp = incident[`l${prev}_response`];
+              tech = incident[`l${prev}_technician`];
+            }
+            const respStr = Array.isArray(resp) ? resp.join(' ').toLowerCase() : String(resp || '').toLowerCase();
+            if (respStr.includes('acepto')) {
+              const techStr = Array.isArray(tech) ? tech.join(',').toLowerCase() : String(tech || '').toLowerCase();
+              if (techStr.includes((technicianEmail || '').toLowerCase())) return 'working';
+              return 'seguimiento';
+            }
+          }
         
           // 0) Si el SLA del nivel actual está vencido, el técnico ve la tarjeta en seguimiento.
           const end = getSlaEndForLevel(incident, level);
@@ -1312,17 +1307,16 @@
           const respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
           if (respText.trim()) {
             const rows = parseRespLog(respText);
+            const myEvents = rows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||'').toLowerCase());
+            const lastMine = myEvents[myEvents.length - 1];
+            if (lastMine?.ev?.startsWith('REJECTED') || lastMine?.ev === 'REASSIGN_FROM') return 'seguimiento';
         
             // ¿quién es el propietario vigente del nivel actual?
             const owner = rows
               .filter(r => r.level === level && r.ev === 'ASSIGNED')
               .slice(-1)[0]?.email?.toLowerCase();
         
-            if (owner && owner === (technicianEmail || '').toLowerCase()) return 'working';
-        
-            const myEvents = rows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||'').toLowerCase());
-            const lastMine = myEvents[myEvents.length - 1];
-            if (lastMine?.ev?.startsWith('REJECTED') || lastMine?.ev === 'REASSIGN_FROM') return 'seguimiento';
+            if (owner && owner === (technicianEmail || '').toLowerCase()) return 'pending';
         
             // Si no soy el titular y no he rechazado, quedo en seguimiento (estoy al tanto).
             return 'seguimiento';
@@ -1332,9 +1326,9 @@
           const now = Date.now();
           const currentAssignments = [
             { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
-            { level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end },
-            { level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end },
-            { level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end }
+            if (level >= 1) currentAssignments.push({ level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end });
+            if (level >= 2) currentAssignments.push({ level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end });
+            if (level >= 3) currentAssignments.push({ level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end });
           ];
           const curr = currentAssignments.find(a =>
             a.level === level &&
@@ -1342,11 +1336,13 @@
           );
           if (curr) {
             const slaOk = curr.sla ? (Date.parse(curr.sla) - now) > 0 : false;
-            if (curr.response === 'acepto' || curr.response === '✅ Acepto') return 'working';
-            if (curr.response === '⭕ Sin Respuesta' && slaOk) return 'pending';
+            const resp = curr.response || '';
+            if (resp.toLowerCase().includes('rechazo')) return 'seguimiento';
+            if (resp === 'acepto' || resp === '✅ Acepto') return 'working';
+            if ((resp === '⭕ Sin Respuesta' || !resp) && slaOk) return 'pending';
           }
             // --- Seguimiento por vencimiento y cambio de nivel (no soy el titular del nivel actual) ---
-            const L = parseInt(incident.escalation_level)||0;
+            const L = level;  
             const slaEnd = getSlaEndForLevel(incident, L);
             if (slaEnd && Date.now() > Date.parse(slaEnd)) {
               // Si el dueño vigente del nivel actual no soy yo, lo veo en seguimiento
@@ -1794,6 +1790,7 @@
 
         // --- Parsear log y agrupar por categoría + request_id ---
         function parseSolicitudesLog(logText = "") {
+          if (!logText) return [];
           if (Array.isArray(logText)) logText = logText.join("\n");
           if (typeof logText !== "string") logText = String(logText);
           if (!logText) return [];
@@ -1823,6 +1820,7 @@
           return map;
         }
           function renderSlaPillInHeader(inc, state){
+          if (state === 'working' || state === 'seguimiento') return '';
           const L = getCurrentLevel(inc);
           const end = getSlaEndForLevel(inc, L);
           if (!end) return '';
@@ -1926,7 +1924,8 @@
         // Campo Notion: "Respuestas (log)"
         // ==============================
         function parseRespLog(text = "") {
-          const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (!text) return [];
+          const lines = String(text).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const rows = [];
           for (const line of lines) {
             // [fecha] RESP#L<n>#<email>|<EVENTO>|<detalle>
@@ -2022,7 +2021,11 @@
         
         function renderNotesSection(inc){
           const t = inc["Comentarios (log)"] || inc.comentarios_log || '';
-          if(!t.trim()) return `<div class="muted">Sin notas ni mensajes</div>`;
+          const notes = [];
+          if (safe(inc.assignment_notes)) {
+            notes.push(`<div class="section-text">${safe(inc.assignment_notes)}</div>`);
+          }
+          if(!t.trim()) return notes.length ? notes.join('') : `<div class="muted">Sin notas ni mensajes</div>`;
           const rows = parseNotesLog(t).slice(-20);
           const items = rows.map(r => {
             const who = r.role === 'SUP' ? '👩‍💼 Supervisor' : '🔧 Técnico';
@@ -2033,7 +2036,8 @@
             </li>`;
           }).join('');
           const legend = `<div class="note-legend"><span class="note-sup">👩‍💼 Supervisor</span><span class="note-tech">🔧 Técnico</span></div>`;
-          return `${legend}<ul class="timeline">${items}</ul>`;
+          notes.push(`${legend}<ul class="timeline">${items}</ul>`);
+          return notes.join('');
         }
 
 
@@ -2165,28 +2169,28 @@
           if (state === "pending") {
           return `
              ${wrapStart}
-              <button class="btn btn-accept" title="Aceptar incidencia" aria-label="Aceptar incidencia" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
-              <button class="btn btn-reject" title="Rechazar incidencia" aria-label="Rechazar incidencia" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
-              <button class="btn btn-help" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
-              <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-primary" title="Aceptar incidencia" aria-label="Aceptar incidencia" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
+              <button class="btn btn-secondary" title="Rechazar incidencia" aria-label="Rechazar incidencia" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
+              <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
+              <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
             ${wrapEnd}`;
         }
           if (state === "working") {
             return `
                ${wrapStart}
-                <button class="btn btn-help" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
-                <button class="btn btn-material" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
-                <button class="btn btn-resolve" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
+                <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
+                <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                <button class="btn btn-drop" title="Dejar incidencia temporalmente" aria-label="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
-                <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+                <button class="btn btn-secondary" title="Dejar incidencia temporalmente" aria-label="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
+                <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
               ${wrapEnd}`;
           }
           // seguimiento
           return `
             ${wrapStart}
-              <button class="btn btn-followup" title="Solicitar asignación" aria-label="Solicitar asignación" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-primary" title="Solicitar asignación" aria-label="Solicitar asignación" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
+              <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
             ${wrapEnd}`;
         }
         // ========================================
@@ -2577,13 +2581,13 @@
                  ${badgesHTML}
                 </div>
               </div>
+
+              ${seguimientoBanner}
         
               <div class="chips">
                 ${validChipsHTML}
                 ${notifChips}
               </div>
-
-              ${seguimientoBanner}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
@@ -2591,11 +2595,6 @@
               <div class="section-title">Acciones tomadas</div>
               <div class="actions-taken">${safe(inc.actions_taken) || 'Sin acciones'}</div>
 
-              ${safe(inc.assignment_notes) ? `
-                <div class="section-title">Nota</div>
-                <div class="section-text">${safe(inc.assignment_notes)}</div>
-              ` : ''}
-        
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
               </div>
