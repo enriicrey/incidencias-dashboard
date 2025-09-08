@@ -1325,11 +1325,18 @@
           // 2) Fallback (campos legados)
           const now = Date.now();
           const currentAssignments = [
-            { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end },
-            if (level >= 1) currentAssignments.push({ level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end });
-            if (level >= 2) currentAssignments.push({ level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end });
-            if (level >= 3) currentAssignments.push({ level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end });
-          ];
+        { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end }
+        ];
+        
+        if (level >= 1)
+          currentAssignments.push({ level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end });
+        
+        if (level >= 2)
+          currentAssignments.push({ level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end });
+        
+        if (level >= 3)
+          currentAssignments.push({ level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end });
+
           const curr = currentAssignments.find(a =>
             a.level === level &&
             (a.tech === technicianEmail || (a.tech && String(a.tech).includes(technicianEmail)))
