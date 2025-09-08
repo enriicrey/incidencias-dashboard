@@ -236,7 +236,7 @@ module.exports = async function handler(req, res) {
         process.env.ALLOW_DEMO_INCIDENTS === '1' ||
         String(data.demo || '') === '1';
 
-       const normalizeLogs = (inc = {}) => {
+      const normalizeLogs = (inc = {}) => {
         const fields = [
           'solicitudes_log',
           'Solicitudes (log)',
@@ -256,77 +256,58 @@ module.exports = async function handler(req, res) {
         return inc;
       };
 
+      const normalizeIncident = (inc = {}) => {
+        normalizeLogs(inc);
+        const lvl = parseInt(inc.escalation_level, 10) || 0;
+        ['l1', 'l2', 'l3'].forEach((prefix, idx) => {
+          if (lvl < idx + 1) {
+            Object.keys(inc).forEach(key => {
+              if (key.startsWith(prefix + '_')) inc[key] = '{{emptystring}}';
+            });
+          }
+        });
+        return inc;
+      };
+
       if (demoEnabled) {
-        const now = Date.now();
-        const inMinutes = (m) => new Date(now + m * 60000).toISOString();
-        const demoIncidents = [
-          {
-            id: 'INC-PENDIENTE',
-            status: 'Pendiente',
-            priority: 'ALTA',
-            equipment: 'Generador principal',
-            zone: 'Zona A',
-            description: 'Falla pendiente con SLA cercano.',
-            report_date: new Date(now - 3600000).toISOString(),
-            escalation_level: 1,
-            l1_technician: 'tecnico@empresa.com',
-            l1_response: '⭕ Sin Respuesta',
-            sla_l1_backup_end: inMinutes(30),
-            materials_url: 'https://example.com/materials/inc-demo-1',
-            history_url: 'https://example.com/history/inc-demo-1',
-            solicitudes_log: [
-              "[2024-01-10T11:00:00Z] MATERIAL#MAT-001|REQUEST|Cable de repuesto",
-              "[2024-01-10T11:20:00Z] MATERIAL#MAT-001|APPROVED|Supervisor"
-            ],
-            respuestas_log: [
-              "[2024-01-10T10:05:00Z] RESP#L1#jorge@empresa.com|ASSIGNED|",
-              "[2024-01-10T10:30:00Z] RESP#L1#jorge@empresa.com|REJECTED::Sin capacidad",
-              "[2024-01-10T10:40:00Z] RESP#L2#maria@empresa.com|ASSIGNED|"
-            ]
-          },
-          {
-            id: 'INC-SEGUIMIENTO',
-            status: 'En seguimiento',
-            priority: 'MEDIA',
-            equipment: 'Sensor de temperatura',
-            zone: 'Zona B',
-            description: 'Incidencia con SLA recientemente vencido.',
-            report_date: new Date(now - 7200000).toISOString(),
-            escalation_level: 1,
-            l1_technician: 'tecnico@empresa.com',
-            l1_response: '✅ Acepto',
-            sla_l1_backup_end: inMinutes(-10),
-            materials_url: 'https://example.com/materials/inc-demo-2',
-            history_url: 'https://example.com/history/inc-demo-2',
-            solicitudes_log: [
-              "[2024-01-11T16:00:00Z] APOYO#SUP-001|REQUEST|Revisión remota"
-            ],
-            respuestas_log: [
-              "[2024-01-11T15:35:00Z] RESP#L1#ana@empresa.com|ASSIGNED|",
-              "[2024-01-11T16:10:00Z] RESP#L1#ana@empresa.com|NO_RESPONSE|",
-              "[2024-01-11T16:20:00Z] RESP#L2#carlos@empresa.com|ASSIGNED|"
-            ]
-          },
-           {
-            id: 'INC-TRABAJANDO',
-            status: 'Trabajando',
-            priority: 'BAJA',
-            equipment: 'UPS Secundaria',
-            zone: 'Zona C',
-            description: 'Incidencia en curso con SLA lejano.',
-            report_date: new Date(now - 1800000).toISOString(),
-            escalation_level: 1,
-            l1_technician: 'tecnico@empresa.com',
-            l1_response: '✅ Acepto',
-            sla_l1_backup_end: inMinutes(24 * 60),
-          },
-        ];
-        return res.status(200).json({ status: 'success', incidents: demoIncidents.map(normalizeLogs) });
-      }
+          const now = Date.now();
+          const inMinutes = (m) => new Date(now + m * 60000).toISOString();
+
+          // Genera todas las combinaciones de estado y nivel 0-3
+          const statuses = ["Trabajando", "Pendiente", "En seguimiento"];
+          const demoIncidents = [];
+
+          statuses.forEach(st => {
+            for (let level = 0; level <= 3; level++) {
+              demoIncidents.push({
+                id: `INC-${st.replace(/\s+/g, "").toUpperCase()}-L${level}`,
+                status: st,
+                priority: "MEDIA",
+                equipment: `Equipo ${level}`,
+                zone: `Zona ${level}`,
+                description: `Ejemplo ${st} nivel ${level}`,
+                report_date: new Date(now - (level + 1) * 3600000).toISOString(),
+                escalation_level: level,
+                l1_technician: "tecnico@empresa.com",
+                l1_response: "✅ Acepto",
+                sla_l1_backup_end: inMinutes((level + 1) * 60),
+                materials_url: `https://example.com/materials/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
+                history_url: `https://example.com/history/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
+                solicitudes_log: [`[2024-01-0${level + 1}T11:00:00Z] MATERIAL#MAT-00${level}|REQUEST|Ejemplo`],
+                respuestas_log: [`[2024-01-0${level + 1}T10:00:00Z] RESP#L${level}#tech@empresa.com|ASSIGNED|`],
+                assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`
+              });
+            }
+          });
+
+          return res
+            .status(200)
+            .json({ status: "success", incidents: demoIncidents.map(normalizeLogs) });
+        }
       
-      if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents.map(normalizeLogs) });
-      if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents.map(normalizeLogs) });
-      if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed.map(normalizeLogs) });
+      if (Array.isArray(parsed.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.incidents.map(normalizeIncident) });
+      if (parsed.data && Array.isArray(parsed.data.incidents)) return res.status(200).json({ status: 'success', incidents: parsed.data.incidents.map(normalizeIncident) });
+      if (Array.isArray(parsed) && parsed.every(x => x && typeof x === 'object')) return res.status(200).json({ status: 'success', incidents: parsed.map(normalizeIncident) });
       return res.status(502).json({ status: 'error', message: 'Respuesta de Make es JSON pero no contiene incidents[]' });
     }
     
