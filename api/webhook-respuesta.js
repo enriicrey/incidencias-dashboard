@@ -316,14 +316,12 @@ module.exports = async function handler(req, res) {
           statuses.forEach(st => {
             for (let level = 0; level <= 3; level++) {
               const base = baseOffsets[st] + level * 5;
-              const sLogs = [];
-              const rLogs = [];
-              for (let l = 0; l <= level; l++) {
-                sLogs.push(`[${inMinutes(base - 15 - (level - l) * 5)}] MATERIAL#MAT-00${l}|REQUEST|Pieza-${l}`);
-                sLogs.push(`[${inMinutes(base - 5 - (level - l) * 5)}] MATERIAL#MAT-00${l}|APPROVED|Gestión`);
-                rLogs.push(`[${inMinutes(base - 10 - (level - l) * 5)}] RESP#L${l}#tech@empresa.com|ASSIGNED|`);
-                rLogs.push(`[${inMinutes(base - 2 - (level - l) * 5)}] RESP#L${l}#tech@empresa.com|ACCEPTED|`);
-              }
+              const sLogs = [
+                '2024-05-10T09:00:00Z Solicitud de reinicio'
+              ];
+              const rLogs = [
+                '2024-05-10T09:30:00Z L0 reporta éxito'
+              ];
               demoIncidents.push({
                 id: `INC-${st.replace(/\s+/g, "").toUpperCase()}-L${level}`,
                 status: st,
