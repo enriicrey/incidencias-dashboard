@@ -266,15 +266,16 @@ module.exports = async function handler(req, res) {
       };
 
       if (demoEnabled) {
-          const now = Date.now();
-          const inMinutes = (m) => new Date(now + m * 60000).toISOString();
+          const inMinutes = (m) => `{{addMinutes(now; ${m})}}`;
 
           // Genera todas las combinaciones de estado y nivel 0-3
           const statuses = ["Trabajando", "Pendiente", "En seguimiento"];
+          const baseOffsets = { Trabajando: -30, Pendiente: 45, "En seguimiento": -90 };
           const demoIncidents = [];
 
           statuses.forEach(st => {
             for (let level = 0; level <= 3; level++) {
+              const base = baseOffsets[st] + level * 5;
               demoIncidents.push({
                 id: `INC-${st.replace(/\s+/g, "").toUpperCase()}-L${level}`,
                 status: st,
@@ -282,16 +283,20 @@ module.exports = async function handler(req, res) {
                 equipment: `Equipo ${level}`,
                 zone: `Zona ${level}`,
                 description: `Ejemplo ${st} nivel ${level}`,
-                report_date: new Date(now - (level + 1) * 3600000).toISOString(),
+                report_date: inMinutes(base),
                 escalation_level: level,
                 l1_technician: "tecnico@empresa.com",
                 l1_response: "✅ Acepto",
-                sla_l1_backup_end: inMinutes((level + 1) * 60),
+                sla_l1_backup_end: inMinutes(base + 60),
+                materials: `Pieza-${level} (${level + 1}); Herramienta-${level} (${level + 2})`,
+                notes: `Nota ejemplo L${level}`,
+                assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`,
+                solicitudes_log: `[${inMinutes(base - 15)}] MATERIAL#MAT-00${level}|REQUEST|Pieza-${level}
+[${inMinutes(base - 5)}] MATERIAL#MAT-00${level}|APPROVED|Gestión`,
+                respuestas_log: `[${inMinutes(base - 10)}] RESP#L${level}#tech@empresa.com|ASSIGNED|
+[${inMinutes(base - 2)}] RESP#L${level}#tech@empresa.com|ACCEPTED|`,
                 materials_url: `https://example.com/materials/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
-                history_url: `https://example.com/history/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
-                solicitudes_log: [`[2024-01-0${level + 1}T11:00:00Z] MATERIAL#MAT-00${level}|REQUEST|Ejemplo`],
-                respuestas_log: [`[2024-01-0${level + 1}T10:00:00Z] RESP#L${level}#tech@empresa.com|ASSIGNED|`],
-                assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`
+                history_url: `https://example.com/history/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`
               });
             }
           });
