@@ -390,12 +390,9 @@
         /* Botones */
         .incident-actions {
             margin-top: auto;
-        }
-
-        .incident-actions .action-buttons {
             display: flex;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -435,6 +432,12 @@
 
         .btn-info { background: var(--info-color); color: white; }
         .btn-secondary { background: #6b7280; color: white; }
+
+        .btn-help { background: var(--warning-color); color: white; }
+        .btn-help:hover { background: var(--warning-dark); }
+
+        .btn-resource { background: var(--info-color); color: white; }
+        .btn-resource:hover { background: var(--info-dark); }
         
         .btn-dark { background:#111827; color:#fff; }
         .btn-dark:hover { background:#0b1220; }
@@ -990,9 +993,9 @@
     
     <!-- Modal de Recursos de referencia -->
     <div id="referenciasModal" class="modal-overlay hidden">
-        <div class="modal">
+        <div class="modal large-modal">
             <div class="modal-header">
-                 <h3>📚 Recursos de referencia</h3>
+                 <h3 class="modal-title">📚 Recursos de referencia</h3>
                 <button class="modal-close" onclick="closeModal('referenciasModal')">×</button>
             </div>
             <div class="modal-body">
@@ -1045,7 +1048,7 @@
         <div id="ayudaModal" class="modal-overlay hidden">
             <div class="modal large-modal">
                 <div class="modal-header">
-                    <h3>🛠️ Solicitar ayuda</h3>
+                    <h3 class="modal-title">🛠️ Solicitar ayuda</h3>
                     <button class="modal-close" onclick="closeModal('ayudaModal')">×</button>
                 </div>
                 <div class="modal-body">
@@ -1312,11 +1315,15 @@
             if (lastMine?.ev?.startsWith('REJECTED') || lastMine?.ev === 'REASSIGN_FROM') return 'seguimiento';
         
             // ¿quién es el propietario vigente del nivel actual?
-            const owner = rows
+            const ownerRow = rows
               .filter(r => r.level === level && r.ev === 'ASSIGNED')
-              .slice(-1)[0]?.email?.toLowerCase();
-        
-            if (owner && owner === (technicianEmail || '').toLowerCase()) return 'pending';
+              .slice(-1)[0];
+            const owner = ownerRow?.email?.toLowerCase();
+
+            if (owner && owner === (technicianEmail || '').toLowerCase()) {
+              const accepted = rows.some(r => r.level === level && r.ev === 'ACCEPTED' && r.email.toLowerCase() === owner);
+              return accepted ? 'working' : 'pending';
+            }
         
             // Si no soy el titular y no he rechazado, quedo en seguimiento (estoy al tanto).
             return 'seguimiento';
@@ -1669,8 +1676,9 @@
             const customText = document.getElementById('customReasonText').value.trim();
             
             handleAction(pendingAction, currentIncidentId, {
-                reject_reason: selectedReason,
-                custom_reason: customText
+                reason: customText ? `${selectedReason}::${customText}` : selectedReason,
+                escalation_level: nextLevel,
+                notify_next: true
             });
             
             closeModal('reasonModal');
@@ -1704,11 +1712,13 @@
         function formatDate(dateString) {
             if (!dateString) return 'Fecha no disponible';
             const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit' 
+            return date.toLocaleString("es-ES", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
             });
         }
     
@@ -2052,7 +2062,7 @@
             const who = r.role === 'SUP' ? '👩‍💼 Supervisor' : '🔧 Técnico';
             const roleClass = r.role === 'SUP' ? 'note-sup' : 'note-tech';
             return `<li class="note-item ${roleClass}">
-              <span class="t-time">${r.when.toLocaleString()}</span>
+              <span class="t-time">${formatDate(r.when)}</span>
               <span class="t-body">${who} — ${r.email}<br>${r.text}</span>
             </li>`;
           }).join('');
@@ -2149,9 +2159,20 @@
         
         // ===== Banner para estado "seguimiento" =====
         function renderSeguimientoBanner(incident, state) {
-          if (state !== "seguimiento") return "";
         
           const L = getCurrentLevel(incident);
+          if (state === "working") {
+            let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+            let acept = "";
+            if (respText !== "{{emptystring}}") {
+              const rows = parseRespLog(respText);
+              const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+            }
+            return `<div class="seguimiento-banner">Trabajando L${L}${acept ? ` · ${acept}` : ""}</div>`;
+          }
+          if (state !== "seguimiento") return "";
+            
           const end = getSlaEndForLevel(incident, L);
           const vencido = end ? (Date.now() > Date.parse(end)) : false;
         
@@ -2170,7 +2191,7 @@
               "";
           }
         
-          const finTxt = end ? new Date(end).toLocaleString() : "";
+          const finTxt = end ? formatDate(end) : "";
           if (vencido) return `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`;
           if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong>${reject ? ` — Motivo: ${reject}` : ""}</div>`;
           return `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`;
@@ -2184,34 +2205,33 @@
             ? `title="Pendiente validar materiales" aria-label="Pendiente validar materiales"`
             : `title="Resolver incidencia" aria-label="Resolver incidencia"`;
             
-          const wrapStart = `<div class="incident-actions"><div class="action-buttons">`;
-          const wrapEnd = `</div></div>`;
+          const wrapStart = `<div class="incident-actions">`;
+          const wrapEnd = `</div>`;
         
           if (state === "pending") {
           return `
              ${wrapStart}
               <button class="btn btn-primary" title="Aceptar incidencia" aria-label="Aceptar incidencia" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
               <button class="btn btn-secondary" title="Rechazar incidencia" aria-label="Rechazar incidencia" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
-              <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
-              <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
             ${wrapEnd}`;
         }
           if (state === "working") {
             return `
                ${wrapStart}
-                <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
+                <button class="btn btn-help" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
                 <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
                 <button class="btn btn-secondary" title="Dejar incidencia temporalmente" aria-label="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
-                <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+                <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
               ${wrapEnd}`;
           }
           // seguimiento
           return `
             ${wrapStart}
               <button class="btn btn-primary" title="Solicitar asignación" aria-label="Solicitar asignación" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
-              <button class="btn btn-secondary" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
+              <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
             ${wrapEnd}`;
         }
         // ========================================
@@ -2590,7 +2610,7 @@
                   <div class="incident-meta">
                     <span>⚙️ ${safe(inc.equipment)}</span>
                     <span>📍 ${safe(inc.zone)}</span>
-                    <span>📅 ${dateVisible(inc)}</span>
+                    <span>📅 ${formatDate(dateVisible(inc))}</span>
                   </div>
                 </div>
                 <div class="incident-header-right">
@@ -2618,7 +2638,6 @@
 
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
-              </div>
         
                ${renderDetailsSection(inc, state)}
             </div>
@@ -2642,10 +2661,6 @@
             <details>
               <summary>📦 Solicitudes recientes</summary>
               ${renderSolicitudesResumen(inc)}
-            </details>
-            <details>
-              <summary>📚 Recursos de referencia</summary>
-              ${renderReferenceLinks(inc, state)}
             </details>
           `;
         }
@@ -2687,7 +2702,7 @@
             const who = r.email;
             const ev  = r.ev.replace('REJECTED::','Rechazado: ');
             const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
-            return `<li class="level-${r.level} ${phase}"><span class="t-time">${r.when.toLocaleString()}</span>
+            return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatDate(r.when)}</span>
                     <span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
           }).join('');
           return `<ul class="timeline">${items}</ul>`;
@@ -2706,7 +2721,7 @@
               const badge = g.last.phase === 'APPROVED' ? '✅'
                          : g.last.phase === 'REJECTED' ? '❌' : '⏳';
               const phaseCls = `phase-${g.last.phase.toLowerCase()}`;
-              return `<li class="${phaseCls}"><span class="t-time">${new Date(g.last.when).toLocaleString()}</span>
+              return `<li class="${phaseCls}"><span class="t-time">${formatDate(g.last.when)}</span>
                       <span class="t-body">${badge} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
