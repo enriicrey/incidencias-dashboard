@@ -244,6 +244,12 @@ module.exports = async function handler(req, res) {
           if (Array.isArray(val)) val = val.join("\n");
           if (val === undefined || val === null || val === "") {
             val = "{{emptystring}}";
+          } else if (typeof val === "object") {
+            try {
+              val = JSON.stringify(val, null, 2);
+            } catch (err) {
+              val = String(val);
+            }
           } else if (typeof val !== "string") {
             val = String(val);
           }
@@ -291,10 +297,8 @@ module.exports = async function handler(req, res) {
                 materials: `Pieza-${level} (${level + 1}); Herramienta-${level} (${level + 2})`,
                 notes: `Nota ejemplo L${level}`,
                 assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`,
-                solicitudes_log: `[${inMinutes(base - 15)}] MATERIAL#MAT-00${level}|REQUEST|Pieza-${level}
-[${inMinutes(base - 5)}] MATERIAL#MAT-00${level}|APPROVED|Gestión`,
-                respuestas_log: `[${inMinutes(base - 10)}] RESP#L${level}#tech@empresa.com|ASSIGNED|
-[${inMinutes(base - 2)}] RESP#L${level}#tech@empresa.com|ACCEPTED|`,
+                solicitudes_log: `[${inMinutes(base-15)}] MATERIAL#MAT-00${level}|REQUEST|Pieza-${level}\n[${inMinutes(base-5)}] MATERIAL#MAT-00${level}|APPROVED|Gestión`,
+                respuestas_log: `[${inMinutes(base-10)}] RESP#L${level}#tech@empresa.com|ASSIGNED|\n[${inMinutes(base-2)}] RESP#L${level}#tech@empresa.com|ACCEPTED|`,
                 materials_url: `https://example.com/materials/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
                 history_url: `https://example.com/history/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`
               });
