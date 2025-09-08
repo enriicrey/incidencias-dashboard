@@ -82,6 +82,13 @@ npm run deploy
 
 ## 🔧 Configuración Make.com
 
+Para asegurar que los campos de log (`Solicitudes (log)` y `Respuestas (log)`) se envíen siempre como texto, configura los módulos de Make para:
+
+- Unir las líneas con `join(array; "\n")`.
+- Usar `{{emptystring}}` cuando el arreglo esté vacío.
+
+Esto evita que lleguen como arrays o valores `null`.
+
 ### Webhook de Respuestas Técnicos
 **URL**: `/api/webhook-respuesta`
 
