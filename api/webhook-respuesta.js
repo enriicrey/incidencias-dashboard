@@ -235,23 +235,19 @@ module.exports = async function handler(req, res) {
     const demoEnabled =
         process.env.ALLOW_DEMO_INCIDENTS === '1' ||
         String(data.demo || '') === '1';
-
+       
       const normalizeLogs = (inc = {}) => {
-        const fields = [
-          'solicitudes_log',
-          'Solicitudes (log)',
-          'respuestas_log',
-          'Respuestas (log)'
-        ];
-        for (const field of fields) {
-          let val = inc[field];
+        for (const key of Object.keys(inc)) {
+          if (!/log/i.test(key)) continue;
+          let val = inc[key];
+           
           if (Array.isArray(val)) val = val.join("\n");
           if (val === undefined || val === null || val === "") {
             val = "{{emptystring}}";
           } else if (typeof val !== "string") {
             val = String(val);
           }
-          inc[field] = val;
+          inc[key] = val;
         }
         return inc;
       };
