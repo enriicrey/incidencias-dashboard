@@ -236,6 +236,21 @@ module.exports = async function handler(req, res) {
     const demoEnabled =
         process.env.ALLOW_DEMO_INCIDENTS === '1' ||
         String(data.demo || '') === '1';
+
+    const sortLogChronologically = (logStr = "") => {
+        const lines = String(logStr)
+          .split(/\r?\n/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .sort((a, b) => {
+            const ma = a.match(/^\[(.+?)\]/);
+            const mb = b.match(/^\[(.+?)\]/);
+            const da = ma ? new Date(ma[1]) : 0;
+            const db = mb ? new Date(mb[1]) : 0;
+            return da - db;
+          });
+        return lines.join("\n");
+      };
        
       const normalizeLogs = (inc = {}) => {
         for (const key of Object.keys(inc)) {
@@ -263,7 +278,11 @@ module.exports = async function handler(req, res) {
           inc.respuestas_log = inc["Respuestas (log)"];
         }
         ["solicitudes_log", "respuestas_log"].forEach(k => {
-          if (inc[k] === undefined || inc[k] === null || inc[k] === "") inc[k] = "{{emptystring}}";
+          if (inc[k] === undefined || inc[k] === null || inc[k] === "") {
+            inc[k] = "{{emptystring}}";
+          } else if (k === "respuestas_log") {
+            inc[k] = sortLogChronologically(inc[k]);
+          }
         });
         return inc;
       };
