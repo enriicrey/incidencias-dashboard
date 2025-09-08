@@ -103,6 +103,4 @@ export default async function handler(req, res) {
             error: process.env.NODE_ENV === 'development' ? error.message : 'Error procesando validación'
         });
     }
-    console.log('🔐 URL que estoy llamando:', process.env.MAKE_WEBHOOK_VALIDATE_PIN);
-console.log('🔐 ¿Es la URL correcta?', process.env.MAKE_WEBHOOK_VALIDATE_PIN === 'https://hook.eu2.make.com/1h9aocyc9vyozouxl178s0tvgnmi42sr');
 }
