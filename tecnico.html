@@ -1306,9 +1306,8 @@
           }
         
           // 1) Preferir "Respuestas (log)"
-          let respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
-          if (typeof respText !== 'string') respText = JSON.stringify(respText ?? '');
-          if (respText.trim()) {
+          let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+          if (respText !== "{{emptystring}}") {
             const rows = parseRespLog(respText);
             const myEvents = rows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||'').toLowerCase());
             const lastMine = myEvents[myEvents.length - 1];
@@ -1349,9 +1348,8 @@
             const slaEnd = getSlaEndForLevel(incident, L);
             if (slaEnd && Date.now() > Date.parse(slaEnd)) {
               // Si el dueño vigente del nivel actual no soy yo, lo veo en seguimiento
-              let respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
-              if (typeof respText !== 'string') respText = JSON.stringify(respText ?? '');
-              if (respText.trim()){
+              let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+              if (respText !== "{{emptystring}}"){
                 const rows = parseRespLog(respText);
                 const owner = getCurrentOwnerByLevel(rows, L);
                 if (!owner || owner.toLowerCase() !== (technicianEmail||'').toLowerCase()){
@@ -1798,6 +1796,8 @@
             logText = logText.join("\n");
           } else if (logText === null || logText === undefined) {
             logText = "";
+          } else if (typeof logText === 'object') {
+            logText = JSON.stringify(logText);
           }
           const text = String(logText);
           if (!text.trim()) return [];
@@ -1839,7 +1839,8 @@
         
         // --- ¿Qué categorías tienen pendientes? ---
         function getPendingCategoriesFromLog(logText="") {
-          if (typeof logText !== 'string') logText = JSON.stringify(logText ?? '');
+          logText = ensureLogString(logText);
+          if (logText === "{{emptystring}}") return new Set();
           const rows = parseSolicitudesLog(logText);
           const grouped = groupByRequest(rows);
           const pendingCats = new Set();
@@ -1852,9 +1853,8 @@
         
         // --- Construir notificaciones compactas desde el log ---
         function buildNotificationsFromLog(incident) {
-          let log = incident["Solicitudes (log)"] || incident.solicitudes_log || "";
-          if (typeof log !== 'string') log = JSON.stringify(log ?? '');
-          if (!log) return [];
+          let log = ensureLogString(incident["Solicitudes (log)"] || incident.solicitudes_log);
+          if (log === "{{emptystring}}") return [];
         
           const rows = parseSolicitudesLog(log);
           const grouped = groupByRequest(rows);
@@ -1894,8 +1894,7 @@
           const notionSet = new Set(Array.isArray(vpField) ? vpField.map(s=>String(s).trim()) : []);
         
           // 2) Lo que dice el log (cálculo)
-          let log = incident["Solicitudes (log)"] || incident.solicitudes_log || "";
-            if (typeof log !== 'string') log = JSON.stringify(log ?? '');
+          let log = ensureLogString(incident["Solicitudes (log)"] || incident.solicitudes_log);
             const pendingCats = getPendingCategoriesFromLog(log); // "MATERIAL","DERIVACION","APOYO"
         
           // Mapear categorías → etiqueta visible
@@ -1927,6 +1926,13 @@
         
           const label = owner ? `👤 Titular L${level}: ${owner}` : `👤 Titular L${level}: —`;
           return `<span class="chip">${label}</span>`;
+        }
+        
+        function ensureLogString(val){
+          if (Array.isArray(val)) val = val.join("\n");
+          else if (typeof val !== 'string') val = JSON.stringify(val ?? '');
+          val = String(val || '');
+          return val.trim() ? val : '{{emptystring}}';
         }
 
         // ==============================
@@ -2145,10 +2151,9 @@
           const vencido = end ? (Date.now() > Date.parse(end)) : false;
         
           // Preferir motivo desde "Respuestas (log)"
-          let respText = incident["Respuestas (log)"] || incident.respuestas_log || "";
-          if (typeof respText !== 'string') respText = JSON.stringify(respText ?? '');
+          let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
           let reject = null;
-          if (respText.trim()) {
+          if (respText !== "{{emptystring}}") {
             const rows = parseRespLog(respText);
             reject = getLastRejectReasonByLevel(rows, L);
           } else {
@@ -2520,14 +2525,12 @@
             if(nlog){
               notes = parseNotesLog(nlog).filter(r=>r.when>ref).length;
             }
-            let elog = inc["Respuestas (log)"] || inc.respuestas_log || '';
-            if (typeof elog !== 'string') elog = JSON.stringify(elog ?? '');
-            if(elog){
+            let elog = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
+            if(elog !== "{{emptystring}}"){
               escalados = parseRespLog(elog).filter(r=>r.when>ref).length;
             }
-            let slog = inc["Solicitudes (log)"] || inc.solicitudes_log || '';
-            if (typeof slog !== 'string') slog = JSON.stringify(slog ?? '');
-            if(slog){
+            let slog = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
+            if(slog !== "{{emptystring}}"){
               solicitudes = parseSolicitudesLog(slog).filter(r=> new Date(r.when)>ref && r.phase==='REQUEST').length;
             }
           return {notes, escalados, solicitudes};
@@ -2672,11 +2675,8 @@
                 }
 
         function renderEscalationHistory(inc){
-            let t = inc["Respuestas (log)"] || inc.respuestas_log || '';
-            if (Array.isArray(t)) t = t.join("\n");
-            if (typeof t !== 'string') t = JSON.stringify(t ?? '');
-            t = String(t || '');
-            if(!t.trim()) return `<div class="muted">Sin historial</div>`;
+            let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
+            if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
             const rows = parseRespLog(t).slice(-12);
           const items = rows.map(r => {
             const who = r.email;
@@ -2689,9 +2689,8 @@
         }
         
         function renderSolicitudesResumen(inc){
-            let t = inc["Solicitudes (log)"] || inc.solicitudes_log || '';
-            if (typeof t !== 'string') t = JSON.stringify(t ?? '');
-            if(!t.trim()) return `<div class="muted">Sin solicitudes</div>`;
+            let t = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
+            if(t === '{{emptystring}}') return `<div class="muted">Sin solicitudes</div>`;
             const rows = parseSolicitudesLog(t);        // ya la tienes
             const grouped = groupByRequest(rows);       // ya la tienes
           // Orden por fecha de último evento
