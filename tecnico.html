@@ -785,6 +785,18 @@
           overflow: hidden;
           text-overflow: ellipsis;
         }
+        
+        .contact-info {
+          font-size: 14px;
+          padding: 4px 0;
+          border-bottom: 1px solid var(--gray-200);
+        }
+        .contact-info:last-child {
+          border-bottom: 0;
+        }
+        .contact-info.is-empty {
+          display: none;
+        }
 
         .contacts-block .group-title{
           font-weight:600;
@@ -2619,21 +2631,20 @@
         }
 
       function renderContacts(inc){
-          const tel = v => v ? ` <a href="tel:${v}" class="tel-link">${v}</a>` : ' —';
-          const row = (label, name, phone) =>
-            `<div><strong>${label}:</strong> ${safe(name) || '—'}${tel(safe(phone))}</div>`;
+          const contactInfo = (label, name, phone) => {
+            const empty = !name || name === '{{emptystring}}';
+            return `
+              <div class="contact-info contact-row ${empty ? 'is-empty' : ''}">
+                <span class="label">${label}:</span>
+                <span class="value">${safe(name) || '—'}${phone ? ` · <a href="tel:${safe(phone)}" class="tel-link">${safe(phone)}</a>` : ''}</span>
+              </div>`;
+          };
         return `
           <div class="detail-grid contacts-block">
             <div class="contact-group">
               <div class="group-title">Equipo técnico</div>
-              <div class="contact-row">
-                <span class="label">Supervisor:</span>
-                <span class="value">${safe(inc.supervisor) || '—'} ${inc.supervisor_phone ? `· <a href="tel:${safe(inc.supervisor_phone)}" class="tel-link">${safe(inc.supervisor_phone)}</a>` : ''}</span>
-              </div>
-              <div class="contact-row">
-                <span class="label">Encargado de zona:</span>
-                <span class="value">${safe(inc.zone_manager) || '—'} ${inc.zone_manager_phone ? `· <a href="tel:${safe(inc.zone_manager_phone)}" class="tel-link">${safe(inc.zone_manager_phone)}</a>` : ''}</span>
-              </div>
+              ${contactInfo('Supervisor', inc.supervisor, inc.supervisor_phone)}
+              ${contactInfo('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
               <div class="contact-row">
                 <span class="label">Técnico asignado:</span>
                 <span class="value">${safe(inc.assigned_technician) || '—'} ${inc.assigned_technician_phone ? `· <a href="tel:${safe(inc.assigned_technician_phone)}" class="tel-link">${safe(inc.assigned_technician_phone)}</a>` : ''}</span>
@@ -2641,10 +2652,7 @@
             </div>
               <div class="contact-group">
               <div class="group-title">Reportante</div>
-              <div class="contact-row">
-                <span class="label">Reporta:</span>
-                <span class="value">${safe(inc.reporter) || '—'} ${inc.reporter_phone ? `· <a href="tel:${safe(inc.reporter_phone)}" class="tel-link">${safe(inc.reporter_phone)}</a>` : ''}</span>
-              </div>
+              ${contactInfo('Reporta', inc.reporter, inc.reporter_phone)}
               <div class="contact-row"><span class="label">Fecha ocurrencia:</span><span class="value">${formatDate(inc.occurrence_date)}</span></div>
               <div class="contact-row"><span class="label">Fecha reporte:</span><span class="value">${formatDate(inc.report_date)}</span></div>
             </div>
