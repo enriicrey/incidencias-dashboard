@@ -92,6 +92,14 @@ Para asegurar que los campos de log (`Solicitudes (log)`, `Respuestas (log)` y `
 - Usar `{{emptystring}}` cuando no haya registros y también en los campos de niveles que no se utilicen (`l1_*`, `l2_*`, `l3_*`).
 - Reservar `assignment_notes` únicamente para comentarios del técnico o supervisor; no registrar aquí aceptaciones o rechazos.
 
+Ejemplo de salida final esperada para cada incidente:
+
+```json
+"solicitudes_log": "2024-05-10T09:00:00Z Solicitud de reinicio",
+"respuestas_log": "2024-05-10T09:30:00Z L0 reporta éxito"
+```
+
+Asegúrate de que estos campos no lleguen como arreglos ni como `null`.
 Esto evita que lleguen como arrays o valores `null`.
 
 ### Webhook de Respuestas Técnicos
