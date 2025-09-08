@@ -339,8 +339,8 @@
           font-weight: 700;
         }
         .sla-timer{
-          font-size:16px;
-          padding:8px 14px;
+          font-size:18px;
+          padding:10px 16px;
           border-radius:12px;
           background:#1f2937;
           color:#f9fafb;
@@ -349,7 +349,7 @@
         .sla-good{ background:#16a34a; color:#ffffff; }
         .seguimiento-banner{
           display:block;
-          margin:0 0 10px;
+          margin:10px 0;
           padding:8px 12px;
           border-radius:10px;
           border:1px solid var(--gray-200);
@@ -390,6 +390,9 @@
         /* Botones */
         .incident-actions {
             margin-top: auto;
+        }
+
+        .action-buttons {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
@@ -723,6 +726,7 @@
         .note-tech{ background:#DBEAFE; }
         .note-legend{ display:flex; gap:8px; font-size:12px; margin-bottom:6px; }
         .note-legend span{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; }
+        .note-badge{ display:inline-block; margin-right:4px; }
         .timeline li.level-0{ border-left:4px solid #6366f1; }
         .timeline li.level-1{ border-left:4px solid #3b82f6; }
         .timeline li.level-2{ border-left:4px solid #f59e0b; }
@@ -1075,6 +1079,8 @@
         let pendingAction = null;
         let selectedReason = null;
         let currentIncidentId = null;
+
+        const MAX_LOG_ENTRIES = Infinity;
         
          let loginEmail = '';
          let lastSeen = new Date(localStorage.getItem('lastSeen') || Date.now());
@@ -1828,7 +1834,7 @@
         }
         
         function groupByRequest(logRows) {
-          // { "MATERIAL|MAT-001": {cat, id, last: {phase, when}, phases: [...] } }
+          // { "MATERIAL|MAT-001": {cat, id, last: {phase, when}, phases: [...], level, status } }
           const map = {};
           for (const r of logRows) {
             const key = `${r.cat}|${r.reqId}`;
@@ -1836,8 +1842,17 @@
             map[key].phases.push(r);
           }
           for (const k of Object.keys(map)) {
-            map[k].phases.sort((a,b)=> new Date(a.when)-new Date(b.when));
-            map[k].last = map[k].phases[map[k].phases.length - 1];
+            const g = map[k];
+            g.phases.sort((a,b)=> new Date(a.when)-new Date(b.when));
+            g.last = g.phases[g.phases.length - 1];
+            // Derivar nivel desde el ultimo meta que contenga "Lx"
+            const lvlPhase = [...g.phases].reverse().find(p => /L\d/i.test(p.meta || ""));
+            const lvlMatch = lvlPhase ? (lvlPhase.meta || "").match(/L(\d+)/i) : null;
+            g.level = lvlMatch ? parseInt(lvlMatch[1], 10) : null;
+            // Estado segun la ultima fase
+            g.status = g.last.phase === 'APPROVED' ? 'approved'
+                      : g.last.phase === 'REJECTED' ? 'rejected'
+                      : 'pending';
           }
           return map;
         }
@@ -2039,19 +2054,25 @@
 
         function parseNotesLog(text=""){
           const lines = String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-          const out = []; // {when,email,role,text}
+          const ROLE_META = {
+            TECH: { icon:'🔧', label:'Técnico', class:'note-tech' },
+            SUP: { icon:'👩‍💼', label:'Supervisor', class:'note-sup' }
+          };
+          const out = []; // {when,email,role,text,icon,label,class}
           for(const line of lines){
             const m = line.match(/^\[(.+?)\]\s+NOTE#([^|]+)\|([^|]+)\|(.*)$/);
             if(!m) continue;
-            const [, when, email, role, msg] = m;
-            out.push({ when:new Date(when), email:email.trim(), role:role.trim(), text:(msg||"").trim() });
+            const [, when, email, roleRaw, msg] = m;
+            const role = (roleRaw||'').trim().toUpperCase();
+            const meta = ROLE_META[role] || { icon:'', label:role, class:'' };
+            out.push({ when:new Date(when), email:email.trim(), role, text:(msg||"").trim(), ...meta });
           }
           out.sort((a,b)=> a.when - b.when);
           return out;
         }
         
         function renderNotesSection(inc){
-          const t = inc["Comentarios (log)"] || inc.comentarios_log || '';
+          const t = ensureLogString(inc["Comentarios (log)"] || inc.comentarios_log);
           const notes = [];
           if (safe(inc.assignment_notes)) {
             notes.push(`<div class="section-text">${safe(inc.assignment_notes)}</div>`);
@@ -2059,14 +2080,12 @@
           if(!t.trim()) return notes.length ? notes.join('') : `<div class="muted">Sin notas ni mensajes</div>`;
           const rows = parseNotesLog(t).slice(-20);
           const items = rows.map(r => {
-            const who = r.role === 'SUP' ? '👩‍💼 Supervisor' : '🔧 Técnico';
-            const roleClass = r.role === 'SUP' ? 'note-sup' : 'note-tech';
-            return `<li class="note-item ${roleClass}">
+            return `<li class="note-item ${r.class}">
               <span class="t-time">${formatDate(r.when)}</span>
-              <span class="t-body">${who} — ${r.email}<br>${r.text}</span>
+              <span class="t-body"><span class="note-badge">${r.icon}</span>${r.label} — ${r.email}<br>${r.text}</span>
             </li>`;
           }).join('');
-          const legend = `<div class="note-legend"><span class="note-sup">👩‍💼 Supervisor</span><span class="note-tech">🔧 Técnico</span></div>`;
+          const legend = `<div class="note-legend"><span class="note-sup"><span class="note-badge">👩‍💼</span> Supervisor</span><span class="note-tech"><span class="note-badge">🔧</span> Técnico</span></div>`;
           notes.push(`${legend}<ul class="timeline">${items}</ul>`);
           return notes.join('');
         }
@@ -2205,7 +2224,7 @@
             ? `title="Pendiente validar materiales" aria-label="Pendiente validar materiales"`
             : `title="Resolver incidencia" aria-label="Resolver incidencia"`;
             
-          const wrapStart = `<div class="incident-actions">`;
+          const wrapStart = `<div class="action-buttons">`;
           const wrapEnd = `</div>`;
         
           if (state === "pending") {
@@ -2219,7 +2238,7 @@
           if (state === "working") {
             return `
                ${wrapStart}
-                <button class="btn btn-help" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
+                <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
                 <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
@@ -2697,7 +2716,7 @@
         function renderEscalationHistory(inc){
             let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
             if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(t).slice(-12);
+            const rows = parseRespLog(t).sort((a, b) => a.when - b.when).slice(-MAX_LOG_ENTRIES);
           const items = rows.map(r => {
             const who = r.email;
             const ev  = r.ev.replace('REJECTED::','Rechazado: ');
@@ -2713,16 +2732,17 @@
             if(t === '{{emptystring}}') return `<div class="muted">Sin solicitudes</div>`;
             const rows = parseSolicitudesLog(t);        // ya la tienes
             const grouped = groupByRequest(rows);       // ya la tienes
-          // Orden por fecha de último evento
+          // Orden por fecha del ultimo evento
           const items = Object.values(grouped)
             .sort((a,b)=> new Date(b.last.when)-new Date(a.last.when))
             .slice(0,12)
             .map(g => {
-              const badge = g.last.phase === 'APPROVED' ? '✅'
-                         : g.last.phase === 'REJECTED' ? '❌' : '⏳';
+              const icon = g.status === 'approved' ? '✅'
+                         : g.status === 'rejected' ? '❌' : '⏳';
               const phaseCls = `phase-${g.last.phase.toLowerCase()}`;
-              return `<li class="${phaseCls}"><span class="t-time">${formatDate(g.last.when)}</span>
-                      <span class="t-body">${badge} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
+              const lvl = g.level != null ? `L${g.level}` : '';
+              return `<li class="${phaseCls}"><span class="t-time">${formatDate(g.last.when)}</span>` +
+                     `<span class="t-body">${lvl} ${icon} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
         }
