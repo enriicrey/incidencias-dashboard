@@ -98,8 +98,9 @@ module.exports = async function handler(req, res) {
       case 'acepto':
       case 'rechazo':
         makePayload.pin = data.pin || '';
-        makePayload.reason = data.reason;
+        makePayload.reason = data.reason || data.reject_reason;
         makePayload.escalation_level = Number.isFinite(+data.escalation_level) ? +data.escalation_level : 0;
+        if (data.notify_next !== undefined) makePayload.notify_next = data.notify_next;
         break;
       case 'resolver':
         if (!data.solution_description || !data.time_invested) {
