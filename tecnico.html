@@ -724,9 +724,8 @@
         .timeline li.note-item{ grid-template-columns:140px 1fr; }
         .note-sup{ background:#FEF3C7; }
         .note-tech{ background:#DBEAFE; }
-        .note-legend{ display:flex; gap:8px; font-size:12px; margin-bottom:6px; }
-        .note-legend span{ display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; }
-        .note-badge{ display:inline-block; margin-right:4px; }
+        .note-badge{ display:inline-block; }
+        .note-author{ display:inline-flex; align-items:center; gap:4px; }
         .timeline li.level-0{ border-left:4px solid #6366f1; }
         .timeline li.level-1{ border-left:4px solid #3b82f6; }
         .timeline li.level-2{ border-left:4px solid #f59e0b; }
@@ -736,20 +735,6 @@
         .timeline li.phase-request, .timeline li.phase-pending{ background:#fffbea; border-left:4px solid #f59e0b; }
         
         /* --- CONTACTOS: enlaces de teléfono sin “pill” y sin solapes --- */
-        .contacts-block a,
-        .contact-link,
-        .tel-link {
-          display: inline-block;
-          max-width: 160px;         /* evita desbordes largos */
-          white-space: nowrap;      /* no partir en varias líneas */
-          overflow: hidden;         /* recorta si excede */
-          text-overflow: ellipsis;  /* … al final */
-          padding: 0;               /* sin fondo ni relleno */
-          background: transparent;  /* limpia el estilo de .btn-link */
-          color: #2563eb;
-          text-decoration: underline;
-          border: 0;
-        }
         
         /* fuerza que las etiquetas del bloque contactos no colisionen con el teléfono */
         .contact-row {
@@ -770,21 +755,33 @@
           text-overflow: ellipsis;
         }
         
-        .contact-info {
-          font-size: 14px;
-          padding: 4px 0;
-          border-bottom: 1px solid var(--gray-200);
-        }
-        .contact-info:last-child {
-          border-bottom: 0;
-        }
-        .contact-info.is-empty {
-          display: none;
+        .contact-card{
+          background:#fff;
+          border:1px solid var(--gray-200);
+          border-radius:8px;
+          padding:8px 12px;
+          display:flex;
+          flex-direction:column;
+          gap:4px;
         }
 
-        .contacts-block .group-title{
+        .contact-card .contact-title{
           font-weight:600;
           margin-bottom:4px;
+          display:flex;
+          align-items:center;
+          gap:4px;
+        }
+
+        .btn-tel{
+          display:inline-block;
+          margin-left:4px;
+          padding:2px 6px;
+          border-radius:4px;
+          background:var(--primary-color);
+          color:#fff;
+          text-decoration:none;
+          font-size:12px;
         }
         
         /* ==== Pulido de contenedor y alineaciones ==== */
@@ -1080,7 +1077,10 @@
         let selectedReason = null;
         let currentIncidentId = null;
 
-        const MAX_LOG_ENTRIES = Infinity;
+        const MAX_LOG_ENTRIES = (() => {
+            const v = Number(window?.MAX_LOG_ENTRIES);
+            return Number.isFinite(v) ? v : Infinity;
+        })();
         
          let loginEmail = '';
          let lastSeen = new Date(localStorage.getItem('lastSeen') || Date.now());
@@ -2055,17 +2055,25 @@
         function parseNotesLog(text=""){
           const lines = String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
           const ROLE_META = {
-            TECH: { icon:'🔧', label:'Técnico', class:'note-tech' },
-            SUP: { icon:'👩‍💼', label:'Supervisor', class:'note-sup' }
+            TECH: { icon:'🔧', class:'note-tech' },
+            SUP: { icon:'👩‍💼', class:'note-sup' }
           };
-          const out = []; // {when,email,role,text,icon,label,class}
+          const out = []; // {when,email,role,text,icon,class,displayName}
           for(const line of lines){
             const m = line.match(/^\[(.+?)\]\s+NOTE#([^|]+)\|([^|]+)\|(.*)$/);
             if(!m) continue;
             const [, when, email, roleRaw, msg] = m;
             const role = (roleRaw||'').trim().toUpperCase();
-            const meta = ROLE_META[role] || { icon:'', label:role, class:'' };
-            out.push({ when:new Date(when), email:email.trim(), role, text:(msg||"").trim(), ...meta });
+            const meta = ROLE_META[role] || { icon:'', class:'' };
+            const emailTrim = email.trim();
+            out.push({
+              when: new Date(when),
+              email: emailTrim,
+              role,
+              text: (msg||"").trim(),
+              displayName: formatNameFromEmail(emailTrim),
+              ...meta
+            });
           }
           out.sort((a,b)=> a.when - b.when);
           return out;
@@ -2082,11 +2090,10 @@
           const items = rows.map(r => {
             return `<li class="note-item ${r.class}">
               <span class="t-time">${formatDate(r.when)}</span>
-              <span class="t-body"><span class="note-badge">${r.icon}</span>${r.label} — ${r.email}<br>${r.text}</span>
+              <span class="t-body"><span class="note-author"><span class="note-badge">${r.icon}</span>${r.displayName}</span>: ${r.text}</span>
             </li>`;
           }).join('');
-          const legend = `<div class="note-legend"><span class="note-sup"><span class="note-badge">👩‍💼</span> Supervisor</span><span class="note-tech"><span class="note-badge">🔧</span> Técnico</span></div>`;
-          notes.push(`${legend}<ul class="timeline">${items}</ul>`);
+          notes.push(`<ul class="timeline">${items}</ul>`);
           return notes.join('');
         }
 
@@ -2685,28 +2692,27 @@
         }
 
       function renderContacts(inc){
-          const contactInfo = (label, name, phone) => {
+          const contactRow = (label, name, phone) => {
             const empty = !name || name === '{{emptystring}}';
+            if(empty && !phone) return '';
             return `
-              <div class="contact-info contact-row ${empty ? 'is-empty' : ''}">
+              <div class="contact-row ${empty ? 'is-empty' : ''}">
                 <span class="label">${label}:</span>
-                <span class="value">${safe(name) || '—'}${phone ? ` · <a href="tel:${safe(phone)}" class="tel-link">${safe(phone)}</a>` : ''}</span>
+                <span class="value">${safe(name) || '—'}${phone ? `<a class="btn-tel" href="tel:${safe(phone)}">📞</a>` : ''}</span>
               </div>`;
           };
         return `
-          <div class="detail-grid contacts-block">
-            <div class="contact-group">
-              <div class="group-title">Equipo técnico</div>
-              ${contactInfo('Supervisor', inc.supervisor, inc.supervisor_phone)}
-              ${contactInfo('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
-              <div class="contact-row">
-                <span class="label">Técnico asignado:</span>
-                <span class="value">${safe(inc.assigned_technician) || '—'} ${inc.assigned_technician_phone ? `· <a href="tel:${safe(inc.assigned_technician_phone)}" class="tel-link">${safe(inc.assigned_technician_phone)}</a>` : ''}</span>
-              </div>
+          <div class="detail-grid">
+            <div class="contact-card">
+              <div class="contact-title">👷 Equipo técnico</div>
+              ${contactRow('Supervisor', inc.supervisor, inc.supervisor_phone)}
+              ${contactRow('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
+              ${contactRow('Técnico asignado', inc.assigned_technician, inc.assigned_technician_phone)}
             </div>
-              <div class="contact-group">
-              <div class="group-title">Reportante</div>
-              ${contactInfo('Reporta', inc.reporter, inc.reporter_phone)}
+            
+            <div class="contact-card">
+              <div class="contact-title">📋 Reportante</div>
+              ${contactRow('Reporta', inc.reporter, inc.reporter_phone)}
               <div class="contact-row"><span class="label">Fecha ocurrencia:</span><span class="value">${formatDate(inc.occurrence_date)}</span></div>
               <div class="contact-row"><span class="label">Fecha reporte:</span><span class="value">${formatDate(inc.report_date)}</span></div>
             </div>
@@ -2716,15 +2722,27 @@
         function renderEscalationHistory(inc){
             let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
             if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(t).sort((a, b) => a.when - b.when).slice(-MAX_LOG_ENTRIES);
-          const items = rows.map(r => {
-            const who = r.email;
-            const ev  = r.ev.replace('REJECTED::','Rechazado: ');
-            const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
-            return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatDate(r.when)}</span>
-                    <span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
-          }).join('');
-          return `<ul class="timeline">${items}</ul>`;
+            const rows = parseRespLog(t).sort((a, b) => a.when - b.when);
+            const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
+            const items = limited.map(r => {
+                const who = r.email;
+                let ev = r.ev;
+                if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
+                else {
+                    const map = {
+                        ASSIGNED: 'Asignado',
+                        ACCEPTED: 'Aceptado',
+                        NO_RESPONSE: 'Sin Respuesta',
+                        REASSIGN_TO: 'Reasignado a',
+                        REASSIGN_FROM: 'Reasignado de'
+                    };
+                    ev = map[ev] || ev;
+                }
+                const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
+                return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatDate(r.when)}</span>`+
+                       `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
+            }).join('');
+            return `<ul class="timeline">${items}</ul>`;
         }
         
         function renderSolicitudesResumen(inc){
