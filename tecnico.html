@@ -283,7 +283,6 @@
           justify-content:flex-end;
           align-items:center;
         }
-        .new-badges{ display:flex; gap:4px; }
         .badge{ padding:2px 6px; border-radius:999px; font-size:12px; font-weight:600; color:white; }
         .badge-notes{ background:#3b82f6; }
         .badge-escalations{ background:#f59e0b; }
@@ -351,13 +350,19 @@
           white-space:nowrap;
         }
         @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
+          0% { opacity: 1; }
+          50% { opacity: 0.6; }
+          100% { opacity: 1; }
         }
         .sla-timer.active {
-          animation: blink 1s step-start infinite;
+          animation: blink 1.8s ease-in-out infinite;
         }
         .sla-good{ background:#16a34a; color:#ffffff; }
+        .incident-banner{
+          width:100%;
+          display:block;
+          margin-bottom:6px;
+        }
         .seguimiento-banner{
           display:block;
           margin:10px 0;
@@ -387,7 +392,7 @@
 
         .chips{ display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:thin; }
 
-        .req-chips{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:thin;}
+        .req-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-height:calc(2 * 34px);overflow-y:auto;scrollbar-width:thin;}
         .chips::-webkit-scrollbar,
         .req-chips::-webkit-scrollbar{ height:6px; }
         .chips::-webkit-scrollbar-thumb,
@@ -395,17 +400,6 @@
         .chips::-webkit-scrollbar-track,
         .req-chips::-webkit-scrollbar-track{ background:transparent; }
 
-        .chip-counter{
-          display:inline-block;
-          padding:6px 10px;
-          border-radius:999px;
-          font-size:12px;
-          font-weight:700;
-          border:1px solid var(--gray-200);
-          background:var(--gray-100);
-          color:var(--gray-700);
-          white-space:nowrap;
-        }
         .req-chip.approved{background:#e6f7ee;color:#166534;border-color:#a7f3d0;}
         .req-chip.rejected{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
         .req-chip.pending{background:#fff8e5;color:#92400e;border-color:#fde68a;}
@@ -728,7 +722,7 @@
         }
         details{ border-top:1px dashed #e5e7eb; margin-top:10px; padding-top:10px; }
         details > summary{ cursor:pointer; list-style:none; font-weight:600; display:flex; align-items:center; gap:8px; }
-        details > summary::-webkit-details-marker{ display:none; }
+        .notes-summary .badge{ margin-left:auto; }
         .detail-grid{
           display:grid;
           grid-template-columns:1fr 1fr;
@@ -1870,6 +1864,7 @@
               metaRaw: rest || ""
             });
           }
+          out.sort((a, b) => new Date(a.when) - new Date(b.when));
           return out;
         }
         
@@ -1896,13 +1891,14 @@
           }
           return map;
         }
-          function renderSlaPillInHeader(inc, state){
+          function renderSlaPillInHeader(inc, state, card){
           const L = getCurrentLevel(inc);
           const end = getSlaEndForLevel(inc, L);
-          if (!end) return '';
+          if (!end) return false;
           const ms = Date.parse(end) - Date.now();
 
-         if (state === 'working' && L === 0 && ms > 0) {
+         if (state === 'working') {
+            if (ms <= 0) return '';
             let respText = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
             let acept = "";
             if (respText !== "{{emptystring}}") {
@@ -1910,14 +1906,13 @@
               const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
               if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
             }
-            return `<span class="sla-timer">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
+            return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
           }
 
-          if (state === 'working' || state === 'seguimiento') return '';
+          if (state === 'seguimiento') return '';
 
-          const active = (ms > 0 && state === 'pending') ? 'active' : '';
           const label = ms <= 0 ? `SLA vencido en L${L}` : `SLA en L${L} · ${formatRemain(ms)}`;
-          return `<span class="sla-timer ${active}">⏱️ ${label}</span>`;
+          return `<span class="sla-timer">⏱️ ${label}</span>`;
         }
         
         // --- ¿Qué categorías tienen pendientes? ---
@@ -2008,10 +2003,17 @@
           const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
           if (log === "{{emptystring}}") return "";
           const rows = parseSolicitudesLog(log);
+          // Ordenar por ID de solicitud y fecha
+          rows.sort((a, b) =>
+            a.reqId.localeCompare(b.reqId) || new Date(a.when) - new Date(b.when)
+          );
           if (!rows.length) return "";
           const grouped = groupByRequest(rows);
           const chips = [];
-          for (const key of Object.keys(grouped)) {
+          const keys = Object.keys(grouped).sort((a, b) =>
+            grouped[a].id.localeCompare(grouped[b].id)
+          );
+          for (const key of keys) {
             const req = grouped[key];
             const meta = req.last?.meta || {};
             const parts = [];
@@ -2262,9 +2264,20 @@
           const cls = mins <= 30 ? "sla-critical" : mins <= 120 ? "sla-warning" : "sla-good";
           return `<span class="sla-timer ${cls}">⏱️ ${formatRemain(delta)}</span>`;
         }
+
+        function setIncidentBanner(card, html) {
+          if (!card) return;
+          let container = card.querySelector('.incident-banner');
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'incident-banner';
+            card.prepend(container);
+          }
+          container.innerHTML = html;
+        }
         
         // ===== Banner para estado "seguimiento" =====
-        function renderSeguimientoBanner(incident, state) {
+        function renderSeguimientoBanner(incident, state, card) {
         
           const L = getCurrentLevel(incident);
           if (state === "working") {
@@ -2275,9 +2288,10 @@
               const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
               if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
             }
-            return `<div class="seguimiento-banner">Trabajando L${L}${acept ? ` · ${acept}` : ""}</div>`;
+            setIncidentBanner(card, `<div class="seguimiento-banner">Trabajando L${L}${acept ? ` · ${acept}` : ""}</div>`);
+            return true;
           }
-          if (state !== "seguimiento") return "";
+          if (state !== "seguimiento") return false;
             
           const end = getSlaEndForLevel(incident, L);
           const vencido = end ? (Date.now() > Date.parse(end)) : false;
@@ -2299,15 +2313,23 @@
           }
         
           const finTxt = end ? formatDate(end) : "";
-          if (vencido) return `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`;
-          if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong>${reject ? ` — Motivo: ${reject}` : ""}</div>`;
+          if (vencido) {
+            setIncidentBanner(card, `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`);
+            return true;
+          }
+          if (reject)  {
+            setIncidentBanner(card, `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong>${reject ? ` — Motivo: ${reject}` : ""}</div>`);
+            return true;
+          }
           if (L === 3) {
             let acept = "";
             const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
             if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
-            return `<div class="seguimiento-banner">Trabajando L3${acept ? ` · ${acept}` : ""}</div>`;
+            setIncidentBanner(card, `<div class="seguimiento-banner">Trabajando L3${acept ? ` · ${acept}` : ""}</div>`);
+            return true;
           }
-          return `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`;
+          setIncidentBanner(card, `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`);
+          return true;
         }
 
         
@@ -2658,7 +2680,7 @@
           if (element) element.classList.add('active');
           applyFiltersAndRender();
         }
-         function countNewItems(inc){
+        function countNewItems(inc){
           const ref = lastSeen;
           let notes = 0;
 
@@ -2669,22 +2691,25 @@
             }
           return {notes};
         }
+
+        function markNotesSeen(detailsEl){
+          if(!detailsEl.open) return;
+          lastSeen = new Date();
+          localStorage.setItem('lastSeen', lastSeen.toISOString());
+          const badge = detailsEl.querySelector('.badge-notes');
+          if(badge) badge.remove();
+        }
     
 
     // --------- RENDER NUEVO (no tocar) ----------
         function incidentCardHTML(inc) {
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
-          const slaChip = renderSlaPillInHeader(inc, state);
-          const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const requestButtonsHTML = renderRequestButtons(inc);
           const chipsBlockHTML =
             requestButtonsHTML.trim()
               ? `<div class="chips"><div class="req-chips">${requestButtonsHTML}</div></div>`
               : '';
           const news = countNewItems(inc);
-          const badgesHTML = news.notes
-            ? `<div class="new-badges"><span class="badge badge-notes">📝 ${news.notes}</span></div>`
-            : '';
             // Extrae prioridad desde el ID si viene incluida allí
           const idWithPriority = String(inc.id || '');
           const priorityFromId = idWithPriority.match(/\s*[—-]\s*(CRITICA|CRÍTICA|ALTA|MEDIA|BAJA)\s*$/i);
@@ -2696,6 +2721,7 @@
           }
           return `
             <div class="incident-card" data-incident-id="${safe(inc.id)}">
+              <div class="incident-banner"></div>
               <div class="incident-header">
                 <div>
                  <div class="incident-title">
@@ -2711,13 +2737,9 @@
                 <div class="incident-header-right">
                 <div class="state-sla">
                     <span class="state-badge">${getStateLabel(state)}</span>
-                    ${slaChip || ""}
                   </div>
-                 ${badgesHTML}
                 </div>
               </div>
-
-              ${seguimientoBanner}
         
               ${chipsBlockHTML}
         
@@ -2730,19 +2752,22 @@
               <div class="incident-actions">
                 ${renderActionButtonsByState(state, inc)}
         
-               ${renderDetailsSection(inc, state)}
+               ${renderDetailsSection(inc, state, news)}
             </div>
           `;
         }
         
-        function renderDetailsSection(inc, state) {
+        function renderDetailsSection(inc, state, news) {
+          const notesBadge = news?.notes
+            ? `<span class="badge badge-notes">${news.notes}</span>`
+            : '';
           return `
             <details>
               <summary>📇 Contactos</summary>
               ${renderContacts(inc)}
             </details>
-            <details>
-              <summary>📝 Notas</summary>
+            <details ontoggle="markNotesSeen(this)">
+              <summary class="notes-summary"><span>📝 Notas</span>${notesBadge}</summary>
               ${renderNotesSection(inc)}
             </details>
             <details>
@@ -2787,7 +2812,8 @@
         function renderEscalationHistory(inc){
             let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
             if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(t, inc).sort((a, b) => a.when - b.when);
+            const rows = parseRespLog(t, inc)
+              .sort((a, b) => a.level - b.level || a.when - b.when);
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
                 const who = r.email;
@@ -2840,33 +2866,6 @@
           return `<ul class="timeline">${items}</ul>`;
         }
 
-    function updateChipCounters() {
-      const containers = [];
-      document.querySelectorAll('.req-chips').forEach(c => containers.push(c));
-      document.querySelectorAll('.chips').forEach(c => {
-        if (!c.querySelector('.req-chips')) containers.push(c);
-      });
-      containers.forEach(container => {
-        container.querySelectorAll('.chip-counter').forEach(e => e.remove());
-        const children = Array.from(container.children).filter(el => !el.classList.contains('chip-counter'));
-        let hidden = 0;
-        const details = [];
-        for (const el of children) {
-          if (el.offsetLeft + el.offsetWidth > container.clientWidth) {
-            hidden++;
-            details.push(el.textContent.trim());
-          }
-        }
-        if (hidden > 0) {
-          const counter = document.createElement('span');
-          counter.className = 'chip-counter';
-          counter.textContent = `+${hidden}`;
-          counter.title = details.join('\n');
-          container.appendChild(counter);
-        }
-      });
-    }
-
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
       if (legacy) legacy.innerHTML = '';
@@ -2887,12 +2886,13 @@
         const wrap = document.createElement('div');
         wrap.innerHTML = incidentCardHTML(inc);
         const card = wrap.firstElementChild;
-    
+        const state = getIncidentRealState(inc, currentTechnician?.email || "");
+        const hasSeg = renderSeguimientoBanner(inc, state, card);
+        if (!hasSeg) renderSlaPillInHeader(inc, state, card);
         frag.appendChild(card);
       });
     
       incidentsContainer.appendChild(frag);
-      updateChipCounters();
     }
     
     // ---------- Aplicar filtros y pintar ----------
