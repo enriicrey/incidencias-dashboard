@@ -719,12 +719,12 @@
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
         
         /* Lista tipo timeline */
-        .timeline {margin:6px 0;}
+        .timeline{display:flex;flex-direction:column;gap:6px;margin:6px 0;}
         .timeline li{display:flex;gap:8px;align-items:center;
                      padding:6px 8px;border-radius:8px;white-space:nowrap;overflow:hidden;}
-        .timeline .t-time{opacity:.7;min-width:140px;}
-        .timeline .t-body{overflow:hidden;text-overflow:ellipsis;}
-        .note-item .note-author{display:inline-flex;gap:6px;align-items:center;}
+        .timeline .t-time{flex:0 0 130px;color:#6b7280;}
+        .timeline .t-body{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;}
+        .note-author{display:inline-flex;gap:6px;align-items:center;font-weight:600;}
         .timeline li.level-0{ border-left:4px solid #6366f1; }
         .timeline li.level-1{ border-left:4px solid #3b82f6; }
         .timeline li.level-2{ border-left:4px solid #f59e0b; }
@@ -1312,23 +1312,24 @@
           // 1) Preferir "Respuestas (log)"
           let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
           if (respText !== "{{emptystring}}") {
-            const rows = parseRespLog(respText).filter(r => r.level === level);
+            const rows = parseRespLog(respText, incident).filter(r => r.level === level);
 
-            // Último evento propio (considera múltiples técnicos en L2)
             const myRows = rows.filter(r => r.email.toLowerCase() === email);
             const lastMine = myRows[myRows.length - 1];
-            if (lastMine?.ev === 'ACCEPTED') return 'working';
-            if (lastMine?.ev === 'REJECTED') return 'seguimiento';
+            const lastAccepted = rows.filter(r => r.ev === 'ACCEPTED').slice(-1)[0];
 
-            // Si el SLA ya venció, pasa a seguimiento
+            if (lastMine) {
+              if (lastMine.ev === 'ACCEPTED') return 'working';
+              if (lastMine.ev === 'REJECTED' || lastMine.ev === 'NO_RESPONSE' || lastMine.ev === 'REASSIGN_FROM') return 'seguimiento';
+              if (lastMine.ev === 'ASSIGNED') return withinSla ? 'pending' : 'seguimiento';
+            }
+
+            if (lastAccepted && lastAccepted.email.toLowerCase() !== email) return 'seguimiento';
+
+            const assigned = rows.some(r => r.ev === 'ASSIGNED' && r.email.toLowerCase() === email);
+            if (assigned) return withinSla ? 'pending' : 'seguimiento';
+
             if (!withinSla) return 'seguimiento';
-              
-            // Propietario vigente
-            const ownerRow = rows.filter(r => r.ev === 'ASSIGNED').slice(-1)[0];
-            const owner = ownerRow?.email?.toLowerCase();
-            if (owner === email) return 'pending';        
-            if (owner) return 'seguimiento';
-          }
         
           // 2) Fallback (campos legados)
           const assignments = [
@@ -1921,7 +1922,7 @@
           const labelByCat = {
             MATERIAL: "📦 Materiales",
             DERIVACION: "↪️ Derivación",
-            APOYO: "👥 Apoyo técnico",
+            APOYO: "👥 Apoyo segundo técnico",
           };
         
           const chips = new Set();
@@ -1937,7 +1938,7 @@
           const displayByNorm = {
             materiales: "📦 Materiales",
             derivacion: "↪️ Derivación",
-            "apoyo tecnico": "👥 Apoyo técnico",
+            "apoyo segundo tecnico": "👥 Apoyo segundo técnico",
           };
 
           const finalChips = Array.from(chips);
@@ -1992,7 +1993,6 @@
           const chips = [];
           for (const key of Object.keys(grouped)) {
             const req = grouped[key];
-            if (req.status !== 'pending') continue;
             const meta = req.last?.meta || {};
             const parts = [];
             if (meta.name) {
@@ -2013,22 +2013,43 @@
         // RESPUESTAS (log) - Helpers
         // Campo Notion: "Respuestas (log)"
         // ==============================
-        function parseRespLog(text = "") {
+        function parseRespLog(text = "", incident = null) {
           if (!text) return [];
           const lines = String(text).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const rows = [];
           for (const line of lines) {
             // [fecha] RESP#L<n>#<email>|<EVENTO>|<detalle>
-            const m = line.match(/^\[(.+?)\]\s+RESP#L(\d)#([^|]+)\|([^|]+)\|?(.*)$/);
+            const m = line.match(/^\[(.+?)\]\s+RESP#L(\d)#([^|]+)\|(ASSIGNED|ACCEPTED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::[^|]+)\|?(.*)$/);
             if (!m) continue;
             const [, when, lvl, email, ev, detail] = m;
             rows.push({
               when: new Date(when),
               level: parseInt(lvl, 10),
               email: email.trim(),
-              ev: ev.trim(),              // ASSIGNED | REASSIGN_TO | REASSIGN_FROM | REJECTED::<motivo> | NO_RESPONSE
+              ev: ev.trim(),              // ASSIGNED | ACCEPTED | REASSIGN_TO | REASSIGN_FROM | REJECTED::<motivo> | NO_RESPONSE
               detail: (detail || "").trim()
             });
+          }
+
+          // Asegurar eventos ASSIGNED para L2 según técnicos notificados
+          if (incident?.l2_technicians_notified) {
+            const notified = String(incident.l2_technicians_notified)
+              .split(',')
+              .map(s => s.trim().toLowerCase())
+              .filter(Boolean);
+            const ts = incident["Fecha-Reporte"] || incident.report_date || incident.created_at || incident.timestamp || new Date().toISOString();
+            for (const tech of notified) {
+              const exists = rows.some(r => r.level === 2 && r.ev === 'ASSIGNED' && r.email.toLowerCase() === tech);
+              if (!exists) {
+                rows.push({
+                  when: new Date(ts),
+                  level: 2,
+                  email: tech,
+                  ev: 'ASSIGNED',
+                  detail: ''
+                });
+              }
+            }
           }
           rows.sort((a,b)=> a.when - b.when);
           return rows;
@@ -2143,7 +2164,7 @@
         
         // Regex estrictas (ISO con zona, categorías/fases controladas)
         const RX_SOL = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:MATERIAL|DERIVACION|APOYO)#[A-Za-z0-9_\-]+\|(REQUEST|APPROVED|REJECTED)\|.*$/;
-        const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*$/;
+        const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|ACCEPTED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*$/;
         
         function validateLogLines({ lines, kind }) {
           // kind: 'SOL' (Solicitudes) | 'RESP' (Respuestas)
@@ -2230,7 +2251,7 @@
             let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
             let acept = "";
             if (respText !== "{{emptystring}}") {
-              const rows = parseRespLog(respText);
+              const rows = parseRespLog(respText, incident);
               const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
               if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
             }
@@ -2245,7 +2266,7 @@
           let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
           let reject = null;
           if (respText !== "{{emptystring}}") {
-            const rows = parseRespLog(respText);
+            const rows = parseRespLog(respText, incident);
             reject = getLastRejectReasonByLevel(rows, L);
           } else {
             // Fallback a tus campos antiguos
@@ -2625,14 +2646,17 @@
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
-          const validChipsHTML = renderPendingChips(inc);
+          const pendingChipsHTML = renderPendingChips(inc);
           const requestButtonsHTML = renderRequestButtons(inc);
-          const showChips = !(validChipsHTML.includes('Sin validaciones pendientes') && !requestButtonsHTML.trim());
-          const chipsBlockHTML = showChips ? `<div class="chips">${validChipsHTML}${requestButtonsHTML}</div>` : '';
+          const showChips = !(pendingChipsHTML.includes('Sin validaciones pendientes') && !requestButtonsHTML.trim());
+          const chipsBlockHTML = showChips ? `<div class="chips">${pendingChipsHTML}</div>` : '';
+          const requestsSectionHTML = requestButtonsHTML.trim()
+            ? `<div class="section-title">📦 Solicitudes recientes</div>${requestButtonsHTML}`
+            : '';
           const news = countNewItems(inc);
-          const badges = [];
-          if(news.notes) badges.push(`<span class="badge badge-notes">📝 ${news.notes}</span>`);
-          const badgesHTML = badges.length ? `<div class="new-badges">${badges.join('')}</div>` : '';
+          const badgesHTML = news.notes
+            ? `<div class="new-badges"><span class="badge badge-notes">📝 ${news.notes}</span></div>`
+            : '';
         
         
           return `
@@ -2661,6 +2685,8 @@
               ${seguimientoBanner}
         
               ${chipsBlockHTML}
+
+              ${requestsSectionHTML}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
@@ -2728,7 +2754,7 @@
         function renderEscalationHistory(inc){
             let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
             if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(t).sort((a, b) => a.when - b.when);
+            const rows = parseRespLog(t, inc).sort((a, b) => a.when - b.when);
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
                 const who = r.email;
@@ -2769,12 +2795,14 @@
               else if (reqMeta.name) detallesBase.push(reqMeta.name);
               else if (reqMeta.qty) detallesBase.push(reqMeta.qty);
               const detalles = reqMeta.to ? `${detallesBase.join(' ')} → ${reqMeta.to}` : detallesBase.join(' ');
-              const reqLine = `👨‍🔧 ${reqMeta.from || ''} · ${detalles}`.trim();
-              const respLine = respPhase ? `🧑‍💼 ${respMeta.by || ''} · ${respPhase.phase}` : '';
-              const phaseCls = respPhase ? `phase-${respPhase.phase.toLowerCase()}` : 'phase-pending';
-              const timeRef = respPhase ? respPhase.when : reqPhase?.when;
-              return `<li class="${phaseCls}"><span class="t-time">${formatDate(timeRef)}</span>` +
-                     `<span class="t-body">${reqLine}${respLine ? '<br>'+respLine : ''}</span></li>`;
+              let lines = `<li class="phase-request"><span class="t-time">${formatDate(reqPhase?.when)}</span>`+
+                          `<span class="t-body">🔧 ${reqMeta.by || ''} · ${detalles}</span></li>`;
+              if (respPhase) {
+                const phaseCls = `phase-${respPhase.phase.toLowerCase()}`;
+                lines += `<li class="${phaseCls}"><span class="t-time">${formatDate(respPhase.when)}</span>`+
+                         `<span class="t-body">👩‍💼 ${respMeta.by || ''} · ${respPhase.phase}</span></li>`;
+              }
+              return lines;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
         }
