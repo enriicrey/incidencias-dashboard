@@ -90,7 +90,6 @@ Para asegurar que los campos de log (`Solicitudes (log)`, `Respuestas (log)` y `
 
 - Para `solicitudes_log` y `respuestas_log`, acumula todos los eventos desde L0 hasta el nivel actual y luego únelos con `join(array; "\n")`.
 - Usar `{{emptystring}}` cuando no haya registros y también en los campos de niveles que no se utilicen (`l1_*`, `l2_*`, `l3_*`).
-- Reservar `assignment_notes` únicamente para comentarios del técnico o supervisor; no registrar aquí aceptaciones o rechazos.
 
 Ejemplo de salida final esperada para cada incidente:
 
