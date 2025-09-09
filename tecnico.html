@@ -1314,20 +1314,19 @@
           if (respText !== "{{emptystring}}") {
             const rows = parseRespLog(respText).filter(r => r.level === level);
 
-            // Eventos propios prioritarios
+            // Último evento propio (considera múltiples técnicos en L2)
             const myRows = rows.filter(r => r.email.toLowerCase() === email);
             const lastMine = myRows[myRows.length - 1];
-            if (lastMine?.ev === 'REJECTED') return 'seguimiento';
             if (lastMine?.ev === 'ACCEPTED') return 'working';
-              
+            if (lastMine?.ev === 'REJECTED') return 'seguimiento';
 
+            // Si el SLA ya venció, pasa a seguimiento
+            if (!withinSla) return 'seguimiento';
+              
             // Propietario vigente
             const ownerRow = rows.filter(r => r.ev === 'ASSIGNED').slice(-1)[0];
             const owner = ownerRow?.email?.toLowerCase();
-            if (owner === email) {
-              return withinSla ? 'pending' : 'seguimiento';
-            }
-        
+            if (owner === email) return 'pending';        
             if (owner) return 'seguimiento';
           }
         
@@ -1802,12 +1801,19 @@
           const text = String(logText);
           if (!text.trim()) return [];
           const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-          const out = []; // {when, cat, id, phase, meta}
+          const out = []; // {when, cat, id, phase, meta, metaRaw}
           for (const line of lines) {
             const m = line.match(/^\[(.+?)\]\s+([A-Z]+)#([\w-]+)\|([A-Z]+)\|(.*)$/);
             if (!m) continue;
             const [, when, cat, reqId, phase, rest] = m;
-            out.push({ when, cat, reqId, phase, meta: rest || "" });
+            out.push({
+              when,
+              cat,
+              reqId,
+              phase,
+              meta: parseMetaKV(rest || ""),
+              metaRaw: rest || ""
+            });
           }
           return out;
         }
@@ -1825,8 +1831,8 @@
             g.phases.sort((a,b)=> new Date(a.when)-new Date(b.when));
             g.last = g.phases[g.phases.length - 1];
             // Derivar nivel desde el ultimo meta que contenga "Lx"
-            const lvlPhase = [...g.phases].reverse().find(p => /L\d/i.test(p.meta || ""));
-            const lvlMatch = lvlPhase ? (lvlPhase.meta || "").match(/L(\d+)/i) : null;
+            const lvlPhase = [...g.phases].reverse().find(p => /L\d/i.test(p.metaRaw || ""));
+            const lvlMatch = lvlPhase ? (lvlPhase.metaRaw || "").match(/L(\d+)/i) : null;
             g.level = lvlMatch ? parseInt(lvlMatch[1], 10) : null;
             // Estado segun la ultima fase
             g.status = g.last.phase === 'APPROVED' ? 'approved'
@@ -1898,30 +1904,49 @@
         
         // --- Chips de Validaciones Pendientes (robustos ante desfases) ---
          function renderPendingChips(incident) {
-          // 1) Lo que dice Notion (campo multiselect)
+          const normalize = (lbl) =>
+            String(lbl)
+              .trim()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^\p{L}\p{N}\s]/gu, "")
+              .trim();
           const vpField = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
-          const notionSet = new Set(Array.isArray(vpField) ? vpField.map(s=>String(s).trim()) : []);
-        
-          // 2) Lo que dice el log (cálculo)
-          let log = ensureLogString(incident["Solicitudes (log)"] || incident.solicitudes_log);
-            const pendingCats = getPendingCategoriesFromLog(log); // "MATERIAL","DERIVACION","APOYO"
-        
-          // Mapear categorías → etiqueta visible
+          const notionLabels = Array.isArray(vpField) ? vpField.map(s=>String(s)) : [];
+
+          const log = ensureLogString(incident["Solicitudes (log)"] || incident.solicitudes_log);
+          const pendingCats = getPendingCategoriesFromLog(log); // "MATERIAL","DERIVACION","APOYO"
+             
           const labelByCat = {
             MATERIAL: "📦 Materiales",
             DERIVACION: "↪️ Derivación",
             APOYO: "👥 Apoyo técnico",
           };
         
-          // Unificar
           const chips = new Set();
-          pendingCats.forEach(cat => chips.add(labelByCat[cat]));
-          notionSet.forEach(lbl => chips.add(lbl));
-        
-          if (chips.size === 0) {
+          notionLabels.forEach(lbl => {
+            const norm = normalize(lbl);
+            if (norm) chips.add(norm);
+          });
+          pendingCats.forEach(cat => {
+            const norm = normalize(labelByCat[cat]);
+            if (norm) chips.add(norm);
+          });
+
+          const displayByNorm = {
+            materiales: "📦 Materiales",
+            derivacion: "↪️ Derivación",
+            "apoyo tecnico": "👥 Apoyo técnico",
+          };
+
+          const finalChips = Array.from(chips);
+          if (finalChips.length === 0) {
             return `<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`;
           }
-          return Array.from(chips).map(lbl => `<span class="materials-badge materials-pending">${lbl}</span>`).join(" ");
+          return finalChips
+            .map(norm => `<span class="materials-badge materials-pending">${displayByNorm[norm] || norm}</span>`)
+            .join(" ");
         }
 
         function renderCurrentOwnerChip(inc){
@@ -1962,15 +1987,26 @@
           const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
           if (log === "{{emptystring}}") return "";
           const rows = parseSolicitudesLog(log);
+          if (!rows.length) return "";
           const grouped = groupByRequest(rows);
           const chips = [];
           for (const key of Object.keys(grouped)) {
             const req = grouped[key];
-            const meta = parseMetaKV(req.last?.meta || "");
-            const label = meta.label || meta.msg || meta.note || `${req.cat}#${req.id}`;
-            chips.push(`<span class="req-chip ${req.status}">${safe(label)}</span>`);
+            if (req.status !== 'pending') continue;
+            const meta = req.last?.meta || {};
+            const parts = [];
+            if (meta.name) {
+              const qty = meta.qty ? ` ×${meta.qty}` : "";
+              parts.push(`📦 ${meta.name}${qty}`);
+            }
+            if (meta.to) parts.push(`↪️ ${meta.to}`);
+            if (meta.detail) parts.push(`👥 ${meta.detail}`);
+            const label = parts.join(" ").trim();
+            if (label) {
+              chips.push(`<span class="req-chip ${req.status}">${safe(label)}</span>`);
+            }
           }
-          return chips.length ? `<div class="req-chips">${chips.join("")}</div>` : "";
+          return chips.length ? `<div class="req-chips">${chips.join(" ")}</div>` : "";
         }
 
         // ==============================
@@ -2590,6 +2626,9 @@
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const validChipsHTML = renderPendingChips(inc);
+          const requestButtonsHTML = renderRequestButtons(inc);
+          const showChips = !(validChipsHTML.includes('Sin validaciones pendientes') && !requestButtonsHTML.trim());
+          const chipsBlockHTML = showChips ? `<div class="chips">${validChipsHTML}${requestButtonsHTML}</div>` : '';
           const news = countNewItems(inc);
           const badges = [];
           if(news.notes) badges.push(`<span class="badge badge-notes">📝 ${news.notes}</span>`);
@@ -2621,10 +2660,7 @@
 
               ${seguimientoBanner}
         
-              <div class="chips">
-                ${validChipsHTML}
-                ${renderRequestButtons(inc)}
-              </div>
+              ${chipsBlockHTML}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
@@ -2718,19 +2754,27 @@
         function renderSolicitudesResumen(inc){
             let t = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
             if(t === '{{emptystring}}') return `<div class="muted">Sin solicitudes</div>`;
-            const rows = parseSolicitudesLog(t);        // ya la tienes
-            const grouped = groupByRequest(rows);       // ya la tienes
-          // Orden por fecha del ultimo evento
+            const rows = parseSolicitudesLog(t);
+            const grouped = groupByRequest(rows);
           const items = Object.values(grouped)
             .sort((a,b)=> new Date(b.last.when)-new Date(a.last.when))
             .slice(0,12)
             .map(g => {
-              const icon = g.status === 'approved' ? '✅'
-                         : g.status === 'rejected' ? '❌' : '⏳';
-              const phaseCls = `phase-${g.last.phase.toLowerCase()}`;
-              const lvl = g.level != null ? `L${g.level}` : '';
-              return `<li class="${phaseCls}"><span class="t-time">${formatDate(g.last.when)}</span>` +
-                     `<span class="t-body">${lvl} ${icon} ${g.cat}#${g.id} · ${g.last.phase}</span></li>`;
+              const reqPhase = g.phases.find(p => p.phase === 'REQUEST');
+              const respPhase = g.phases.find(p => p.phase === 'APPROVED' || p.phase === 'REJECTED');
+              const reqMeta = reqPhase?.meta || {};
+              const respMeta = respPhase?.meta || {};
+              const detallesBase = [];
+              if (reqMeta.qty && reqMeta.name) detallesBase.push(`${reqMeta.qty}× ${reqMeta.name}`);
+              else if (reqMeta.name) detallesBase.push(reqMeta.name);
+              else if (reqMeta.qty) detallesBase.push(reqMeta.qty);
+              const detalles = reqMeta.to ? `${detallesBase.join(' ')} → ${reqMeta.to}` : detallesBase.join(' ');
+              const reqLine = `👨‍🔧 ${reqMeta.from || ''} · ${detalles}`.trim();
+              const respLine = respPhase ? `🧑‍💼 ${respMeta.by || ''} · ${respPhase.phase}` : '';
+              const phaseCls = respPhase ? `phase-${respPhase.phase.toLowerCase()}` : 'phase-pending';
+              const timeRef = respPhase ? respPhase.when : reqPhase?.when;
+              return `<li class="${phaseCls}"><span class="t-time">${formatDate(timeRef)}</span>` +
+                     `<span class="t-body">${reqLine}${respLine ? '<br>'+respLine : ''}</span></li>`;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
         }
