@@ -2647,19 +2647,22 @@
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
-          const pendingChipsHTML = renderPendingChips(inc);
+          let pendingChipsHTML = renderPendingChips(inc);
           const requestButtonsHTML = renderRequestButtons(inc);
-          const showChips = !(pendingChipsHTML.includes('Sin validaciones pendientes') && !requestButtonsHTML.trim());
-          const chipsBlockHTML = showChips ? `<div class="chips">${pendingChipsHTML}</div>` : '';
-          const requestsSectionHTML = requestButtonsHTML.trim()
-            ? `<div class="section-title">📦 Solicitudes recientes</div>${requestButtonsHTML}`
-            : '';
+          if (
+            pendingChipsHTML.includes('✔️ Sin validaciones pendientes') &&
+            requestButtonsHTML.trim()
+          ) {
+            pendingChipsHTML = '';
+          }
+          const chipsBlockHTML =
+            pendingChipsHTML.trim() || requestButtonsHTML.trim()
+              ? `<div class="chips">${pendingChipsHTML}${requestButtonsHTML}</div>`
+              : '';
           const news = countNewItems(inc);
           const badgesHTML = news.notes
             ? `<div class="new-badges"><span class="badge badge-notes">📝 ${news.notes}</span></div>`
             : '';
-        
-        
           return `
             <div class="incident-card" data-incident-id="${safe(inc.id)}">
               <div class="incident-header">
@@ -2686,8 +2689,6 @@
               ${seguimientoBanner}
         
               ${chipsBlockHTML}
-
-              ${requestsSectionHTML}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
