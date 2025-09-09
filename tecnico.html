@@ -278,7 +278,7 @@
         }
         .incident-header-right .state-sla{
           display:flex;
-          flex-wrap:wrap;
+          flex-wrap: nowrap;
           gap:6px;
           justify-content:flex-end;
           align-items:center;
@@ -338,12 +338,24 @@
           font-weight: 700;
         }
         .sla-timer{
+          display:inline-flex;
+          align-items:center;
           font-size:18px;
           padding:10px 16px;
           border-radius:12px;
-          background:#1f2937;
-          color:#f9fafb;
+          background:#fff7ed;
+          color:#7c2d12;
           font-weight:600;
+          display:inline-flex;
+          align-items:center;
+          white-space:nowrap;
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .sla-timer.active {
+          animation: blink 1s step-start infinite;
         }
         .sla-good{ background:#16a34a; color:#ffffff; }
         .seguimiento-banner{
@@ -368,20 +380,39 @@
           font-size:12px;
           font-weight:700;
           border:1px solid var(--gray-200);
+          white-space: nowrap;
         }
         .materials-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
         .materials-pending{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
 
-        .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+        .chips{ display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:thin; }
         .notif-chip{
-          display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px;
-          font-weight:700; border:1px solid var(--gray-200);
+          display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px;
+          font-weight:700; border:1px solid var(--gray-200); white-space:nowrap;
         }
         .notif-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
         .notif-warn{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
         .notif-bad{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
 
-        .req-chips{display:flex;flex-wrap:wrap;gap:8px;}
+        .req-chips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:thin;}
+        .chips::-webkit-scrollbar,
+        .req-chips::-webkit-scrollbar{ height:6px; }
+        .chips::-webkit-scrollbar-thumb,
+        .req-chips::-webkit-scrollbar-thumb{ background:var(--gray-300); border-radius:999px; }
+        .chips::-webkit-scrollbar-track,
+        .req-chips::-webkit-scrollbar-track{ background:transparent; }
+
+        .chip-counter{
+          display:inline-block;
+          padding:6px 10px;
+          border-radius:999px;
+          font-size:12px;
+          font-weight:700;
+          border:1px solid var(--gray-200);
+          background:var(--gray-100);
+          color:var(--gray-700);
+          white-space:nowrap;
+        }
         .req-chip.approved{background:#e6f7ee;color:#166534;border-color:#a7f3d0;}
         .req-chip.rejected{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
         .req-chip.pending{background:#fff8e5;color:#92400e;border-color:#fde68a;}
@@ -997,7 +1028,7 @@
                 <button class="modal-close" onclick="closeModal('referenciasModal')">×</button>
             </div>
             <div class="modal-body">
-                <div id="referenciasList" class="referencias-list"></div>
+                <div id="referenciasList" class="referencias-options"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('referenciasModal')">Cerrar</button>
@@ -1489,20 +1520,21 @@
             const wrap = content => `<div>${content}</div>`;
             const cls = asButtons ? 'btn btn-primary' : '';
             const links = [];
-            if (inc.url) links.push(wrap(`<a href="${inc.url}" target="_blank" class="${cls}">🔗 Incidencia</a>`));
-            if (state === "working") {
-                links.push(inc.materials_url
-                    ? wrap(`<a href="${inc.materials_url}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
-                    : wrap('⚠️ Estado de materiales no disponible'));
-                links.push(inc.history_url
-                    ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
-                    : wrap('⚠️ Historial del componente no disponible'));
-            } else {
-                links.push(inc.history_url
-                    ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
-                    : wrap('⚠️ Historial del componente no disponible'));
-            }
-            if (!links.length) links.push(wrap('⚠️ Recursos no disponibles'));
+            // 🔗 Incidencia
+            links.push(inc.url
+                ? wrap(`<a href="${inc.url}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
+                : wrap(`<button class="${cls}" disabled>🔗 Incidencia no disponible</button>`));
+
+            // 📊 Estado de materiales
+            const matUrl = state === 'working' ? inc.materials_url : null;
+            links.push(matUrl
+                ? wrap(`<a href="${matUrl}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
+                : wrap(`<button class="${cls}" disabled>📊 Estado de materiales no disponible</button>`));
+
+            // 🔍 Historial del componente
+            links.push(inc.history_url
+                ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
+                : wrap(`<button class="${cls}" disabled>🔍 Historial del componente no disponible</button>`));
             return links.join('');
         }
         
@@ -1705,6 +1737,23 @@
                 hour12: false
             });
         }
+
+        function formatTimeOrDate(dateString) {
+            if (!dateString) return 'Fecha no disponible';
+            const date = new Date(dateString);
+            const today = new Date();
+            const sameDay = date.getFullYear() === today.getFullYear() &&
+                date.getMonth() === today.getMonth() &&
+                date.getDate() === today.getDate();
+            if (sameDay) {
+                return date.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            }
+            return formatDate(dateString);
+        }
     
         function getPriorityClass(priority) {
             if (!priority) return 'baja';
@@ -1761,6 +1810,19 @@
                     </button>
                 </div>
             `;
+        }
+        
+        // Permite mostrar el botón "Dejar incidencia" solo en ventanas horarias concretas
+        function shouldShowDejarIncidencia() {
+            const now = new Date();
+            const minutes = now.getHours() * 60 + now.getMinutes();
+            // Ventanas: 05:45-06:15, 13:45-14:15 y 21:45-22:15
+            const windows = [
+                [5 * 60 + 45, 6 * 60 + 15],
+                [13 * 60 + 45, 14 * 60 + 15],
+                [21 * 60 + 45, 22 * 60 + 15]
+            ];
+            return windows.some(([start, end]) => minutes >= start && minutes < end);
         }
 
         function showNotification(message, type = 'info') {
@@ -1842,14 +1904,27 @@
           return map;
         }
           function renderSlaPillInHeader(inc, state){
-          if (state === 'working' || state === 'seguimiento') return '';
           const L = getCurrentLevel(inc);
           const end = getSlaEndForLevel(inc, L);
           if (!end) return '';
           const ms = Date.parse(end) - Date.now();
-          const cls = ms <= 0 ? 'sla-critical' : (ms <= 120*60000 ? 'sla-warning' : 'sla-good');
+
+         if (state === 'working' && L === 0 && ms > 0) {
+            let respText = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
+            let acept = "";
+            if (respText !== "{{emptystring}}") {
+              const rows = parseRespLog(respText, inc);
+              const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+            }
+            return `<span class="sla-timer">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
+          }
+
+          if (state === 'working' || state === 'seguimiento') return '';
+
+          const active = (ms > 0 && state === 'pending') ? 'active' : '';
           const label = ms <= 0 ? `SLA vencido en L${L}` : `SLA en L${L} · ${formatRemain(ms)}`;
-          return `<span class="sla-timer ${cls}">⏱️ ${label}</span>`;
+          return `<span class="sla-timer ${active}">⏱️ ${label}</span>`;
         }
         
         // --- ¿Qué categorías tienen pendientes? ---
@@ -1958,7 +2033,7 @@
               chips.push(`<span class="materials-badge req-chip ${req.status}">${safe(label)}</span>`);
             }
           }
-          return chips.length ? `<div class="req-chips">${chips.join(" ")}</div>` : "";
+          return chips.length ? chips.join("") : "";
         }
 
         // ==============================
@@ -2102,7 +2177,7 @@
           const rows = parseNotesLog(t).slice(-20);
           const items = rows.map(r => {
             return `<li class="note-item ${r.class}">
-              <span class="t-time">${formatDate(r.when)}</span>
+              <span class="t-time">${formatTimeOrDate(r.when)}</span>
               <span class="t-body"><span class="note-author"><span class="note-badge">${r.icon}</span>${r.displayName}</span>: ${r.text}</span>
             </li>`;
           }).join('');
@@ -2192,7 +2267,7 @@
           if (delta <= 0) return ""; // vencido → no mostrar
           const mins = delta / 60000;
           const cls = mins <= 30 ? "sla-critical" : mins <= 120 ? "sla-warning" : "sla-good";
-          return `<div class="sla-timer ${cls}">⏱️ ${formatRemain(delta)}</div>`;
+          return `<span class="sla-timer ${cls}">⏱️ ${formatRemain(delta)}</span>`;
         }
         
         // ===== Banner para estado "seguimiento" =====
@@ -2216,9 +2291,10 @@
         
           // Preferir motivo desde "Respuestas (log)"
           let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+          let rows = [];
           let reject = null;
           if (respText !== "{{emptystring}}") {
-            const rows = parseRespLog(respText, incident);
+            rows = parseRespLog(respText, incident);
             reject = getLastRejectReasonByLevel(rows, L);
           } else {
             // Fallback a tus campos antiguos
@@ -2232,6 +2308,12 @@
           const finTxt = end ? formatDate(end) : "";
           if (vencido) return `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`;
           if (reject)  return `<div class="seguimiento-banner">❌ <strong>Rechazado en L${L}</strong>${reject ? ` — Motivo: ${reject}` : ""}</div>`;
+          if (L === 3) {
+            let acept = "";
+            const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+            if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+            return `<div class="seguimiento-banner">Trabajando L3${acept ? ` · ${acept}` : ""}</div>`;
+          }
           return `<div class="seguimiento-banner">ℹ️ En seguimiento en L${L}</div>`;
         }
 
@@ -2261,7 +2343,7 @@
                 <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
-                <button class="btn btn-secondary" title="Dejar incidencia temporalmente" aria-label="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>
+                ${shouldShowDejarIncidencia() ? `<button class="btn btn-secondary" title="Dejar incidencia temporalmente" aria-label="Dejar incidencia temporalmente" onclick="dejarIncidencia('${incident.id}')">🕐 Dejar incidencia</button>` : ''}
                 <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="abrirReferencias('${incident.id}')">📚 Recursos</button>
               ${wrapEnd}`;
           }
@@ -2343,9 +2425,11 @@
           <label class="form-label">Motivo:</label>
         <textarea id="motivoDerivacion" class="form-control" rows="3"></textarea> `
       },
-        { id: "dejar_incidencia", title: "🕐 Dejar incidencia",
-        description: "Ceder incidencia al siguiente turno o departamento.",
-        fields: `
+        ...(
+          shouldShowDejarIncidencia()
+            ? [{ id: "dejar_incidencia", title: "🕐 Dejar incidencia",
+                description: "Ceder incidencia al siguiente turno o departamento.",
+                fields: `
           <label class="form-label">Motivo:</label>
           <select id="dejarIncidenciaReason" class="form-control">
             <option value="">-- Selecciona --</option>
@@ -2354,8 +2438,8 @@
           </select>
           <label class="form-label">Detalles:</label>
           <textarea id="dejarIncidenciaDetalles" class="form-control" rows="3" placeholder="Detalles..."></textarea>
-        `
-      },
+      `}] : []
+        ),
       { id: "apoyo_segundo_tecnico", title: "👥 Solicitar segundo técnico",
         description: "Pide apoyo de otro técnico.",
         fields: `<textarea id="detalleApoyo" class="form-control" rows="3" placeholder="Explica por qué necesitas apoyo."></textarea>`
@@ -2374,6 +2458,7 @@
           `).join('');
         }
         function dejarIncidencia(id){
+          if (!shouldShowDejarIncidencia()) return;
           showAyudaModal(id);
           // preselecciona la tarjeta de “dejar_incidencia”
           setTimeout(() => {
@@ -2447,8 +2532,8 @@
             closeModal('ayudaModal');
             return;
           }
-        
-          if (id === 'dejar_incidencia') {
+    
+            if (id === 'dejar_incidencia' && shouldShowDejarIncidencia()) {
             const reason = document.getElementById('dejarIncidenciaReason')?.value;
             const details = (document.getElementById('dejarIncidenciaDetalles')?.value || '').trim();
             if (!reason) { alert('Selecciona un motivo'); return; }
@@ -2601,7 +2686,7 @@
           const requestButtonsHTML = renderRequestButtons(inc);
           const chipsBlockHTML =
             requestButtonsHTML.trim()
-              ? `<div class="chips">${requestButtonsHTML}</div>`
+              ? `<div class="chips"><div class="req-chips">${requestButtonsHTML}</div></div>`
               : '';
           const news = countNewItems(inc);
           const badgesHTML = news.notes
@@ -2726,7 +2811,7 @@
                     ev = map[ev] || ev;
                 }
                 const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
-                return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatDate(r.when)}</span>`+
+                return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatTimeOrDate(r.when)}</span>`+
                        `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
             }).join('');
             return `<ul class="timeline">${items}</ul>`;
@@ -2750,17 +2835,44 @@
               else if (reqMeta.name) detallesBase.push(reqMeta.name);
               else if (reqMeta.qty) detallesBase.push(reqMeta.qty);
               const detalles = reqMeta.to ? `${detallesBase.join(' ')} → ${reqMeta.to}` : detallesBase.join(' ');
-              let lines = `<li class="phase-request"><span class="t-time">${formatDate(reqPhase?.when)}</span>`+
+              let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase?.when)}</span>`+
                           `<span class="t-body">🔧 ${reqMeta.by || ''} · ${detalles}</span></li>`;
               if (respPhase) {
                 const phaseCls = `phase-${respPhase.phase.toLowerCase()}`;
-                lines += `<li class="${phaseCls}"><span class="t-time">${formatDate(respPhase.when)}</span>`+
+                lines += `<li class="${phaseCls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>`+
                          `<span class="t-body">👩‍💼 ${respMeta.by || ''} · ${respPhase.phase}</span></li>`;
               }
               return lines;
             }).join('');
           return `<ul class="timeline">${items}</ul>`;
         }
+
+    function updateChipCounters() {
+      const containers = [];
+      document.querySelectorAll('.req-chips').forEach(c => containers.push(c));
+      document.querySelectorAll('.chips').forEach(c => {
+        if (!c.querySelector('.req-chips')) containers.push(c);
+      });
+      containers.forEach(container => {
+        container.querySelectorAll('.chip-counter').forEach(e => e.remove());
+        const children = Array.from(container.children).filter(el => !el.classList.contains('chip-counter'));
+        let hidden = 0;
+        const details = [];
+        for (const el of children) {
+          if (el.offsetLeft + el.offsetWidth > container.clientWidth) {
+            hidden++;
+            details.push(el.textContent.trim());
+          }
+        }
+        if (hidden > 0) {
+          const counter = document.createElement('span');
+          counter.className = 'chip-counter';
+          counter.textContent = `+${hidden}`;
+          counter.title = details.join('\n');
+          container.appendChild(counter);
+        }
+      });
+    }
 
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
@@ -2787,6 +2899,7 @@
       });
     
       incidentsContainer.appendChild(frag);
+      updateChipCounters();
     }
     
     // ---------- Aplicar filtros y pintar ----------
