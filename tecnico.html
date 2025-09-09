@@ -382,11 +382,9 @@
         .notif-bad{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
 
         .req-chips{display:flex;flex-wrap:wrap;gap:8px;}
-        .req-chip{padding:6px 10px;border-radius:9999px;font-weight:600;
-                  border:1px solid var(--gray-200);background:#f9fafb;}
-        .req-chip.approved{background:#e8f5e9;border-color:#c8e6c9;}
-        .req-chip.rejected{background:#ffebee;border-color:#ffcdd2;}
-        .req-chip.pending{background:#fff8e1;border-color:#ffe0b2;}
+        .req-chip.approved{background:#e6f7ee;color:#166534;border-color:#a7f3d0;}
+        .req-chip.rejected{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+        .req-chip.pending{background:#fff8e5;color:#92400e;border-color:#fde68a;}
         
 
         .state-pending { background: #fef3c7; color: #92400e; }
@@ -1903,53 +1901,6 @@
         
           return out;
         }
-        
-        // --- Chips de Validaciones Pendientes (robustos ante desfases) ---
-         function renderPendingChips(incident) {
-          const normalize = (lbl) =>
-            String(lbl)
-              .trim()
-              .toLowerCase()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/[^\p{L}\p{N}\s]/gu, "")
-              .trim();
-          const vpField = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
-          const notionLabels = Array.isArray(vpField) ? vpField.map(s=>String(s)) : [];
-
-          const log = ensureLogString(incident["Solicitudes (log)"] || incident.solicitudes_log);
-          const pendingCats = getPendingCategoriesFromLog(log); // "MATERIAL","DERIVACION","APOYO"
-             
-          const labelByCat = {
-            MATERIAL: "📦 Materiales",
-            DERIVACION: "↪️ Derivación",
-            APOYO: "👥 Apoyo",
-          };
-        
-          const chips = new Set();
-          notionLabels.forEach(lbl => {
-            const norm = normalize(lbl);
-            if (norm) chips.add(norm);
-          });
-          pendingCats.forEach(cat => {
-            const norm = normalize(labelByCat[cat]);
-            if (norm) chips.add(norm);
-          });
-
-          const displayByNorm = {
-            materiales: "📦 Materiales",
-            derivacion: "↪️ Derivación",
-            "apoyo segundo tecnico": "👥 Apoyo",
-          };
-
-          const finalChips = Array.from(chips);
-          if (finalChips.length === 0) {
-            return `<span class="materials-badge materials-ok">✔️ Sin validaciones pendientes</span>`;
-          }
-          return finalChips
-            .map(norm => `<span class="materials-badge materials-pending">${displayByNorm[norm] || norm}</span>`)
-            .join(" ");
-        }
 
         function renderCurrentOwnerChip(inc){
           const level = parseInt(inc.escalation_level ?? 0, 10);
@@ -2004,7 +1955,7 @@
             if (meta.detail) parts.push(`👥 ${meta.detail}`);
             const label = parts.join(" ").trim();
             if (label) {
-              chips.push(`<span class="req-chip ${req.status}">${safe(label)}</span>`);
+              chips.push(`<span class="materials-badge req-chip ${req.status}">${safe(label)}</span>`);
             }
           }
           return chips.length ? `<div class="req-chips">${chips.join(" ")}</div>` : "";
@@ -2647,29 +2598,31 @@
           const state = getIncidentRealState(inc, currentTechnician?.email || "");
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
-          let pendingChipsHTML = renderPendingChips(inc);
           const requestButtonsHTML = renderRequestButtons(inc);
-          if (
-            pendingChipsHTML.includes('✔️ Sin validaciones pendientes') &&
-            requestButtonsHTML.trim()
-          ) {
-            pendingChipsHTML = '';
-          }
           const chipsBlockHTML =
-            pendingChipsHTML.trim() || requestButtonsHTML.trim()
-              ? `<div class="chips">${pendingChipsHTML}${requestButtonsHTML}</div>`
+            requestButtonsHTML.trim()
+              ? `<div class="chips">${requestButtonsHTML}</div>`
               : '';
           const news = countNewItems(inc);
           const badgesHTML = news.notes
             ? `<div class="new-badges"><span class="badge badge-notes">📝 ${news.notes}</span></div>`
             : '';
+            // Extrae prioridad desde el ID si viene incluida allí
+          const idWithPriority = String(inc.id || '');
+          const priorityFromId = idWithPriority.match(/\s*[—-]\s*(CRITICA|CRÍTICA|ALTA|MEDIA|BAJA)\s*$/i);
+          let displayId = idWithPriority;
+          let priority = inc.priority || '';
+          if (!priority && priorityFromId) {
+            priority = priorityFromId[1].toUpperCase();
+            displayId = idWithPriority.slice(0, priorityFromId.index).trim();
+          }
           return `
             <div class="incident-card" data-incident-id="${safe(inc.id)}">
               <div class="incident-header">
                 <div>
                  <div class="incident-title">
-                  <span class="inc-title-id" title="${safe(inc.id)}">${safe(inc.id)}</span>
-                  — ${safe(inc.priority)}
+                  <span class="inc-title-id" title="${safe(inc.id)}">${safe(displayId)}</span>
+                  ${priority ? `— ${safe(priority)}` : ''}
                 </div>
                   <div class="incident-meta">
                     <span>⚙️ ${safe(inc.equipment)}</span>
