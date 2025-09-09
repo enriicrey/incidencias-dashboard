@@ -289,10 +289,7 @@ module.exports = async function handler(req, res) {
 
       const normalizeIncident = (inc = {}) => {
         normalizeLogs(inc);
-
-      if (inc.assignment_notes === undefined || inc.assignment_notes === null || inc.assignment_notes === '') {
-          inc.assignment_notes = '{{emptystring}}';
-        }
+        delete inc.assignment_notes;
          
         const lvl = parseInt(inc.escalation_level, 10) || 0;
         ['l1', 'l2', 'l3'].forEach((prefix, idx) => {
@@ -336,7 +333,6 @@ module.exports = async function handler(req, res) {
                 sla_l1_backup_end: inMinutes(base + 60),
                 materials: `Pieza-${level} (${level + 1}); Herramienta-${level} (${level + 2})`,
                 notes: `Nota ejemplo L${level}`,
-                assignment_notes: st == "Pendiente" ? "{{emptystring}}" : `Nota asignación L${level}`,
                 solicitudes_log: sLogs.join("\n") || "{{emptystring}}",
                 respuestas_log: rLogs.join("\n") || "{{emptystring}}",
                 materials_url: `https://example.com/materials/${st.replace(/\s+/g, '-').toLowerCase()}-l${level}`,
