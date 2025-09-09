@@ -284,7 +284,6 @@
           align-items:center;
         }
         .new-badges{ display:flex; gap:4px; }
-        .resource-icons{ display:flex; gap:4px; }
         .badge{ padding:2px 6px; border-radius:999px; font-size:12px; font-weight:600; color:white; }
         .badge-notes{ background:#3b82f6; }
         .badge-escalations{ background:#f59e0b; }
@@ -381,6 +380,13 @@
         .notif-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
         .notif-warn{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
         .notif-bad{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+
+        .req-chips{display:flex;flex-wrap:wrap;gap:8px;}
+        .req-chip{padding:6px 10px;border-radius:9999px;font-weight:600;
+                  border:1px solid var(--gray-200);background:#f9fafb;}
+        .req-chip.approved{background:#e8f5e9;border-color:#c8e6c9;}
+        .req-chip.rejected{background:#ffebee;border-color:#ffcdd2;}
+        .req-chip.pending{background:#fff8e1;border-color:#ffe0b2;}
         
 
         .state-pending { background: #fef3c7; color: #92400e; }
@@ -713,19 +719,12 @@
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
         
         /* Lista tipo timeline */
-        .timeline{ list-style:none; margin:8px 0; padding:0; }
-        .timeline li{
-          display:grid; grid-template-columns: 110px 1fr; gap:10px;
-          padding:8px 10px; border-radius:8px; background:#f9fafb; margin-bottom:6px;
-          font-size:13px;
-        }
-        .timeline .t-time{ color:#6b7280; font-variant-numeric: tabular-nums; }
-        .timeline .t-body{ color:#374151; }
-        .timeline li.note-item{ grid-template-columns:140px 1fr; }
-        .note-sup{ background:#FEF3C7; }
-        .note-tech{ background:#DBEAFE; }
-        .note-badge{ display:inline-block; }
-        .note-author{ display:inline-flex; align-items:center; gap:4px; }
+        .timeline{margin:6px 0;}
+        .timeline li{display:flex;gap:8px;align-items:center;
+                     padding:6px 8px;border-radius:8px;white-space:nowrap;overflow:hidden;}
+        .timeline .t-time{opacity:.7;min-width:140px;}
+        .timeline .t-body{overflow:hidden;text-overflow:ellipsis;}
+        .note-item .note-author{display:inline-flex;gap:6px;align-items:center;}
         .timeline li.level-0{ border-left:4px solid #6366f1; }
         .timeline li.level-1{ border-left:4px solid #3b82f6; }
         .timeline li.level-2{ border-left:4px solid #f59e0b; }
@@ -1286,6 +1285,7 @@
         // ========================================
         function getIncidentRealState(incident, technicianEmail) {
           const level = parseInt(incident.escalation_level) || 0;
+          const email = (technicianEmail || '').toLowerCase();
 
           // Si algún nivel inferior ya fue aceptado, no consultamos niveles superiores
           for (let prev = 0; prev < level; prev++) {
@@ -1300,82 +1300,61 @@
             const respStr = Array.isArray(resp) ? resp.join(' ').toLowerCase() : String(resp || '').toLowerCase();
             if (respStr.includes('acepto')) {
               const techStr = Array.isArray(tech) ? tech.join(',').toLowerCase() : String(tech || '').toLowerCase();
-              if (techStr.includes((technicianEmail || '').toLowerCase())) return 'working';
+              if (techStr.includes(email)) return 'working';
               return 'seguimiento';
             }
           }
         
-          // 0) Si el SLA del nivel actual está vencido, el técnico ve la tarjeta en seguimiento.
-          const end = getSlaEndForLevel(incident, level);
-          const deadline = end ? Date.parse(end) : 0;
-          if (deadline && Date.now() > deadline) {
-            return 'seguimiento';
-          }
+          // SLA del nivel actual
+          const slaEnd = getSlaEndForLevel(incident, level);
+          const withinSla = slaEnd ? Date.now() <= Date.parse(slaEnd) : false;
         
           // 1) Preferir "Respuestas (log)"
           let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
           if (respText !== "{{emptystring}}") {
-            const rows = parseRespLog(respText);
-            const myEvents = rows.filter(r => r.level === level && r.email.toLowerCase() === (technicianEmail||'').toLowerCase());
-            const lastMine = myEvents[myEvents.length - 1];
-            if (lastMine?.ev?.startsWith('REJECTED') || lastMine?.ev === 'REASSIGN_FROM') return 'seguimiento';
-        
-            // ¿quién es el propietario vigente del nivel actual?
-            const ownerRow = rows
-              .filter(r => r.level === level && r.ev === 'ASSIGNED')
-              .slice(-1)[0];
-            const owner = ownerRow?.email?.toLowerCase();
+            const rows = parseRespLog(respText).filter(r => r.level === level);
 
-            if (owner && owner === (technicianEmail || '').toLowerCase()) {
-              const accepted = rows.some(r => r.level === level && r.ev === 'ACCEPTED' && r.email.toLowerCase() === owner);
-              return accepted ? 'working' : 'pending';
+            // Eventos propios prioritarios
+            const myRows = rows.filter(r => r.email.toLowerCase() === email);
+            const lastMine = myRows[myRows.length - 1];
+            if (lastMine?.ev === 'REJECTED') return 'seguimiento';
+            if (lastMine?.ev === 'ACCEPTED') return 'working';
+              
+
+            // Propietario vigente
+            const ownerRow = rows.filter(r => r.ev === 'ASSIGNED').slice(-1)[0];
+            const owner = ownerRow?.email?.toLowerCase();
+            if (owner === email) {
+              return withinSla ? 'pending' : 'seguimiento';
             }
         
-            // Si no soy el titular y no he rechazado, quedo en seguimiento (estoy al tanto).
-            return 'seguimiento';
+            if (owner) return 'seguimiento';
           }
         
           // 2) Fallback (campos legados)
-          const now = Date.now();
-          const currentAssignments = [
-        { level: 0, tech: incident.l0_technician, response: incident.l0_response, sla: incident.sla_l0_end }
-        ];
-        
-        if (level >= 1)
-          currentAssignments.push({ level: 1, tech: incident.l1_technician, response: incident.l1_response, sla: incident.sla_l1_backup_end });
-        
-        if (level >= 2)
-          currentAssignments.push({ level: 2, tech: incident.l2_technicians, response: incident.l2_responses, sla: incident.sla_l2_equipo_end });
-        
-        if (level >= 3)
-          currentAssignments.push({ level: 3, tech: incident.l3_technician, response: incident.l3_response, sla: incident.sla_l3_responsable_end });
+          const assignments = [
+            { level: 0, tech: incident.l0_technician, respText: incident.l0_response, sla: incident.sla_l0_end },
+            { level: 1, tech: incident.l1_technician, respText: incident.l1_response, sla: incident.sla_l1_backup_end },
+            { level: 2, tech: incident.l2_technicians, respText: incident.l2_responses, sla: incident.sla_l2_equipo_end },
+            { level: 3, tech: incident.l3_technician, respText: incident.l3_response, sla: incident.sla_l3_responsable_end }
+          ];
 
-          const curr = currentAssignments.find(a =>
+          const curr = assignments.find(a =>
             a.level === level &&
-            (a.tech === technicianEmail || (a.tech && String(a.tech).includes(technicianEmail)))
+            (Array.isArray(a.tech)
+              ? a.tech.map(t => String(t).toLowerCase()).includes(email)
+              : String(a.tech || '').toLowerCase().includes(email))
           );
           if (curr) {
-            const slaOk = curr.sla ? (Date.parse(curr.sla) - now) > 0 : false;
-            const resp = curr.response || '';
-            if (resp.toLowerCase().includes('rechazo')) return 'seguimiento';
-            if (resp === 'acepto' || resp === '✅ Acepto') return 'working';
-            if ((resp === '⭕ Sin Respuesta' || !resp) && slaOk) return 'pending';
+            const withinSla = curr.sla ? Date.now() <= Date.parse(curr.sla) : false;
+            const resp = Array.isArray(curr.respText)
+              ? curr.respText.join(' ').toLowerCase()
+              : String(curr.respText || '').toLowerCase();
+            if (resp.includes('rechazo')) return 'seguimiento';
+            if (resp.includes('acepto')) return 'working';
+            if (!resp || resp.includes('sin respuesta')) return withinSla ? 'pending' : 'seguimiento';
           }
-            // --- Seguimiento por vencimiento y cambio de nivel (no soy el titular del nivel actual) ---
-            const L = level;  
-            const slaEnd = getSlaEndForLevel(incident, L);
-            if (slaEnd && Date.now() > Date.parse(slaEnd)) {
-              // Si el dueño vigente del nivel actual no soy yo, lo veo en seguimiento
-              let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
-              if (respText !== "{{emptystring}}"){
-                const rows = parseRespLog(respText);
-                const owner = getCurrentOwnerByLevel(rows, L);
-                if (!owner || owner.toLowerCase() !== (technicianEmail||'').toLowerCase()){
-                  return 'seguimiento';
-                }
-              }
-            }
-            return 'seguimiento';
+           return 'seguimiento';
         }
 
 
@@ -1930,8 +1909,8 @@
           // Mapear categorías → etiqueta visible
           const labelByCat = {
             MATERIAL: "📦 Materiales",
-            DERIVACION: "🏢 Derivación de departamento",
-            APOYO: "👥 Apoyo segundo técnico",
+            DERIVACION: "↪️ Derivación",
+            APOYO: "👥 Apoyo técnico",
           };
         
           // Unificar
@@ -1963,6 +1942,35 @@
           else if (typeof val !== 'string') val = JSON.stringify(val ?? '');
           val = String(val || '');
           return val.trim() ? val : '{{emptystring}}';
+        }
+
+        function parseMetaKV(str = "") {
+          const obj = {};
+          String(str || "")
+            .split(/[,;]+/)
+            .map(s => s.trim())
+            .filter(Boolean)
+            .forEach(part => {
+              const [k, v] = part.split(/=/);
+              if (!k) return;
+              obj[k.trim()] = (v || "").trim();
+            });
+          return obj;
+        }
+
+        function renderRequestButtons(inc) {
+          const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
+          if (log === "{{emptystring}}") return "";
+          const rows = parseSolicitudesLog(log);
+          const grouped = groupByRequest(rows);
+          const chips = [];
+          for (const key of Object.keys(grouped)) {
+            const req = grouped[key];
+            const meta = parseMetaKV(req.last?.meta || "");
+            const label = meta.label || meta.msg || meta.note || `${req.cat}#${req.id}`;
+            chips.push(`<span class="req-chip ${req.status}">${safe(label)}</span>`);
+          }
+          return chips.length ? `<div class="req-chips">${chips.join("")}</div>` : "";
         }
 
         // ==============================
@@ -2081,11 +2089,7 @@
         
         function renderNotesSection(inc){
           const t = ensureLogString(inc["Comentarios (log)"] || inc.comentarios_log);
-          const notes = [];
-          if (safe(inc.assignment_notes)) {
-            notes.push(`<div class="section-text">${safe(inc.assignment_notes)}</div>`);
-          }
-          if(!t.trim()) return notes.length ? notes.join('') : `<div class="muted">Sin notas ni mensajes</div>`;
+          if(!t.trim()) return `<div class="muted">Sin notas ni mensajes</div>`;
           const rows = parseNotesLog(t).slice(-20);
           const items = rows.map(r => {
             return `<li class="note-item ${r.class}">
@@ -2093,8 +2097,7 @@
               <span class="t-body"><span class="note-author"><span class="note-badge">${r.icon}</span>${r.displayName}</span>: ${r.text}</span>
             </li>`;
           }).join('');
-          notes.push(`<ul class="timeline">${items}</ul>`);
-          return notes.join('');
+          return `<ul class="timeline">${items}</ul>`;
         }
 
 
@@ -2570,21 +2573,14 @@
         }
          function countNewItems(inc){
           const ref = lastSeen;
-          let notes = 0, escalados = 0, solicitudes = 0;
+          let notes = 0;
 
           const nlog = inc["Comentarios (log)"] || inc.comentarios_log || '';
             if(nlog){
-              notes = parseNotesLog(nlog).filter(r=>r.when>ref).length;
+              notes = parseNotesLog(nlog)
+                .filter(r => r.when > ref && r.role === 'SUP').length;
             }
-            let elog = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
-            if(elog !== "{{emptystring}}"){
-              escalados = parseRespLog(elog).filter(r=>r.when>ref).length;
-            }
-            let slog = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
-            if(slog !== "{{emptystring}}"){
-              solicitudes = parseSolicitudesLog(slog).filter(r=> new Date(r.when)>ref && r.phase==='REQUEST').length;
-            }
-          return {notes, escalados, solicitudes};
+          return {notes};
         }
     
 
@@ -2594,36 +2590,11 @@
           const slaChip = renderSlaPillInHeader(inc, state);
           const seguimientoBanner = renderSeguimientoBanner(inc, state);
           const validChipsHTML = renderPendingChips(inc);
-          const notifList = buildNotificationsFromLog(inc);
           const news = countNewItems(inc);
           const badges = [];
           if(news.notes) badges.push(`<span class="badge badge-notes">📝 ${news.notes}</span>`);
-          if(news.escalados) badges.push(`<span class="badge badge-escalations">📈 ${news.escalados}</span>`);
-          if(news.solicitudes) badges.push(`<span class="badge badge-solicitudes">📦 ${news.solicitudes}</span>`);
           const badgesHTML = badges.length ? `<div class="new-badges">${badges.join('')}</div>` : '';
         
-          // Notificaciones → chips
-          const notifMap = {
-            material_approved: '🟢 Materiales autorizados',
-            material_rejected: '🔴 Materiales rechazados',
-            derivation_approved: '✅ Derivación aprobada',
-            derivation_rejected: '❌ Derivación rechazada',
-            support_approved: '👥 Apoyo aprobado',
-            support_rejected: '👥 Apoyo rechazado',
-            incident_closed: '✅ Cerrada por supervisor',
-            solution_rejected: '🔄 Solución rechazada'
-          };
-          const notifChipCls = t => (
-            t?.endsWith('approved') || t === 'incident_closed' ? 'notif-ok' :
-            t?.endsWith('rejected') ? 'notif-bad' : 'notif-warn'
-          );
-          const notifChips = notifList.map(n =>
-            `<span class="notif-chip ${notifChipCls(n.type)}">${notifMap[n.type] || n.message || 'Aviso'}</span>`
-          ).join(" ");
-          const resourceIcons = [];
-          if (inc.assignment_notes && inc.assignment_notes !== '{{emptystring}}') resourceIcons.push('📝');
-          if (inc.materials_url && inc.materials_url !== '{{emptystring}}') resourceIcons.push('📦');
-          const resourceIconsHTML = resourceIcons.length ? `<div class="resource-icons">${resourceIcons.join('')}</div>` : '';
         
           return `
             <div class="incident-card" data-incident-id="${safe(inc.id)}">
@@ -2644,7 +2615,6 @@
                     <span class="state-badge">${getStateLabel(state)}</span>
                     ${slaChip || ""}
                   </div>
-                 ${resourceIconsHTML}
                  ${badgesHTML}
                 </div>
               </div>
@@ -2653,7 +2623,7 @@
         
               <div class="chips">
                 ${validChipsHTML}
-                ${notifChips}
+                ${renderRequestButtons(inc)}
               </div>
         
               <div class="section-title">Descripción incidencia</div>
