@@ -280,7 +280,7 @@ module.exports = async function handler(req, res) {
         ["solicitudes_log", "respuestas_log"].forEach(k => {
           if (inc[k] === undefined || inc[k] === null || inc[k] === "") {
             inc[k] = "{{emptystring}}";
-          } else if (k === "respuestas_log") {
+          } else {
             inc[k] = sortLogChronologically(inc[k]);
           }
         });
