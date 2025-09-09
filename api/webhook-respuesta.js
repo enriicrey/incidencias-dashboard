@@ -292,13 +292,59 @@ module.exports = async function handler(req, res) {
         delete inc.assignment_notes;
          
         const lvl = parseInt(inc.escalation_level, 10) || 0;
+
+        // Limpiar campos de niveles superiores solo si no traen información útil
         ['l1', 'l2', 'l3'].forEach((prefix, idx) => {
           if (lvl < idx + 1) {
             Object.keys(inc).forEach(key => {
-              if (key.startsWith(prefix + '_')) inc[key] = '{{emptystring}}';
+              if (!key.startsWith(prefix + '_')) return;
+              const val = inc[key];
+              const hasContent =
+                val !== undefined &&
+                val !== null &&
+                !(typeof val === 'string' && val.trim() === '') &&
+                val !== '{{emptystring}}';
+              if (!hasContent) inc[key] = '{{emptystring}}';
             });
           }
         });
+
+        // Datos de nivel actual
+        inc.current_level = lvl;
+        const techKey = lvl === 2 ? 'l2_technicians' : `l${lvl}_technician`;
+        if (inc[techKey] !== undefined) inc.current_technician = inc[techKey];
+
+        // Status por SLA vencido
+        const slaKeys = [
+          'sla_l0_end',
+          'sla_l1_backup_end',
+          'sla_l2_equipo_end',
+          'sla_l3_responsable_end'
+        ];
+        const slaKey = slaKeys[lvl];
+        const slaEnd = slaKey ? inc[slaKey] : null;
+        if (slaEnd && Date.parse(slaEnd) && Date.now() > Date.parse(slaEnd)) {
+          inc.status = 'seguimiento';
+        }
+
+        // Información del nivel superior (N+1)
+        const upperLvl = lvl + 1;
+        if (upperLvl <= 3) {
+          const upperTechKey = upperLvl === 2 ? 'l2_technicians' : `l${upperLvl}_technician`;
+          const upperTech = inc[upperTechKey];
+          const upperSlaKey = slaKeys[upperLvl];
+          const upperSla = upperSlaKey ? inc[upperSlaKey] : null;
+          const hasUpperInfo =
+            (upperTech !== undefined && upperTech !== null && String(upperTech).trim() !== '' && upperTech !== '{{emptystring}}') ||
+            (upperSla !== undefined && upperSla !== null && String(upperSla).trim() !== '' && upperSla !== '{{emptystring}}');
+          if (hasUpperInfo) {
+            inc.upper_level = {
+              level: upperLvl,
+              technician: upperTech || '',
+              sla: upperSla || ''
+            };
+          }
+        }
         return inc;
       };
 
