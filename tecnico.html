@@ -1057,9 +1057,6 @@
         <div class="modal-body">
             <!-- Formulario de nuevo material -->
             <div class="form-grid">
-                <input type="text" id="matNombre" placeholder="Código o nombre" list="inventoryOptions" class="form-control">
-                <input type="text" id="matUnidad" placeholder="Unidad" class="form-control" readonly>
-                <input type="text" id="matConsumo" placeholder="Consumo" class="form-control" readonly>
                 <select id="matSelect" class="form-control" onchange="onMaterialChange()">
                     <option value="">-- Material --</option>
                 </select>
@@ -1070,8 +1067,6 @@
                     <option value="urgente">Urgente</option>
                 </select>
             </div>
-            <datalist id="inventoryOptions"></datalist>
-            <input type="hidden" id="matCodigo">
             <button class="btn btn-secondary" onclick="agregarMaterial()">➕ Añadir a la lista</button>
 
             <!-- Lista de materiales añadidos -->
@@ -1107,7 +1102,6 @@
                 </div>
             </div>
         </div>
-    <script src="inventory.js"></script>
     <script>
         // ========================================
         //  VARIABLES GLOBALES
@@ -1116,8 +1110,8 @@
         let pendingAction = null;
         let selectedReason = null;
         let currentIncidentId = null;
-        let inventoryLight = null;
-        let inventoryPromise = null;
+        let inventory = null;
+        let inventoryCache = [];
 
         const MAX_LOG_ENTRIES = (() => {
             const v = Number(window?.MAX_LOG_ENTRIES);
@@ -1153,37 +1147,32 @@
             }, duration);
         }
 
-        async function loadInventoryLight(force = false) {
-            if (inventoryLight && !force) return inventoryLight;
+        async function loadInventory(force = false) {
+            if (inventoryLight && !force) {
+                inventoryCache = inventoryLight.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
+                populateInventorySelector();
+                return inventoryLight;
+            }
             if (inventoryPromise && !force) return inventoryPromise;
-
-            inventoryPromise = (async () => {
-                try {
-                    const resp = await fetch('/api/get_inventory');
-                    const raw = await resp.text();
-                    let data;
-                    try {
-                        data = JSON.parse(raw);
-                    } catch {
-                        throw new Error(`Respuesta no-JSON del servidor (${resp.status}): ${raw.slice(0,200)}`);
-                    }
-                    if (Array.isArray(data)) {
-                        inventoryLight = data;
-                    } else if (data.status === 'success' && Array.isArray(data.inventory)) {
-                        inventoryLight = data.inventory;
-                    } else {
-                        throw new Error(data.message || 'Error al cargar inventario');
-                    }
-                    return inventoryLight;
-                } catch (err) {
-                    showToast('❌ Error cargando inventario');
-                    throw err;
-                } finally {
-                    inventoryPromise = null;
+            try {
+                data = JSON.parse(raw);
+                } catch {
+                    throw new Error(`Respuesta no-JSON del servidor (${resp.status}): ${raw.slice(0,200)}`);
                 }
-            })();
-
-            return inventoryPromise;
+                if (Array.isArray(data)) {
+                    inventory = data;
+                } else if (data.status === 'success' && Array.isArray(data.inventory)) {
+                    inventory = data.inventory;
+                } else {
+                    throw new Error(data.message || 'Error al cargar inventario');
+                }
+                inventoryCache = inventoryLight.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
+                populateInventorySelector();
+                return inventory;
+            } catch (err) {
+                showToast('❌ Error cargando inventario');
+                throw err;
+            }
         }
 
         function updateTechnicianHeader(technician) {
@@ -1349,7 +1338,7 @@
                     updateTechnicianHeader(currentTechnician);
                     lastSeen = new Date();
                     localStorage.setItem('lastSeen', lastSeen.toISOString());
-                    loadInventoryLight().catch(() => {});
+                    loadInventory().catch(() => {});
                 } else {
                     let msg = data.message || 'Error al cargar incidencias';
                     const extras = [];
@@ -1584,10 +1573,9 @@
 
         function showResolverModal(incidentId) {
             currentIncidentId = incidentId;
-            const inc = allIncidents.find(i => i.id === incidentId);
-            const container = document.getElementById('resolverRequests');
-            if (container) container.innerHTML = renderSolicitudesResumen(inc || {});
             const inc = allIncidents.find(i => i.id === incidentId) || {};
+            const container = document.getElementById('resolverRequests');
+            if (container) container.innerHTML = renderSolicitudesResumen(inc);
             renderMaterialesResultado(inc.materials_requested || []);
             document.getElementById('resolverModal').classList.remove('hidden');
             updateResolverValidation();
@@ -1596,21 +1584,21 @@
 
         async function showMaterialesModal(incidentId) {
             currentIncidentId = incidentId;
-            updateEnviarMaterialesBtn();
-            setupUsageValidation();
+            validateMateriales();
             const modal = document.getElementById('materialesModal');
             const controls = modal.querySelectorAll('input, select, button');
             controls.forEach(el => el.disabled = true);
             modal.classList.remove('hidden');
-            if (!inventoryLight) {
+            if (!inventory) {
                 try {
-                    await loadInventoryLight();
+                    await loadInventory();
                 } catch {
                     return; // toast already shown, keep disabled
                 }
             }
             controls.forEach(el => el.disabled = false);
-            loadInventoryLight();
+            populateInventorySelector();
+            loadInventory(true).then(populateInventorySelector).catch(() => {});
         }
 
         function renderMaterialesResultado(materials = []) {
@@ -1869,35 +1857,28 @@
         }
 
       function confirmResolver() {
-      const solution = document.getElementById('solutionDescription').value.trim();
-      const solution = document.getElementById('solutionDescription').value.trim();
-        const materials = document.getElementById('materialsUsed').value.trim();
-        if (!solution) {
+      const solution_description = document.getElementById('solutionDescription').value.trim();
+        if (!solution_description) {
           showNotification('Describe la solución implementada', 'error');
           return;
         }
 
+        const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
+        const materiales_resultado = rows.map(row => ({
+          req: row.dataset.req || '',
+          consumida: Number(row.querySelector('.consumida-input').value) || 0,
+          devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
+          desechada: Number(row.querySelector('.desechada-input').value) || 0
+        }));
+
         handleAction('resolver', currentIncidentId, {
           solution_description: solution,
-          materials_used: materials
+          materiales_resultado: materials
+
         });
         closeModal('resolverModal');
-    
-      const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
-      const materiales = rows.map(row => ({
-        req: row.dataset.req || '',
-        code: row.dataset.code || '',
-        name: row.dataset.name || '',
-        unit: row.dataset.unit || '',
-        qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
-        qty_aprobada: row.dataset.qty_aprobada ? Number(row.dataset.qty_aprobada) : undefined,
-        consumida: Number(row.querySelector('.consumida-input').value) || 0,
-        devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
-        desechada: Number(row.querySelector('.desechada-input').value) || 0
-      }));
       }
     
-
         // ========================================
         //  UTILIDADES Y HELPERS
         // ========================================
@@ -2831,169 +2812,68 @@
             //  SOLICITAR MATERIALES - MULTIPLE
             // ========================================
             let materialesTemp = [];
-            function initInventoryAutocomplete(){
-                const dl = document.getElementById('inventoryOptions');
-                if(!dl || !window.inventoryList) return;
-                window.inventoryList.forEach(item => {
-                    const optCode = document.createElement('option');
-                    optCode.value = item.code;
-                    optCode.label = item.name;
-                    dl.appendChild(optCode);
-                    const optName = document.createElement('option');
-                    optName.value = item.name;
-                    optName.label = item.code;
-                    dl.appendChild(optName);
-                });
-                document.getElementById('matNombre').addEventListener('change', handleInventorySelection);
-            }
-
-            function handleInventorySelection(){
-                const input = document.getElementById('matNombre');
-                const val = input.value.trim().toLowerCase();
-                const item = window.inventoryList.find(i => i.code.toLowerCase() === val || i.name.toLowerCase() === val);
-                const unidad = document.getElementById('matUnidad');
-                const consumo = document.getElementById('matConsumo');
-                const codigo = document.getElementById('matCodigo');
-                const cantidad = document.getElementById('matCantidad');
-                if(item){
-                    input.value = item.name;
-                    codigo.value = item.code;
-                    unidad.value = item.unit;
-                    consumo.value = item.consumo;
-                    if(['kg','l','m'].includes(item.unit)){
-                        cantidad.step = '0.01';
-                    }else{
-                        cantidad.step = '1';
-                        cantidad.value = Math.floor(cantidad.value || 0);
-                    }
-                }else{
-                    codigo.value = '';
-                    unidad.value = '';
-                    consumo.value = '';
-                }
-            }
-
-            document.addEventListener('DOMContentLoaded', initInventoryAutocomplete);
-            function updateEnviarMaterialesBtn() {
+            
+            function validateMateriales() {
                 const btn = document.getElementById('enviarMaterialesBtn');
-                if (!btn) return;
-                const hasError = document.querySelector('.usage-error:not(.hidden)');
-                btn.disabled = materialesTemp.length === 0 || !!hasError;
-            }
-
-            function setupUsageValidation() {
-                document.querySelectorAll('.usage-row').forEach(row => {
-                    const total = parseFloat(row.dataset.total) || 0;
-                    const consumida = row.querySelector('input.consumida');
-                    const devuelta = row.querySelector('input.devuelta');
-                    const desechada = row.querySelector('input.desechada');
-                    const errorEl = row.querySelector('.usage-error');
-                    if (!consumida || !devuelta || !desechada || !errorEl) return;
-                    function validate() {
-                        const sum = (parseFloat(consumida.value) || 0) +
-                                    (parseFloat(devuelta.value) || 0) +
-                                    (parseFloat(desechada.value) || 0);
-                        if (sum > total) {
-                            errorEl.textContent = `La suma no puede exceder ${total}`;
-                            errorEl.classList.remove('hidden');
-                        } else {
-                            errorEl.textContent = '';
-                            errorEl.classList.add('hidden');
-                        }
-                        updateEnviarMaterialesBtn();
-                    }
-                    [consumida, devuelta, desechada].forEach(inp => inp.addEventListener('input', validate));
-                });
-            }
-
-            let inventoryCache = [];
-
-            async function loadInventoryLight() {
-              if (inventoryCache.length) return inventoryCache;
-              try {
-                const resp = await fetch('/api/get_inventory');
-                const data = await resp.json();
-                inventoryCache = Array.isArray(data)
-                  ? data.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }))
-                  : [];
-              } catch (err) {
-                console.error('Error cargando inventario', err);
-                inventoryCache = [];
-              }
-              populateInventorySelector();
-              return inventoryCache;
+                if (btn) btn.disabled = materialesTemp.length === 0;
             }
 
             function populateInventorySelector() {
-              const sel = document.getElementById('matSelect');
-              if (!sel) return;
-              sel.innerHTML = '<option value="">-- Material --</option>' +
-                inventoryCache.map(item => `<option value="${item.code}">${item.name} (${item.unit})</option>`).join('');
+               const sel = document.getElementById('matSelect');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">-- Material --</option>' +
+                  (inventory || []).map(item => `<option value="${item.code}">${item.name} (${item.unit})</option>`).join('');
             }
 
             function onMaterialChange() {
-              const code = document.getElementById('matSelect').value;
-              const item = inventoryCache.find(i => i.code === code);
-              const qtyInput = document.getElementById('matQty');
-              const allowDecimal = ['kg', 'l', 'm'];
-              qtyInput.step = (item && allowDecimal.includes(item.unit)) ? '0.01' : '1';
+               const code = document.getElementById('matSelect').value;
+                const item = (inventory || []).find(i => i.code === code);
+                const qtyInput = document.getElementById('matQty');
+                const allowDecimal = ['kg', 'l', 'm'];
+                qtyInput.step = (item && allowDecimal.includes(item.unit)) ? '0.01' : '1';
             }
         
             function agregarMaterial() {
-            const codigo = document.getElementById("matCodigo").value.trim();
-            const code = document.getElementById('matSelect').value;
-            const unidad = document.getElementById("matUnidad").value.trim();
-            const consumo = document.getElementById("matConsumo").value.trim();
-            const cantidad = parseFloat(document.getElementById("matCantidad").value);
+              const code = document.getElementById('matSelect').value;
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
-              if (!code || !qty) {
-                alert('Por favor selecciona material y cantidad.');
-                return;
-            }
-            const item = inventoryCache.find(i => i.code === code);
-              if (!item) {
-                alert('Material inválido');
+              if (!code || !qty || qty <= 0 || !urgencia) {
+                alert('Por favor selecciona material, cantidad (>0) y urgencia.');
                 return;
               }
-              const allowDecimal = ['kg', 'l', 'm'];
-              if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
-                alert('La cantidad debe ser un número entero');
-                return;
+              const item = inventoryCache.find(i => i.code === code);
+                if (!item) {
+                  alert('Material inválido');
+                  return;
+                }
+                const allowDecimal = ['kg', 'l', 'm'];
+                if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
+                 alert('La cantidad debe ser un número entero');
+                 return;
               }
-              if (!['kg','l','m'].includes(unidad) && !Number.isInteger(cantidad)) {
-                alert("La cantidad debe ser un número entero para la unidad seleccionada.");
-                return;
-            }
-
-              const nuevoMaterial = { codigo, nombre, unidad, consumo, cantidad, tipo, urgencia, justificacion };
-              materialesTemp.push(nuevoMaterial);
                 
-              renderMaterialesList();
-              setupUsageValidation();
-              updateEnviarMaterialesBtn();
-              document.getElementById('matSelect').value = '';
-              document.getElementById("matCodigo").value = "";
-                document.getElementById("matUnidad").value = "";
-                document.getElementById("matConsumo").value = "";
-              document.getElementById('matQty').value = '';
-              document.getElementById("matUrgencia").value = "";
+                materialesTemp.push({
+                code: item.code,
+                name: item.name,
+                unit: item.unit,
+                qty,
+                urgencia
+              });
 
-            if (!codigo || !nombre || !cantidad || !tipo || !urgencia || cantidad <= 0) {
-                alert("Por favor completa nombre, cantidad (>0), tipo y urgencia.");
-                return;
-            }
-
-                
+                renderMaterialesList();
+       
+                document.getElementById('matSelect').value = '';
+                document.getElementById('matQty').value = '';
+                document.getElementById('matUrgencia').value = '';
             }
 
             function renderMaterialesList() {
               const container = document.getElementById('materialsList');
               if (materialesTemp.length === 0) {
                 container.innerHTML = '<p>No hay materiales añadidos.</p>';
-                updateEnviarMaterialesBtn();
+                validateMateriales();
                 return;
-               }
+              }
               const rows = materialesTemp.map((mat, idx) => `
                 <tr>
                   <td>${mat.code}</td>
@@ -3004,13 +2884,12 @@
                 </tr>
               `).join('');
               container.innerHTML = `<table class="materials-table"><thead><tr><th>Código</th><th>Nombre</th><th>Cantidad</th><th>Urgencia</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+              validateMateriales();
             }
 
             function eliminarMaterial(index) {
               materialesTemp.splice(index, 1);
               renderMaterialesList();
-              setupUsageValidation();
-              updateEnviarMaterialesBtn();
             }
 
             async function enviarMateriales() {
@@ -3018,10 +2897,7 @@
                 alert('No hay materiales para enviar.');
                 return;
               }
-              if (document.querySelector('.usage-error:not(.hidden)')) {
-            showNotification('Revisa las cantidades de materiales', 'error');
-            return;
-          }
+                
               const ok = await handleAction('request_materials', currentIncidentId, {
                 items: materialesTemp
               });
@@ -3030,6 +2906,7 @@
                 renderMaterialesList();
                 closeModal('materialesModal');
               }
+              validateMateriales();
             }
             
     // Estado en memoria
