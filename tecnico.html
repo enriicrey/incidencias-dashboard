@@ -1111,7 +1111,7 @@
         let selectedReason = null;
         let currentIncidentId = null;
         let inventory = null;
-        let inventoryCache = [];
+        let inventoryPromise;
 
         const MAX_LOG_ENTRIES = (() => {
             const v = Number(window?.MAX_LOG_ENTRIES);
@@ -1148,31 +1148,25 @@
         }
 
         async function loadInventory(force = false) {
-            if (inventoryLight && !force) {
-                inventoryCache = inventoryLight.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
-                populateInventorySelector();
-                return inventoryLight;
-            }
-            if (inventoryPromise && !force) return inventoryPromise;
-            try {
-                data = JSON.parse(raw);
-                } catch {
-                    throw new Error(`Respuesta no-JSON del servidor (${resp.status}): ${raw.slice(0,200)}`);
-                }
-                if (Array.isArray(data)) {
-                    inventory = data;
-                } else if (data.status === 'success' && Array.isArray(data.inventory)) {
-                    inventory = data.inventory;
-                } else {
-                    throw new Error(data.message || 'Error al cargar inventario');
-                }
-                inventoryCache = inventoryLight.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
-                populateInventorySelector();
-                return inventory;
-            } catch (err) {
-                showToast('❌ Error cargando inventario');
-                throw err;
-            }
+            if (!force && inventoryPromise) return inventoryPromise;
+            inventoryPromise = fetch('/api/get_inventory')
+                .then(resp => resp.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        inventory = data;
+                    } else if (data.status === 'success' && Array.isArray(data.inventory)) {
+                        inventory = data.inventory;
+                    } else {
+                        throw new Error(data.message || 'Error al cargar inventario');
+                    }
+                    inventoryCache = inventory.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
+                    return inventory;
+                })
+                .catch(err => {
+                    showToast('❌ Error cargando inventario');
+                    throw err;
+                });
+            return inventoryPromise;
         }
 
         function updateTechnicianHeader(technician) {
@@ -1589,16 +1583,13 @@
             const controls = modal.querySelectorAll('input, select, button');
             controls.forEach(el => el.disabled = true);
             modal.classList.remove('hidden');
-            if (!inventory) {
-                try {
-                    await loadInventory();
-                } catch {
-                    return; // toast already shown, keep disabled
-                }
+            try {
+                await loadInventory();
+            } catch {
+                return; // toast already shown, keep disabled
             }
             controls.forEach(el => el.disabled = false);
             populateInventorySelector();
-            loadInventory(true).then(populateInventorySelector).catch(() => {});
         }
 
         function renderMaterialesResultado(materials = []) {
@@ -1856,7 +1847,7 @@
             closeModal('reasonModal');
         }
 
-      function confirmResolver() {
+      async function confirmResolver() {
       const solution_description = document.getElementById('solutionDescription').value.trim();
         if (!solution_description) {
           showNotification('Describe la solución implementada', 'error');
@@ -1871,12 +1862,12 @@
           desechada: Number(row.querySelector('.desechada-input').value) || 0
         }));
 
-        handleAction('resolver', currentIncidentId, {
-          solution_description: solution,
-          materiales_resultado: materials
+          const ok = await handleAction('resolver', currentIncidentId, {
+          solution_description,
+          materiales_resultado
 
         });
-        closeModal('resolverModal');
+        if (ok) closeModal('resolverModal');
       }
     
         // ========================================
@@ -2841,7 +2832,7 @@
                 alert('Por favor selecciona material, cantidad (>0) y urgencia.');
                 return;
               }
-              const item = inventoryCache.find(i => i.code === code);
+              const item = (inventory || []).find(i => i.code === code);
                 if (!item) {
                   alert('Material inválido');
                   return;
@@ -2856,6 +2847,7 @@
                 code: item.code,
                 name: item.name,
                 unit: item.unit,
+                consumo: item.consumo,
                 qty,
                 urgencia
               });
@@ -2898,8 +2890,9 @@
                 return;
               }
                 
+              const items = materialesTemp.map(({code, name, unit, consumo, qty, urgencia}) => ({code, name, unit, consumo, qty, urgencia}));
               const ok = await handleAction('request_materials', currentIncidentId, {
-                items: materialesTemp
+                items
               });
               if (ok) {
                 materialesTemp = [];
