@@ -1319,10 +1319,20 @@
         function setupFamilyFilter() {
           const sel = document.getElementById('matFamilyFilter');
           if (!sel) return;
+        
+          // Construir opciones
           const fams = getUniqueFamilies();
           sel.innerHTML = '<option value="">Todas</option>' +
             fams.map(f => `<option value="${safe(f)}">${safe(f)}</option>`).join('');
-          sel.onchange = () => populateInventorySelector(sel.value);
+          // Al cambiar familia: repoblar datalist y limpiar selección
+          sel.onchange = (e) => {
+            populateInventorySelector(e.target.value);
+            const matInput = document.getElementById('matSelect');
+            if (matInput) {
+              matInput.value = '';
+              onMaterialChange(); // restablece hint de unidad/consumo y step del qty
+            }
+          };
         }
         
         /** Acepta: código, nombre, o "CODE - Nombre" mostrado en el datalist */
@@ -1512,7 +1522,6 @@
                   // 3) Habilitar botones "📦 Materiales" en caliente si procede
                   document.querySelectorAll('button[aria-label="Solicitar materiales"]')
                     .forEach(btn => btn.disabled = !inventoryLoadedOk);
-                
                   lastSeen = new Date();
                   localStorage.setItem('lastSeen', lastSeen.toISOString());
                 } else {
@@ -1816,39 +1825,29 @@
            showMaterialesModal(currentIncidentId);
        }
 
-        function renderMaterialesResultado(materials = []) {
-            const wrapper = document.getElementById('materialesResultadoWrapper');
-            if (!wrapper) return;
-            if (!materials.length) {
-                wrapper.innerHTML = '<p>No hay materiales solicitados.</p>';
-                return;
-            }
-            const rows = materials.map(m => `
-                <tr data-req="${safe(m.req)}" data-code="${safe(m.code)}" data-name="${safe(m.name)}" data-unit="${safe(m.unit)}" data-qty_solicitada="${safe(m.qty_solicitada)}" data-qty_aprobada="${safe(m.qty_aprobada)}">
-                    <td>${safe(m.req)}</td>
-                    <td>${safe(m.code)}</td>
-                    <td>${safe(m.name)}</td>
-                    <td>${safe(m.unit)}</td>
-                    <td>${safe(m.qty_solicitada)}</td>
-                    <td>${safe(m.qty_aprobada)}</td>
-                    <td><input type="number" min="0" class="form-control consumida-input" value="0"></td>
-                    <td><input type="number" min="0" class="form-control devuelta-input" value="0"></td>
-                    <td><input type="number" min="0" class="form-control desechada-input" value="0"></td>
-                    <td class="mat-error" style="color:#b91c1c;font-size:12px;"></td>
-                </tr>
-            `).join('');
-            wrapper.innerHTML = `
-                <table class="table" id="materialesResultadoTable">
-                    <thead>
-                        <tr>
-                            <th>Req</th><th>Código</th><th>Nombre</th><th>Unidad</th><th>Sol.</th><th>Apr.</th>
-                            <th>Consumida</th><th>Devuelta</th><th>Desechada</th><th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="materialesResultadoBody">${rows}</tbody>
-                </table>
-            `;
-            wrapper.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateResolverValidation));
+        function unitAllowsDecimal(u) {
+          const unit = (u || '').toLowerCase().trim();
+          return unit === 'm' || unit === 'kg' || unit === 'l';
+        }
+        function renderMaterialesResultado(items = []) {
+          const tbody = document.getElementById('materialesResultadoBody');
+          if (!tbody) return;
+          const rowsHtml = items.map(it => {
+            const unit = normalizeUnit(it.unit || '');
+            const step = unitAllowsDecimal(unit) ? '0.01' : '1';
+            return `
+              <tr data-req="${escapeHtml(it.req || '')}" data-code="${escapeHtml(it.code || '')}">
+                <td class="nowrap">${escapeHtml(it.code || '')}</td>
+                <td class="ellipsis" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name || '')}</td>
+                <td class="nowrap">${escapeHtml(unit)}</td>
+                <td class="num">${Number(it.qty_solicitada || 0)}</td>
+                <td class="num">${Number(it.qty_aprobada ?? it.qty_solicitada ?? 0)}</td>
+                <td><input class="consumida-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
+                <td><input class="devuelta-input"  type="number" min="0" step="${step}" inputmode="decimal"></td>
+                <td><input class="desechada-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
+              </tr>`;
+          }).join('');
+          tbody.innerHTML = rowsHtml;
         }
 
         function updateResolverValidation() {
@@ -3094,10 +3093,9 @@
                 const fam = i.family ? ` · [${i.family}]` : '';
                 const label = `${i.code} - ${i.name}${unit}${fam}`;
                 // usamos value con el label completo para que el usuario vea y el resolver lo soporte
-                return `<option value="${safe(label)}"></option>`;
+                return `<option value="${escapeHtml(label)}"></option>`;
               }).join('');
             }
-
 
             function onMaterialChange() {
               const val = document.getElementById('matSelect').value.trim();
