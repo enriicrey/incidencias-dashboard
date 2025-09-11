@@ -79,7 +79,6 @@ module.exports = async function handler(req, res) {
     if (norm.description && !norm.help_description) norm.help_description = norm.description;
     if (norm.description && !norm.information_content) norm.information_content = norm.description;
     if (typeof norm.read_only === 'string') norm.read_only = norm.read_only === 'true';
-    if (typeof norm.work_can_continue === 'string') norm.work_can_continue = norm.work_can_continue === 'true';
 
     Object.assign(data, norm);
 
@@ -103,32 +102,25 @@ module.exports = async function handler(req, res) {
         if (data.notify_next !== undefined) makePayload.notify_next = data.notify_next;
         break;
       case 'resolver':
-        if (!data.solution_description || !data.time_invested) {
-          return res.status(400).json({ status: 'error', message: 'solution_description y time_invested son obligatorios' });
+        if (!data.solution_description || !Array.isArray(data.materiales_resultado)) {
+          return res.status(400).json({ status: 'error', message: 'solution_description y materiales_resultado son obligatorios' });
         }
         makePayload.pin = data.pin || '';
         makePayload.solution_description = data.solution_description;
-        makePayload.time_invested = data.time_invested;
-        makePayload.preventive_actions = data.preventive_actions || '';
-        makePayload.materials_used = Array.isArray(data.materials_used) ? data.materials_used : (data.materials_used || []);
-        if (Array.isArray(makePayload.materials_used)) {
-          makePayload.materials_count = makePayload.materials_used.length;
-          makePayload.materials_summary = makePayload.materials_used
-            .map(m => `${m.materialName || m.nombre || 'Material'} (${m.quantity || m.cantidad || 1})`)
-            .join(', ');
-        }
+        makePayload.materials_used = data.materiales_resultado;
+        makePayload.materials_count = makePayload.materials_used.length;
+        makePayload.materials_summary = makePayload.materials_used
+          .map(m => `${m.materialName || m.nombre || 'Material'} (${m.quantity || m.cantidad || 1})`)
+          .join(', ');
         break;
-      case 'solicitar_materiales': {
-        const list = Array.isArray(data.materials_requested) ? data.materials_requested : [];
+      case 'request_materials': {
+        const list = Array.isArray(data.items) ? data.items : [];
         if (!list.length) {
-          return res.status(400).json({ status: 'error', message: 'materials_requested debe ser un array con al menos un material' });
+          return res.status(400).json({ status: 'error', message: 'items debe ser un array con al menos un material' });
         }
         makePayload.pin = data.pin || '';
         makePayload.materials_requested = list;
-        makePayload.work_can_continue = !!data.work_can_continue;
-        makePayload.impact_if_delayed = data.impact_if_delayed || 'Sin impacto especificado';
         makePayload.materials_count = list.length;
-        makePayload.urgency_levels = list.map(m => m.urgencia || m.urgency || 'normal').join(',');
         break;
       }
       case 'derivar_departamento':
