@@ -1081,6 +1081,7 @@
             <div class="materials-list" id="materialsList"></div>
         </div>
         <div class="modal-footer">
+            <button id="retryInventoryBtn" class="btn btn-secondary" onclick="retryInventory()">🔄 Reintentar</button>
             <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
             <button id="enviarMaterialesBtn" class="btn btn-success" onclick="enviarMateriales()" disabled>✅ Enviar solicitud</button>
         </div>
@@ -1112,8 +1113,8 @@
         </div>
      <script id="inventory-seed" type="application/json">
     [
-        {"code": "INV001", "name": "Cable UTP", "unit": "metros", "consumo": "Consumible"},
-        {"code": "INV002", "name": "Conector RJ45", "unit": "pieza", "consumo": "Consumible"}
+        {"code": "INV001", "name": "Cable UTP", "unit": "m", "consumo": "Consumible"},
+        {"code": "INV002", "name": "Conector RJ45", "unit": "ud", "consumo": "Consumible"}
     ]
     </script>
     <script>
@@ -1160,12 +1161,32 @@
             }, duration);
         }
 
+        function normalizeUnit(unit) {
+            const map = {
+                'metros': 'm',
+                'metro': 'm',
+                'm': 'm',
+                'pieza': 'ud',
+                'piezas': 'ud',
+                'unidad': 'ud',
+                'unidades': 'ud',
+                'ud': 'ud',
+                'kilogramo': 'kg',
+                'kilogramos': 'kg',
+                'kg': 'kg',
+                'litro': 'l',
+                'litros': 'l',
+                'l': 'l'
+            };
+            return map[(unit || '').toLowerCase()] || unit;
+        }
+
         async function loadInventoryLight(force = false) {
             if (!force && inventory) return inventory;
             const seed = document.getElementById('inventory-seed');
             if (seed) {
                 try {
-                    inventory = JSON.parse(seed.textContent);
+                    inventory = JSON.parse(seed.textContent).map(i => ({...i, unit: normalizeUnit(i.unit)}));
                 } catch (err) {
                     console.error('Error al parsear inventario:', err);
                     inventory = [];
@@ -1594,19 +1615,22 @@
             }
             if (!inventory || inventory.length === 0) {
                 showToast('❌ Inventario no disponible');
-                if (confirm('Inventario no disponible. ¿Reintentar?')) {
-                    await loadInventoryLight(true);
-                    if (!inventory || inventory.length === 0) {
-                        showToast('❌ Inventario no disponible');
-                        return;
-                    }
-                } else {
-                    return;
-                }
+                closeModal('materialesModal');
+                return;
             }
             const modal = document.getElementById('materialesModal');
             populateInventorySelector();
             modal.classList.remove('hidden');
+        }
+
+        async function retryInventory() {
+            await loadInventoryLight(true);
+            if (!inventory || inventory.length === 0) {
+                showToast('❌ Inventario no disponible');
+                closeModal('materialesModal');
+                return;
+            }
+            populateInventorySelector();
         }
 
         function renderMaterialesResultado(materials = []) {
@@ -1881,19 +1905,10 @@
 
         const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
         const materiales_resultado = rows.map(row => {
-          const data = {
-            req: safe(row.dataset.req) || '',
-            code: safe(row.dataset.code) || '',
-            name: safe(row.dataset.name) || '',
-            unit: safe(row.dataset.unit) || '',
-            qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
-            qty_aprobada: row.dataset.qty_aprobada ? Number(row.dataset.qty_aprobada) : null,
-            consumida: Number(row.querySelector('.consumida-input').value) || 0,
-            devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
-            desechada: Number(row.querySelector('.desechada-input').value) || 0
-          };
-          const { req, consumida, devuelta, desechada } = data;
-          return { req, consumida, devuelta, desechada };
+          const consumida = Number(row.querySelector('.consumida-input').value) || 0;
+          const devuelta = Number(row.querySelector('.devuelta-input').value) || 0;
+          const desechada = Number(row.querySelector('.desechada-input').value) || 0;
+          return { req: row.dataset.req, consumida, devuelta, desechada }; 
         });
           
           const ok = await handleAction('resolver', currentIncidentId, {
@@ -2858,18 +2873,19 @@
                const list = document.getElementById('matOptions');
                if (!list) return;
                list.innerHTML = inventory.map(i =>
-                 `<option value="${safe(i.code)} - ${safe(i.name)}"></option>`).join('');
+                 `<option value="${safe(i.code)}" label="${safe(i.code)} - ${safe(i.name)}"></option>`).join('');
             }
 
             function onMaterialChange() {
                const val = document.getElementById('matSelect').value.trim();
-                const item = (inventory || []).find(i => `${i.code} - ${i.name}` === val || i.code === val || i.name === val);
+                const item = (inventory || []).find(i => i.code === val);
                 const qtyInput = document.getElementById('matQty');
                 const info = document.getElementById('matInfo');
                 const allowDecimal = ['kg', 'l', 'm'];
                 if (item) {
-                    qtyInput.step = allowDecimal.includes(item.unit) ? '0.01' : '1';
-                    if (info) info.textContent = `Unidad: ${item.unit} (${item.consumo})`;
+                    const unit = normalizeUnit(item.unit);
+                    qtyInput.step = allowDecimal.includes(unit) ? '0.01' : '1';
+                    if (info) info.textContent = `Unidad: ${unit} (${item.consumo})`;
                 } else {
                     qtyInput.step = '1';
                     if (info) info.textContent = '';
@@ -2880,14 +2896,15 @@
               const val = document.getElementById('matSelect').value.trim();
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
-              const item = (inventory || []).find(i => `${i.code} - ${i.name}` === val || i.code === val || i.name === val);
+              const item = (inventory || []).find(i => i.code === val);
               const urgenciasValidas = ['alta', 'media', 'baja'];
               if (!item || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
                 showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
                 return;
               }
+              const unit = normalizeUnit(item.unit);
               const allowDecimal = ['kg', 'l', 'm'];
-              if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
+              if (!allowDecimal.includes(unit) && qty % 1 !== 0) {
                 showNotification('La cantidad debe ser un número entero', 'error');
                 return;
               }
@@ -2895,7 +2912,7 @@
               materialesTemp.push({
                 code: item.code,
                 name: item.name,
-                unit: item.unit,
+                unit,
                 consumo: item.consumo,
                 qty,
                 urgencia
@@ -2942,7 +2959,7 @@
                 return;
               }
                 
-              const items = materialesTemp.map(({code, name, unit, consumo, qty, urgencia}) => ({code, name, unit, consumo, qty, urgencia}));
+              const items = materialesTemp.map(({code, name, unit, consumo, qty, urgencia}) => ({code, name, unit: normalizeUnit(unit), consumo, qty, urgencia}));
               const ok = await handleAction('request_materials', currentIncidentId, {
                 items
               });
@@ -3273,6 +3290,7 @@
     window.eliminarMaterial  = eliminarMaterial;
     window.enviarMateriales  = enviarMateriales;
     window.onMaterialChange  = onMaterialChange;
+    window.retryInventory    = retryInventory;
 
         
     </script>
