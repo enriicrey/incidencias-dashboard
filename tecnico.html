@@ -1112,8 +1112,8 @@
         </div>
      <script id="inventory-seed" type="application/json">
     [
-        {"code": "INV001", "name": "Cable UTP", "unit": "metros", "consumo": 0},
-        {"code": "INV002", "name": "Conector RJ45", "unit": "pieza", "consumo": 0}
+        {"code": "INV001", "name": "Cable UTP", "unit": "metros", "consumo": "Consumible"},
+        {"code": "INV002", "name": "Conector RJ45", "unit": "pieza", "consumo": "Consumible"}
     ]
     </script>
     <script>
@@ -1169,11 +1169,13 @@
                 } catch (err) {
                     console.error('Error al parsear inventario:', err);
                     inventory = [];
+                    showToast('❌ Error cargando inventario local');
                 }
             } else {
                 inventory = [];
-             }
-             return inventory;
+                showToast('❌ Error cargando inventario local');
+            }
+            return inventory;
         }
 
         function updateTechnicianHeader(technician) {
@@ -1602,13 +1604,13 @@
                 return;
             }
             const rows = materials.map(m => `
-                <tr data-req="${m.req || ''}" data-code="${m.code || ''}" data-name="${m.name || ''}" data-unit="${m.unit || ''}" data-qty_solicitada="${m.qty_solicitada ?? ''}" data-qty_aprobada="${m.qty_aprobada ?? ''}">
-                    <td>${m.req || ''}</td>
-                    <td>${m.code || ''}</td>
-                    <td>${m.name || ''}</td>
-                    <td>${m.unit || ''}</td>
-                    <td>${m.qty_solicitada ?? ''}</td>
-                    <td>${m.qty_aprobada ?? ''}</td>
+                <tr data-req="${safe(m.req)}" data-code="${safe(m.code)}" data-name="${safe(m.name)}" data-unit="${safe(m.unit)}" data-qty_solicitada="${safe(m.qty_solicitada)}" data-qty_aprobada="${safe(m.qty_aprobada)}">
+                    <td>${safe(m.req)}</td>
+                    <td>${safe(m.code)}</td>
+                    <td>${safe(m.name)}</td>
+                    <td>${safe(m.unit)}</td>
+                    <td>${safe(m.qty_solicitada)}</td>
+                    <td>${safe(m.qty_aprobada)}</td>
                     <td><input type="number" min="0" class="form-control consumida-input" value="0"></td>
                     <td><input type="number" min="0" class="form-control devuelta-input" value="0"></td>
                     <td><input type="number" min="0" class="form-control desechada-input" value="0"></td>
@@ -1860,18 +1862,22 @@
         }
 
         const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
-        const materiales_resultado = rows.map(row => ({
-          req: row.dataset.req || '',
-          code: row.dataset.code || '',
-          name: row.dataset.name || '',
-          unit: row.dataset.unit || '',
-          qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
-          qty_aprobada: row.dataset.qty_aprobada ? Number(row.dataset.qty_aprobada) : null,
-          consumida: Number(row.querySelector('.consumida-input').value) || 0,
-          devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
-          desechada: Number(row.querySelector('.desechada-input').value) || 0
-        }));
-
+        const materiales_resultado = rows.map(row => {
+          const data = {
+            req: safe(row.dataset.req) || '',
+            code: safe(row.dataset.code) || '',
+            name: safe(row.dataset.name) || '',
+            unit: safe(row.dataset.unit) || '',
+            qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
+            qty_aprobada: row.dataset.qty_aprobada ? Number(row.dataset.qty_aprobada) : null,
+            consumida: Number(row.querySelector('.consumida-input').value) || 0,
+            devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
+            desechada: Number(row.querySelector('.desechada-input').value) || 0
+          };
+          const { req, consumida, devuelta, desechada } = data;
+          return { req, consumida, devuelta, desechada };
+        });
+          
           const ok = await handleAction('resolver', currentIncidentId, {
           solution_description,
           materiales_resultado
@@ -2844,7 +2850,7 @@
                 const allowDecimal = ['kg', 'l', 'm'];
                 if (item) {
                     qtyInput.step = allowDecimal.includes(item.unit) ? '0.01' : '1';
-                    if (info) info.textContent = `Unidad: ${item.unit} | Consumo: ${item.consumo}`;
+                    if (info) info.textContent = `Unidad: ${item.unit} (${item.consumo})`;
                 } else {
                     qtyInput.step = '1';
                     if (info) info.textContent = '';
@@ -2897,7 +2903,7 @@
                 <tr>
                   <td>${safe(mat.code)}</td>
                   <td>${safe(mat.name)}</td>
-                  <td>${mat.qty} ${safe(mat.unit)}</td>
+                  <td>${mat.qty} ${safe(mat.unit)} (${safe(mat.consumo)})</td>
                   <td>${safe(mat.urgencia)}</td>
                   <td><button onclick="eliminarMaterial(${idx})">🗑️</button></td>
                 </tr>
@@ -3151,8 +3157,10 @@
                 
               const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
               const unitPart = reqMeta.unit ? ` ${safe(reqMeta.unit)}` : "";
+              const reqId = reqPhase.req || g.req || g.id;
+              const reqPart = reqId ? `[${safe(reqId)}] ` : "";
               let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
-                `<span class="t-body">👷 ${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></li>`;
+                `<span class="t-body">👷 ${reqPart}${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></li>`;
                 
               if (respPhase) {
                 const cls = `phase-${respPhase.phase.toLowerCase()}`;
@@ -3163,8 +3171,9 @@
                 }
                 if (respMeta.reason) extras.push(safe(respMeta.reason));
                 const extraStr = extras.length ? ` · ${extras.join(" · ")}` : "";
+                const respReqPart = reqId ? `[${safe(reqId)}] ` : "";
                 lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
-                  `<span class="t-body">🧑‍💼 ${safe(respPhase.phase)}${extraStr}</span></li>`;
+                  `<span class="t-body">🧑‍💼 ${respReqPart}${safe(respPhase.phase)}${extraStr}</span></li>`;
               }
               return lines;
             }).join("");
