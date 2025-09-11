@@ -1074,6 +1074,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
+            <button id="retryInventoryBtn" class="btn btn-warning hidden" onclick="retryLoadInventory()">🔄 Reintentar</button>
             <button id="enviarMaterialesBtn" class="btn btn-success" onclick="enviarMateriales()" disabled>✅ Enviar solicitud</button>
         </div>
     </div>
@@ -1159,7 +1160,6 @@
                     } else {
                         throw new Error(data.message || 'Error al cargar inventario');
                     }
-                    inventoryCache = inventory.map(({ code, name, unit, consumo }) => ({ code, name, unit, consumo }));
                     return inventory;
                 })
                 .catch(err => {
@@ -1570,7 +1570,7 @@
             const inc = allIncidents.find(i => i.id === incidentId) || {};
             const container = document.getElementById('resolverRequests');
             if (container) container.innerHTML = renderSolicitudesResumen(inc);
-            renderMaterialesResultado(inc.materials_requested || []);
+            renderMaterialesResultado(inc.items || []);
             document.getElementById('resolverModal').classList.remove('hidden');
             updateResolverValidation();
             updateResolverButton();
@@ -1580,16 +1580,37 @@
             currentIncidentId = incidentId;
             validateMateriales();
             const modal = document.getElementById('materialesModal');
+            const retryBtn = document.getElementById('retryInventoryBtn');
+            if (retryBtn) retryBtn.classList.add('hidden');
             const controls = modal.querySelectorAll('input, select, button');
             controls.forEach(el => el.disabled = true);
             modal.classList.remove('hidden');
             try {
                 await loadInventory();
+                controls.forEach(el => el.disabled = false);
+                populateInventorySelector();
             } catch {
-                return; // toast already shown, keep disabled
+                controls.forEach(el => el.disabled = false);
+                if (retryBtn) retryBtn.classList.remove('hidden');
+                inventoryPromise = null;
+                showNotification('❌ No se pudo cargar el inventario. Cierra el modal o reintenta.', 'error');
             }
-            controls.forEach(el => el.disabled = false);
-            populateInventorySelector();
+        }
+
+        async function retryLoadInventory() {
+            const modal = document.getElementById('materialesModal');
+            const controls = modal.querySelectorAll('input, select, button');
+            controls.forEach(el => el.disabled = true);
+            try {
+                await loadInventory(true);
+                populateInventorySelector();
+                const retryBtn = document.getElementById('retryInventoryBtn');
+                if (retryBtn) retryBtn.classList.add('hidden');
+            } catch {
+                showNotification('❌ No se pudo cargar el inventario. Cierra el modal o reintenta.', 'error');
+            } finally {
+                controls.forEach(el => el.disabled = false);
+            }
         }
 
         function renderMaterialesResultado(materials = []) {
@@ -2391,7 +2412,7 @@
           const items = rows.map(r => {
             return `<li class="note-item ${r.class}">
               <span class="t-time">${formatTimeOrDate(r.when)}</span>
-              <span class="t-body"><span class="note-author"><span class="note-badge">${r.icon}</span>${r.displayName}</span>: ${r.text}</span>
+              <span class="t-body"><span class="note-author"><span class="note-badge">${r.icon}</span>${safe(r.displayName)}</span>: ${safe(r.text)}</span>
             </li>`;
           }).join('');
           return `<ul class="timeline">${items}</ul>`;
@@ -2829,17 +2850,17 @@
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
               if (!code || !qty || qty <= 0 || !urgencia) {
-                alert('Por favor selecciona material, cantidad (>0) y urgencia.');
+                showNotification('Por favor selecciona material, cantidad (>0) y urgencia.', 'error');
                 return;
               }
               const item = (inventory || []).find(i => i.code === code);
                 if (!item) {
-                  alert('Material inválido');
+                  showNotification('Material inválido', 'error');
                   return;
                 }
                 const allowDecimal = ['kg', 'l', 'm'];
                 if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
-                 alert('La cantidad debe ser un número entero');
+                 howNotification('La cantidad debe ser un número entero', 'error');
                  return;
               }
                 
@@ -2914,7 +2935,13 @@
 
     // Helpers existentes (SLA / seguimiento / safe / fecha)
     function safe(v){
-      return (v === undefined || v === null || v === '{{emptystring}}') ? '' : v;
+      if (v === undefined || v === null || v === '{{emptystring}}') return '';
+      return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
     function dateVisible(inc){
       return safe(inc.occurrence_date) || safe(inc.report_date) || '';
@@ -3078,7 +3105,7 @@
               .sort((a, b) => a.level - b.level || a.when - b.when);
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
-                const who = r.email;
+                const who = safe(r.email);
                 let ev = r.ev;
                 if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
                 else {
@@ -3091,6 +3118,7 @@
                     };
                     ev = map[ev] || ev;
                 }
+                ev = safe(ev);
                 const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
                 return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatTimeOrDate(r.when)}</span>`+
                        `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
@@ -3116,13 +3144,13 @@
               else if (reqMeta.name) detallesBase.push(reqMeta.name);
               else if (reqMeta.qty) detallesBase.push(reqMeta.qty);
               const detalles = reqMeta.to ? `${detallesBase.join(' ')} → ${reqMeta.to}` : detallesBase.join(' ');
-              const reqLabel = g.req ? ` · #${g.req}` : '';
+              const reqLabel = g.req ? ` · #${safe(g.req)}` : '';
               let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase?.when)}</span>`+
-                          `<span class="t-body">🔧 ${reqMeta.by || ''} · ${detalles}${reqLabel}</span></li>`;
+                          `<span class="t-body">🔧 ${safe(reqMeta.by) || ''} · ${safe(detalles)}${reqLabel}</span></li>`;
               if (respPhase) {
                 const phaseCls = `phase-${respPhase.phase.toLowerCase()}`;
                 lines += `<li class="${phaseCls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>`+
-                         `<span class="t-body">👩‍💼 ${respMeta.by || ''} · ${respPhase.phase}${reqLabel}</span></li>`;
+                         `<span class="t-body">👩‍💼 ${safe(respMeta.by) || ''} · ${safe(respPhase.phase)}${reqLabel}</span></li>`;
               }
               return lines;
             }).join('');
@@ -3202,6 +3230,7 @@
     window.eliminarMaterial  = eliminarMaterial;
     window.enviarMateriales  = enviarMateriales;
     window.onMaterialChange  = onMaterialChange;
+    window.retryLoadInventory = retryLoadInventory;
 
         
     </script>
