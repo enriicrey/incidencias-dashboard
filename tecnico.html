@@ -1182,7 +1182,7 @@
         }
 
         async function loadInventoryLight(force = false) {
-            if (!force && inventory) return inventory;
+            if (!force && Array.isArray(inventory) && inventory.length) return inventory;
             const seed = document.getElementById('inventory-seed');
             if (seed) {
                 try {
@@ -1610,7 +1610,7 @@
         async function showMaterialesModal(incidentId) {
             currentIncidentId = incidentId;
             validateMateriales();
-            if (!inventory) {
+            if (!Array.isArray(inventory) || inventory.length === 0) {
                 await loadInventoryLight();
             }
             if (!inventory || inventory.length === 0) {
@@ -2917,10 +2917,8 @@
                 qty,
                 urgencia
               });
-                
+              
               renderMaterialesList();
-
-              validateMateriales();
 
               document.getElementById('matSelect').value = '';
               document.getElementById('matQty').value = '';
@@ -2939,7 +2937,7 @@
                 <tr>
                   <td>${safe(mat.code)}</td>
                   <td>${safe(mat.name)}</td>
-                  <td>${mat.qty} ${safe(mat.unit)} (${safe(mat.consumo)})</td>
+                  <td>${safe(String(mat.qty))} ${safe(mat.unit)} (${safe(mat.consumo)})</td>
                   <td>${safe(mat.urgencia)}</td>
                   <td><button onclick="eliminarMaterial(${idx})">🗑️</button></td>
                 </tr>
