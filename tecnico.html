@@ -400,9 +400,16 @@
         .chips::-webkit-scrollbar-track,
         .req-chips::-webkit-scrollbar-track{ background:transparent; }
 
-        .req-chip.approved{background:#e6f7ee;color:#166534;border-color:#a7f3d0;}
-        .req-chip.rejected{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
-        .req-chip.pending{background:#fff8e5;color:#92400e;border-color:#fde68a;}
+        .req-chip{
+          padding:6px 10px;
+          border-radius:9999px;
+          border:1px solid #e5e7eb;
+          font-weight:600;
+          background:#f9fafb;
+        }
+        .req-chip.approved{background:#e8f5e9;border-color:#c8e6c9;}
+        .req-chip.rejected{background:#ffebee;border-color:#ffcdd2;}
+        .req-chip.pending{background:#fff8e1;border-color:#ffe0b2;}
         
 
         .state-pending { background: #fef3c7; color: #92400e; }
@@ -1057,9 +1064,8 @@
         <div class="modal-body">
             <!-- Formulario de nuevo material -->
             <div class="form-grid">
-                <select id="matSelect" class="form-control" onchange="onMaterialChange()">
-                    <option value="">-- Material --</option>
-                </select>
+                <input id="matSelect" list="matOptions" placeholder="Material" class="form-control" oninput="onMaterialChange()">
+                <datalist id="matOptions"></datalist>
                 <input type="number" id="matQty" placeholder="Cantidad" class="form-control" step="1">
                 <select id="matUrgencia" class="form-control">
                     <option value="">-- Urgencia --</option>
@@ -1067,6 +1073,7 @@
                     <option value="urgente">Urgente</option>
                 </select>
             </div>
+            <p id="matInfo" class="material-info"></p>
             <button class="btn btn-secondary" onclick="agregarMaterial()">➕ Añadir a la lista</button>
 
             <!-- Lista de materiales añadidos -->
@@ -1148,18 +1155,39 @@
             }, duration);
         }
 
-        async function loadInventory(force = false) {
+        async function loadInventoryLight() {
+            if (inventory) return inventory;
+            try {
+                const resp = await fetch('/api/get_inventory');
+                const data = await resp.json();
+                if (Array.isArray(data)) {
+                    inventory = data;
+                } else if (data.status === 'success' && Array.isArray(data.inventory)) {
+                    inventory = data.inventory;
+                } else {
+                    throw new Error(data.message || 'Error al cargar inventario');
+                }
+                return inventory;
+            } catch (err) {
+                showToast('❌ Error cargando inventario');
+                throw err;
+            }
+        }
+
+        async function loadInventoryLight(force = false) {
             if (!force && inventoryPromise) return inventoryPromise;
             inventoryPromise = fetch('/api/get_inventory')
                 .then(resp => resp.json())
                 .then(data => {
+                    let items;
                     if (Array.isArray(data)) {
-                        inventory = data;
+                        items = data;
                     } else if (data.status === 'success' && Array.isArray(data.inventory)) {
-                        inventory = data.inventory;
+                        items = data.inventory;
                     } else {
                         throw new Error(data.message || 'Error al cargar inventario');
                     }
+                    inventory = items.map(({code, name, unit, consumo}) => ({code, name, unit, consumo}));
                     return inventory;
                 })
                 .catch(err => {
@@ -1332,7 +1360,7 @@
                     updateTechnicianHeader(currentTechnician);
                     lastSeen = new Date();
                     localStorage.setItem('lastSeen', lastSeen.toISOString());
-                    loadInventory().catch(() => {});
+                    loadInventoryLight().catch(() => {});
                 } else {
                     let msg = data.message || 'Error al cargar incidencias';
                     const extras = [];
@@ -1396,20 +1424,28 @@
             const lastMine = myRows[myRows.length - 1];
             const lastAccepted = rows.filter(r => r.ev === 'ACCEPTED').slice(-1)[0];
 
+            // Traspaso: quien entrega pasa a seguimiento
             if (transfer && transfer.type === 'from') return 'seguimiento';
-            if (transfer && transfer.type === 'to' && !lastMine) return withinSla ? 'pending' : 'seguimiento';
+
+            // Receptor del traspaso sin respuesta todavía
+            if (transfer && transfer.type === 'to' && !lastMine) {
+              return withinSla ? 'pending' : 'seguimiento';
+            }
 
             if (lastMine) {
               if (lastMine.ev === 'ACCEPTED') return 'working';
               if (lastMine.ev === 'REJECTED' || lastMine.ev === 'NO_RESPONSE' || lastMine.ev === 'REASSIGN_FROM') return 'seguimiento';
               if (lastMine.ev === 'ASSIGNED') {
+                // Apoyo aceptado: si cualquiera aceptó, ambos trabajan
                 if (lastAccepted) return 'working';
                 return withinSla ? 'pending' : 'seguimiento';
               }
             }
-              
+
+            // Receptor de traspaso que aún no acepta
             if (transfer && transfer.type === 'to') return withinSla ? 'pending' : 'seguimiento';
 
+            // Otro técnico aceptó → este queda en seguimiento
             if (lastAccepted && lastAccepted.email.toLowerCase() !== email) return 'seguimiento';
 
             const assigned = rows.some(r => r.ev === 'ASSIGNED' && r.email.toLowerCase() === email);
@@ -1558,13 +1594,6 @@
             modal.classList.remove('hidden');
         }
 
-        function updateResolverButton() {
-            const btn = document.getElementById('resolverSubmitBtn');
-            if (!btn) return;
-            const solution = document.getElementById('solutionDescription').value.trim();
-            btn.disabled = !solution;
-        }
-
         function showResolverModal(incidentId) {
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId) || {};
@@ -1573,28 +1602,23 @@
             renderMaterialesResultado(inc.items || []);
             document.getElementById('resolverModal').classList.remove('hidden');
             updateResolverValidation();
-            updateResolverButton();
         }
 
         async function showMaterialesModal(incidentId) {
             currentIncidentId = incidentId;
             validateMateriales();
+            if (!inventory) {
+                try {
+                    await loadInventoryLight();
+                } catch {
+                    return;
+                }
+            }
             const modal = document.getElementById('materialesModal');
             const retryBtn = document.getElementById('retryInventoryBtn');
             if (retryBtn) retryBtn.classList.add('hidden');
-            const controls = modal.querySelectorAll('input, select, button');
-            controls.forEach(el => el.disabled = true);
+            populateInventorySelector();
             modal.classList.remove('hidden');
-            try {
-                await loadInventory();
-                controls.forEach(el => el.disabled = false);
-                populateInventorySelector();
-            } catch {
-                controls.forEach(el => el.disabled = false);
-                if (retryBtn) retryBtn.classList.remove('hidden');
-                inventoryPromise = null;
-                showNotification('❌ No se pudo cargar el inventario. Cierra el modal o reintenta.', 'error');
-            }
         }
 
         async function retryLoadInventory() {
@@ -1602,7 +1626,7 @@
             const controls = modal.querySelectorAll('input, select, button');
             controls.forEach(el => el.disabled = true);
             try {
-                await loadInventory(true);
+                await loadInventoryLight(true);
                 populateInventorySelector();
                 const retryBtn = document.getElementById('retryInventoryBtn');
                 if (retryBtn) retryBtn.classList.add('hidden');
@@ -1651,23 +1675,26 @@
         function updateResolverValidation() {
             const btn = document.getElementById('resolverSubmitBtn');
             const body = document.getElementById('materialesResultadoBody');
-            if (!btn || !body) return;
+            if (!btn) return;
             let allValid = true;
-            body.querySelectorAll('tr').forEach(row => {
-                const limit = Number(row.dataset.qty_aprobada) || Number(row.dataset.qty_solicitada) || 0;
-                const c = Number(row.querySelector('.consumida-input').value) || 0;
-                const d = Number(row.querySelector('.devuelta-input').value) || 0;
-                const x = Number(row.querySelector('.desechada-input').value) || 0;
-                const sum = c + d + x;
-                const err = row.querySelector('.mat-error');
-                if (sum > limit) {
-                    allValid = false;
-                    if (err) err.textContent = `Excede (${sum}/${limit})`;
-                } else {
-                    if (err) err.textContent = '';
-                }
-            });
-            btn.disabled = !allValid;
+            if (body) {
+                body.querySelectorAll('tr').forEach(row => {
+                    const limit = Number(row.dataset.qty_aprobada) || Number(row.dataset.qty_solicitada) || 0;
+                    const c = Number(row.querySelector('.consumida-input').value) || 0;
+                    const d = Number(row.querySelector('.devuelta-input').value) || 0;
+                    const x = Number(row.querySelector('.desechada-input').value) || 0;
+                    const sum = c + d + x;
+                    const err = row.querySelector('.mat-error');
+                    if (sum > limit) {
+                        allValid = false;
+                        if (err) err.textContent = `Excede (${sum}/${limit})`;
+                    } else {
+                        if (err) err.textContent = '';
+                    }
+                });
+            }
+            const solution = document.getElementById('solutionDescription').value.trim();
+            btn.disabled = !allValid || !solution;
         }
 
         function showAyudaModal(incidentId) {
@@ -1675,7 +1702,7 @@
             document.getElementById('ayudaModal').classList.remove('hidden');
         }
 
-        document.getElementById('solutionDescription').addEventListener('input', updateResolverButton);
+        document.getElementById('solutionDescription').addEventListener('input', updateResolverValidation);
 
         function renderReferenceLinks(inc, state, asButtons = false) {
             const wrap = content => `<div>${content}</div>`;
@@ -1736,7 +1763,7 @@
         // ========================================
         async function handleAction(action, incidentId, extraData = {}) {
             if (!currentTechnician?.authenticated) {
-                alert('Debes estar autenticado para realizar acciones');
+                showNotification('Debes estar autenticado para realizar acciones', 'error');
                 return;
             }
 
@@ -1772,7 +1799,7 @@
                     if (action === 'resolver' && /pendientes? de materiales/i.test(msg)) {
                         msg = 'No puedes resolver: hay validaciones pendientes de materiales.';
                     }
-                    showNotification(`❌ ${msg}`, 'error');
+                    showToast(`❌ ${msg}`);
                     return false;
                 }
             } catch (error) {
@@ -1870,14 +1897,19 @@
 
       async function confirmResolver() {
       const solution_description = document.getElementById('solutionDescription').value.trim();
-        if (!solution_description) {
-          showNotification('Describe la solución implementada', 'error');
+        if (solution_description.length < 10) {
+          showNotification('Describe la solución implementada (mínimo 10 caracteres)', 'error');
           return;
         }
 
         const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
         const materiales_resultado = rows.map(row => ({
           req: row.dataset.req || '',
+          code: row.dataset.code || '',
+          name: row.dataset.name || '',
+          unit: row.dataset.unit || '',
+          qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
+          qty_aprobada: row.dataset.qty_aprobada ? Number(row.dataset.qty_aprobada) : null,
           consumida: Number(row.querySelector('.consumida-input').value) || 0,
           devuelta: Number(row.querySelector('.devuelta-input').value) || 0,
           desechada: Number(row.querySelector('.desechada-input').value) || 0
@@ -2044,11 +2076,11 @@
             out.push({
               when,
               cat,
-              reqId: req,
+              reqId,
               phase,
               meta,
               metaRaw: rest || "",
-              req: meta.req || null
+              req
             });
           }
           out.sort((a, b) => new Date(a.when) - new Date(b.when));
@@ -2062,7 +2094,7 @@
             const key = `${r.cat}|${r.reqId}`;
             if (!map[key]) {
               map[key] = { cat: r.cat, id: r.reqId, phases: [], req: r.req || null };
-            } else if (r.req && !map[key].req) {
+            } else if (r.req && (!map[key].req || map[key].req === map[key].id)) {
               map[key].req = r.req;
             }
             map[key].phases.push(r);
@@ -2206,7 +2238,8 @@
           );
           for (const key of keys) {
             const req = grouped[key];
-            const meta = req.last?.meta || {};
+            if (req.last?.phase !== "REQUEST") continue;
+            const meta = req.last.meta || {};
             const parts = [];
             if (meta.name) {
               const qty = meta.qty ? ` ×${meta.qty}` : "";
@@ -2241,6 +2274,7 @@
                 email: "",
                 ev: 'TRANSFER',
                 detail: (reason || "").trim(),
+                reason: (reason || "").trim(),
                 from: from.trim(),
                 to: to.trim()
               });
@@ -2256,6 +2290,7 @@
                 email: "",
                 ev: 'DERIVATION',
                 detail: (reason || "").trim(),
+                reason: (reason || "").trim(),
                 from: from.trim(),
                 to: to.trim()
               });
@@ -2467,9 +2502,15 @@
           const arr = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
           let list = Array.isArray(arr) ? arr.map(x => String(x).trim()) : [];
           if (list.includes(VP.MATERIALES)) {
-            const log = incident["Solicitudes (log)"] ?? incident.solicitudes_log;
-            const cats = getPendingCategoriesFromLog(log);
-            if (!cats.has("MATERIAL")) {
+            const log = ensureLogString(incident["Solicitudes (log)"] ?? incident.solicitudes_log);
+            if (log !== "{{emptystring}}") {
+              const rows = parseSolicitudesLog(log);
+              const grouped = groupByRequest(rows);
+              const hasPending = Object.values(grouped).some(g => g.cat === "MATERIAL" && g.last?.phase === "REQUEST");
+              if (!hasPending) {
+                list = list.filter(x => x !== VP.MATERIALES);
+              }
+            } else {
               list = list.filter(x => x !== VP.MATERIALES);
             }
           }
@@ -2623,6 +2664,8 @@
         document.addEventListener('DOMContentLoaded', () => {
           incidentsContainer = document.querySelector('.incidents-section .incidents-list');
           checkDirectAccess();
+
+         loadInventoryLight().catch(() => {});
         
           const emailInput = document.getElementById('emailInput');
           const loginBtn   = document.getElementById('loginBtn');
@@ -2751,7 +2794,7 @@
         }
         
         function procesarAyuda() {
-          if (!selectedAyuda) { alert("Selecciona una opción antes de continuar."); return; }
+          if (!selectedAyuda) { showNotification('Selecciona una opción antes de continuar.', 'error'); return; }
         
           const id = selectedAyuda.id;
             
@@ -2766,7 +2809,7 @@
 
           if (id === 'notes') {
             const info = (document.getElementById('infoExtra')?.value || '').trim();
-            if (!info) { alert('Debes ingresar una nota antes de continuar.'); return; }
+            if (!info) { showNotification('Debes ingresar una nota antes de continuar.', 'error'); return; }
             handleAction('notes', currentIncidentId, {
               description: info
             });
@@ -2777,7 +2820,7 @@
           if (id === 'derivar_departamento') {
             const depto = document.getElementById('departamentoSelect')?.value;
             const motivo = (document.getElementById('motivoDerivacion')?.value || '').trim();
-            if (!depto) { alert('Selecciona el departamento destino'); return; }
+            if (!depto) { showNotification('Selecciona el departamento destino', 'error'); return; }
             handleAction('derivar_departamento', currentIncidentId, {
               target_department: depto,
               derivation_reason: motivo
@@ -2798,14 +2841,14 @@
             if (id === 'dejar_incidencia' && shouldShowDejarIncidencia()) {
             const reason = document.getElementById('dejarIncidenciaReason')?.value;
             const details = (document.getElementById('dejarIncidenciaDetalles')?.value || '').trim();
-            if (!reason) { alert('Selecciona un motivo'); return; }
+            if (!reason) { showNotification('Selecciona un motivo', 'error'); return; }
             if (reason === 'fin_turno') {
               // Validación de “últimos 15 minutos de turno”
               const now = new Date();
               const h = now.getHours(), m = now.getMinutes();
               const nearEnd = (h===13 && m>=45) || (h===21 && m>=45) || (h===5 && m>=45);
               if (!nearEnd) {
-                alert('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h');
+                showNotification('❌ Fin de turno solo disponible en los últimos 15 minutos del turno\n\nTurnos: 6-14h | 14-22h | 22-6h', 'error');
                 return;
               }
             }
@@ -2831,40 +2874,42 @@
             }
 
             function populateInventorySelector() {
-               const sel = document.getElementById('matSelect');
-                if (!sel) return;
-                sel.innerHTML = '<option value="">-- Material --</option>' +
-                  (inventory || []).map(item => `<option value="${item.code}">${item.name} (${item.unit})</option>`).join('');
+               const list = document.getElementById('matOptions');
+                if (!list) return;
+                list.innerHTML = (inventory || []).map(item => `<option value="${item.code} - ${item.name}"></option>`).join('');
             }
 
             function onMaterialChange() {
-               const code = document.getElementById('matSelect').value;
-                const item = (inventory || []).find(i => i.code === code);
+               const val = document.getElementById('matSelect').value.trim();
+                const item = (inventory || []).find(i => `${i.code} - ${i.name}` === val || i.code === val || i.name === val);
                 const qtyInput = document.getElementById('matQty');
+                const info = document.getElementById('matInfo');
                 const allowDecimal = ['kg', 'l', 'm'];
-                qtyInput.step = (item && allowDecimal.includes(item.unit)) ? '0.01' : '1';
+                if (item) {
+                    qtyInput.step = allowDecimal.includes(item.unit) ? '0.01' : '1';
+                    if (info) info.textContent = `Unidad: ${item.unit} | Consumo: ${item.consumo}`;
+                } else {
+                    qtyInput.step = '1';
+                    if (info) info.textContent = '';
+                }
             }
         
             function agregarMaterial() {
-              const code = document.getElementById('matSelect').value;
+              const val = document.getElementById('matSelect').value.trim();
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
-              if (!code || !qty || qty <= 0 || !urgencia) {
+              const item = (inventory || []).find(i => `${i.code} - ${i.name}` === val || i.code === val || i.name === val);
+              if (!item || isNaN(qty) || qty <= 0 || !urgencia) {
                 showNotification('Por favor selecciona material, cantidad (>0) y urgencia.', 'error');
                 return;
               }
-              const item = (inventory || []).find(i => i.code === code);
-                if (!item) {
-                  showNotification('Material inválido', 'error');
-                  return;
-                }
-                const allowDecimal = ['kg', 'l', 'm'];
-                if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
-                 howNotification('La cantidad debe ser un número entero', 'error');
-                 return;
+              const allowDecimal = ['kg', 'l', 'm'];
+              if (!allowDecimal.includes(item.unit) && qty % 1 !== 0) {
+                showNotification('La cantidad debe ser un número entero', 'error');
+                return;
               }
                 
-                materialesTemp.push({
+              materialesTemp.push({
                 code: item.code,
                 name: item.name,
                 unit: item.unit,
@@ -2872,12 +2917,15 @@
                 qty,
                 urgencia
               });
+                
+              renderMaterialesList();
 
-                renderMaterialesList();
-       
-                document.getElementById('matSelect').value = '';
-                document.getElementById('matQty').value = '';
-                document.getElementById('matUrgencia').value = '';
+              validateMateriales();
+
+              document.getElementById('matSelect').value = '';
+              document.getElementById('matQty').value = '';
+              document.getElementById('matUrgencia').value = '';
+              onMaterialChange();
             }
 
             function renderMaterialesList() {
@@ -2907,7 +2955,7 @@
 
             async function enviarMateriales() {
               if (materialesTemp.length === 0) {
-                alert('No hay materiales para enviar.');
+                showNotification('No hay materiales para enviar.', 'error');
                 return;
               }
                 
@@ -3126,34 +3174,43 @@
             return `<ul class="timeline">${items}</ul>`;
         }
         
-        function renderSolicitudesResumen(inc){
-            let t = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
-            if(t === '{{emptystring}}') return `<div class="muted">Sin solicitudes</div>`;
-            const rows = parseSolicitudesLog(t);
-            const grouped = groupByRequest(rows);
+        function renderSolicitudesResumen(inc) {
+          const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
+          if (log === "{{emptystring}}") return `<div class="muted">Sin solicitudes</div>`;
+
+          const rows = parseSolicitudesLog(log).filter(r => r.cat === "MATERIAL");
+          const grouped = groupByRequest(rows);
+            
           const items = Object.values(grouped)
-            .sort((a,b)=> new Date(b.last.when)-new Date(a.last.when))
-            .slice(0,12)
+            .sort((a, b) => new Date(b.last.when) - new Date(a.last.when))
+            .slice(0, 12)
             .map(g => {
-              const reqPhase = g.phases.find(p => p.phase === 'REQUEST');
-              const respPhase = g.phases.find(p => p.phase === 'APPROVED' || p.phase === 'REJECTED');
-              const reqMeta = reqPhase?.meta || {};
+              const reqPhase = g.phases.find(p => p.phase === "REQUEST");
+              if (!reqPhase) return "";
+              const respPhase = g.phases.find(p => p.phase === "APPROVED" || p.phase === "REJECTED");
+              const reqMeta = reqPhase.meta || {};
               const respMeta = respPhase?.meta || {};
-              const detallesBase = [];
-              if (reqMeta.qty && reqMeta.name) detallesBase.push(`${reqMeta.qty}× ${reqMeta.name}`);
-              else if (reqMeta.name) detallesBase.push(reqMeta.name);
-              else if (reqMeta.qty) detallesBase.push(reqMeta.qty);
-              const detalles = reqMeta.to ? `${detallesBase.join(' ')} → ${reqMeta.to}` : detallesBase.join(' ');
-              const reqLabel = g.req ? ` · #${safe(g.req)}` : '';
-              let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase?.when)}</span>`+
-                          `<span class="t-body">🔧 ${safe(reqMeta.by) || ''} · ${safe(detalles)}${reqLabel}</span></li>`;
+                
+              const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
+              const unitPart = reqMeta.unit ? ` ${safe(reqMeta.unit)}` : "";
+              let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
+                `<span class="t-body">👷 ${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></li>`;
+                
               if (respPhase) {
-                const phaseCls = `phase-${respPhase.phase.toLowerCase()}`;
-                lines += `<li class="${phaseCls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>`+
-                         `<span class="t-body">👩‍💼 ${safe(respMeta.by) || ''} · ${safe(respPhase.phase)}${reqLabel}</span></li>`;
+                const cls = `phase-${respPhase.phase.toLowerCase()}`;
+                const extras = [];
+                if (respMeta.qty) {
+                  const qUnit = respMeta.unit ? ` ${safe(respMeta.unit)}` : "";
+                  extras.push(`${safe(respMeta.qty)}${qUnit}`);
+                }
+                if (respMeta.reason) extras.push(safe(respMeta.reason));
+                const extraStr = extras.length ? ` · ${extras.join(" · ")}` : "";
+                lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
+                  `<span class="t-body">🧑‍💼 ${safe(respPhase.phase)}${extraStr}</span></li>`;
               }
               return lines;
-            }).join('');
+            }).join("");
+            
           return `<ul class="timeline">${items}</ul>`;
         }
 
