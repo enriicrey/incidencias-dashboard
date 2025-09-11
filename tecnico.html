@@ -1069,8 +1069,9 @@
                 <input type="number" id="matQty" placeholder="Cantidad" class="form-control" step="1">
                 <select id="matUrgencia" class="form-control">
                     <option value="">-- Urgencia --</option>
-                    <option value="normal">Normal</option>
-                    <option value="urgente">Urgente</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
                 </select>
             </div>
             <p id="matInfo" class="material-info"></p>
@@ -1081,7 +1082,6 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
-            <button id="retryInventoryBtn" class="btn btn-warning hidden" onclick="retryLoadInventory()">🔄 Reintentar</button>
             <button id="enviarMaterialesBtn" class="btn btn-success" onclick="enviarMateriales()" disabled>✅ Enviar solicitud</button>
         </div>
     </div>
@@ -1110,6 +1110,12 @@
                 </div>
             </div>
         </div>
+     <script id="inventory-seed" type="application/json">
+    [
+        {"code": "INV001", "name": "Cable UTP", "unit": "metros", "consumo": 0},
+        {"code": "INV002", "name": "Conector RJ45", "unit": "pieza", "consumo": 0}
+    ]
+    </script>
     <script>
         // ========================================
         //  VARIABLES GLOBALES
@@ -1119,7 +1125,6 @@
         let selectedReason = null;
         let currentIncidentId = null;
         let inventory = null;
-        let inventoryPromise;
 
         const MAX_LOG_ENTRIES = (() => {
             const v = Number(window?.MAX_LOG_ENTRIES);
@@ -1155,46 +1160,20 @@
             }, duration);
         }
 
-        async function loadInventoryLight() {
-            if (inventory) return inventory;
-            try {
-                const resp = await fetch('/api/get_inventory');
-                const data = await resp.json();
-                if (Array.isArray(data)) {
-                    inventory = data;
-                } else if (data.status === 'success' && Array.isArray(data.inventory)) {
-                    inventory = data.inventory;
-                } else {
-                    throw new Error(data.message || 'Error al cargar inventario');
-                }
-                return inventory;
-            } catch (err) {
-                showToast('❌ Error cargando inventario');
-                throw err;
-            }
-        }
-
         async function loadInventoryLight(force = false) {
-            if (!force && inventoryPromise) return inventoryPromise;
-            inventoryPromise = fetch('/api/get_inventory')
-                .then(resp => resp.json())
-                .then(data => {
-                    let items;
-                    if (Array.isArray(data)) {
-                        items = data;
-                    } else if (data.status === 'success' && Array.isArray(data.inventory)) {
-                        items = data.inventory;
-                    } else {
-                        throw new Error(data.message || 'Error al cargar inventario');
-                    }
-                    inventory = items.map(({code, name, unit, consumo}) => ({code, name, unit, consumo}));
-                    return inventory;
-                })
-                .catch(err => {
-                    showToast('❌ Error cargando inventario');
-                    throw err;
-                });
-            return inventoryPromise;
+            if (!force && inventory) return inventory;
+            const seed = document.getElementById('inventory-seed');
+            if (seed) {
+                try {
+                    inventory = JSON.parse(seed.textContent);
+                } catch (err) {
+                    console.error('Error al parsear inventario:', err);
+                    inventory = [];
+                }
+            } else {
+                inventory = [];
+             }
+             return inventory;
         }
 
         function updateTechnicianHeader(technician) {
@@ -1360,7 +1339,7 @@
                     updateTechnicianHeader(currentTechnician);
                     lastSeen = new Date();
                     localStorage.setItem('lastSeen', lastSeen.toISOString());
-                    loadInventoryLight().catch(() => {});
+                    loadInventoryLight();
                 } else {
                     let msg = data.message || 'Error al cargar incidencias';
                     const extras = [];
@@ -1608,33 +1587,11 @@
             currentIncidentId = incidentId;
             validateMateriales();
             if (!inventory) {
-                try {
-                    await loadInventoryLight();
-                } catch {
-                    return;
-                }
+                await loadInventoryLight();
             }
             const modal = document.getElementById('materialesModal');
-            const retryBtn = document.getElementById('retryInventoryBtn');
-            if (retryBtn) retryBtn.classList.add('hidden');
             populateInventorySelector();
             modal.classList.remove('hidden');
-        }
-
-        async function retryLoadInventory() {
-            const modal = document.getElementById('materialesModal');
-            const controls = modal.querySelectorAll('input, select, button');
-            controls.forEach(el => el.disabled = true);
-            try {
-                await loadInventoryLight(true);
-                populateInventorySelector();
-                const retryBtn = document.getElementById('retryInventoryBtn');
-                if (retryBtn) retryBtn.classList.add('hidden');
-            } catch {
-                showNotification('❌ No se pudo cargar el inventario. Cierra el modal o reintenta.', 'error');
-            } finally {
-                controls.forEach(el => el.disabled = false);
-            }
         }
 
         function renderMaterialesResultado(materials = []) {
@@ -2661,14 +2618,14 @@
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
         // ========================================
         let incidentsContainer = null;
-        document.addEventListener('DOMContentLoaded', () => {
-          incidentsContainer = document.querySelector('.incidents-section .incidents-list');
-          checkDirectAccess();
+         document.addEventListener('DOMContentLoaded', () => {
+            incidentsContainer = document.querySelector('.incidents-section .incidents-list');
+            checkDirectAccess();
 
-         loadInventoryLight().catch(() => {});
-        
-          const emailInput = document.getElementById('emailInput');
-          const loginBtn   = document.getElementById('loginBtn');
+            loadInventoryLight();
+
+            const emailInput = document.getElementById('emailInput');
+            const loginBtn   = document.getElementById('loginBtn');
         
           emailInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') loginWithPIN();
@@ -2899,8 +2856,9 @@
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
               const item = (inventory || []).find(i => `${i.code} - ${i.name}` === val || i.code === val || i.name === val);
-              if (!item || isNaN(qty) || qty <= 0 || !urgencia) {
-                showNotification('Por favor selecciona material, cantidad (>0) y urgencia.', 'error');
+              const urgenciasValidas = ['alta', 'media', 'baja'];
+              if (!item || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
+                showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
                 return;
               }
               const allowDecimal = ['kg', 'l', 'm'];
@@ -2937,10 +2895,10 @@
               }
               const rows = materialesTemp.map((mat, idx) => `
                 <tr>
-                  <td>${mat.code}</td>
-                  <td>${mat.name}</td>
-                  <td>${mat.qty} ${mat.unit}</td>
-                  <td>${mat.urgencia}</td>
+                  <td>${safe(mat.code)}</td>
+                  <td>${safe(mat.name)}</td>
+                  <td>${mat.qty} ${safe(mat.unit)}</td>
+                  <td>${safe(mat.urgencia)}</td>
                   <td><button onclick="eliminarMaterial(${idx})">🗑️</button></td>
                 </tr>
               `).join('');
@@ -3287,7 +3245,6 @@
     window.eliminarMaterial  = eliminarMaterial;
     window.enviarMateriales  = enviarMateriales;
     window.onMaterialChange  = onMaterialChange;
-    window.retryLoadInventory = retryLoadInventory;
 
         
     </script>
