@@ -62,15 +62,6 @@ module.exports = async function handler(req, res) {
       (email || '').split('@')[0]?.split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || '';
 
     const norm = { ...data };
-    if (Array.isArray(norm.materiales) && !norm.materials_requested) {
-      norm.materials_requested = norm.materiales.map(m => ({
-        name: m.nombre,
-        quantity: Number(m.cantidad) || 1,
-        type: m.tipo,
-        urgency: m.urgencia || 'normal',
-        justification: m.justificacion || ''
-      }));
-    }
     if (typeof norm.materials_used === 'string') {
       norm.materials_used = norm.materials_used
         .split(',').map(s => s.trim()).filter(Boolean)
@@ -107,9 +98,9 @@ module.exports = async function handler(req, res) {
         }
         makePayload.pin = data.pin || '';
         makePayload.solution_description = data.solution_description;
-        makePayload.materials_used = data.materiales_resultado;
-        makePayload.materials_count = makePayload.materials_used.length;
-        makePayload.materials_summary = makePayload.materials_used
+        makePayload.materiales_resultado = data.materiales_resultado;
+        makePayload.materials_count = makePayload.materiales_resultado.length;
+        makePayload.materials_summary = makePayload.materiales_resultado
           .map(m => `${m.materialName || m.nombre || 'Material'} (${m.quantity || m.cantidad || 1})`)
           .join(', ');
         break;
@@ -119,7 +110,7 @@ module.exports = async function handler(req, res) {
           return res.status(400).json({ status: 'error', message: 'items debe ser un array con al menos un material' });
         }
         makePayload.pin = data.pin || '';
-        makePayload.materials_requested = list;
+        makePayload.items = list;
         makePayload.materials_count = list.length;
         break;
       }
