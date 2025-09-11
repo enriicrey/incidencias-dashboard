@@ -1434,31 +1434,32 @@
 
             if (!withinSla) return 'seguimiento';
         
-          // 2) Fallback (campos legados)
-          const assignments = [
-            { level: 0, tech: incident.l0_technician, respText: incident.l0_response, sla: incident.sla_l0_end },
-            { level: 1, tech: incident.l1_technician, respText: incident.l1_response, sla: incident.sla_l1_backup_end },
-            { level: 2, tech: incident.l2_technicians, respText: incident.l2_responses, sla: incident.sla_l2_equipo_end },
-            { level: 3, tech: incident.l3_technician, respText: incident.l3_response, sla: incident.sla_l3_responsable_end }
-          ];
+          } else {
+            // 2) Fallback (campos legados)
+            const assignments = [
+              { level: 0, tech: incident.l0_technician, respText: incident.l0_response, sla: incident.sla_l0_end },
+              { level: 1, tech: incident.l1_technician, respText: incident.l1_response, sla: incident.sla_l1_backup_end },
+              { level: 2, tech: incident.l2_technicians, respText: incident.l2_responses, sla: incident.sla_l2_equipo_end },
+              { level: 3, tech: incident.l3_technician, respText: incident.l3_response, sla: incident.sla_l3_responsable_end }
+            ];
 
-          const curr = assignments.find(a =>
-            a.level === level &&
-            (Array.isArray(a.tech)
-              ? a.tech.map(t => String(t).toLowerCase()).includes(email)
-              : String(a.tech || '').toLowerCase().includes(email))
-          );
-          if (curr) {
-            const withinSla = curr.sla ? Date.now() <= Date.parse(curr.sla) : false;
-            const resp = Array.isArray(curr.respText)
-              ? curr.respText.join(' ').toLowerCase()
-              : String(curr.respText || '').toLowerCase();
-            if (resp.includes('rechazo')) return 'seguimiento';
-            if (resp.includes('acepto')) return 'working';
-            if (!resp || resp.includes('sin respuesta')) return withinSla ? 'pending' : 'seguimiento';
+            const curr = assignments.find(a =>
+              a.level === level &&
+              (Array.isArray(a.tech)
+                ? a.tech.map(t => String(t).toLowerCase()).includes(email)
+                : String(a.tech || '').toLowerCase().includes(email))
+            );
+            if (curr) {
+              const withinSla = curr.sla ? Date.now() <= Date.parse(curr.sla) : false;
+              const resp = Array.isArray(curr.respText)
+                ? curr.respText.join(' ').toLowerCase()
+                : String(curr.respText || '').toLowerCase();
+              if (resp.includes('rechazo')) return 'seguimiento';
+              if (resp.includes('acepto')) return 'working';
+              if (!resp || resp.includes('sin respuesta')) return withinSla ? 'pending' : 'seguimiento';
+            }
           }
            return 'seguimiento';
-        }
         }
 
 
@@ -1591,6 +1592,18 @@
             if (!inventory) {
                 await loadInventoryLight();
             }
+            if (!inventory || inventory.length === 0) {
+                showToast('❌ Inventario no disponible');
+                if (confirm('Inventario no disponible. ¿Reintentar?')) {
+                    await loadInventoryLight(true);
+                    if (!inventory || inventory.length === 0) {
+                        showToast('❌ Inventario no disponible');
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
             const modal = document.getElementById('materialesModal');
             populateInventorySelector();
             modal.classList.remove('hidden');
@@ -1707,6 +1720,11 @@
             });
             selectedReason = null;
             currentIncidentId = null;
+            if (modalId === 'materialesModal') {
+                materialesTemp = [];
+                renderMaterialesList();
+                validateMateriales();
+            }
         }
 
         function selectReason(reasonId, ev) {
@@ -2838,8 +2856,9 @@
 
             function populateInventorySelector() {
                const list = document.getElementById('matOptions');
-                if (!list) return;
-                list.innerHTML = (inventory || []).map(item => `<option value="${item.code} - ${item.name}"></option>`).join('');
+               if (!list) return;
+               list.innerHTML = inventory.map(i =>
+                 `<option value="${safe(i.code)} - ${safe(i.name)}"></option>`).join('');
             }
 
             function onMaterialChange() {
