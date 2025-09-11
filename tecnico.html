@@ -1126,6 +1126,7 @@
         let selectedReason = null;
         let currentIncidentId = null;
         let inventory = null;
+        let inventoryLoadedOk = false;
 
         const MAX_LOG_ENTRIES = (() => {
             const v = Number(window?.MAX_LOG_ENTRIES);
@@ -1633,35 +1634,33 @@
             updateResolverValidation();
         }
 
-         function showMaterialesModal(incidentId) {
-            currentIncidentId = incidentId;
-            validateMateriales();
-            const retryBtn = document.getElementById('retryInventoryBtn');
-            if (!inventory || inventory.length === 0) {
-                showToast('❌ Inventario no disponible');
-                if (retryBtn) retryBtn.classList.remove('hidden');
-            } else {
-                if (retryBtn) retryBtn.classList.add('hidden');
-                populateInventorySelector();
-            }
-            const modal = document.getElementById('materialesModal');
-            modal.classList.remove('hidden');
-            validateMateriales();
-        }
+        function showMaterialesModal(incidentId) {
+           currentIncidentId = incidentId;
+           const retryBtn = document.getElementById('retryInventoryBtn');
+           if (!inventory || inventory.length === 0) {
+               showToast('❌ Inventario no disponible');
+               if (retryBtn) retryBtn.classList.remove('hidden');
+               return;
+           } else {
+               if (retryBtn) retryBtn.classList.add('hidden');
+               populateInventorySelector();
+               validateMateriales();
+           }
+           const modal = document.getElementById('materialesModal');
+           modal.classList.remove('hidden');
+       }
 
         async function retryInventory() {
             await loadInventoryLight(true);
-            const retryBtn = document.getElementById('retryInventoryBtn');
-            if (!inventory || inventory.length === 0) {
-                showToast('❌ Inventario no disponible');
-                if (retryBtn) retryBtn.classList.remove('hidden');
-                validateMateriales();
-                return;
-            }
-            if (retryBtn) retryBtn.classList.add('hidden');
-            populateInventorySelector();
-            validateMateriales();
-        }
+           const retryBtn = document.getElementById('retryInventoryBtn');
+           if (!inventory || inventory.length === 0) {
+               showToast('❌ Inventario no disponible');
+               if (retryBtn) retryBtn.classList.remove('hidden');
+               return;
+           }
+           if (retryBtn) retryBtn.classList.add('hidden');
+           showMaterialesModal(currentIncidentId);
+       }
 
         function renderMaterialesResultado(materials = []) {
             const wrapper = document.getElementById('materialesResultadoWrapper');
@@ -1734,20 +1733,21 @@
             const wrap = content => `<div>${content}</div>`;
             const cls = asButtons ? 'btn btn-primary' : '';
             const links = [];
+            const safe = url => encodeURI(String(url));
             // 🔗 Incidencia
             links.push(inc.url
-                ? wrap(`<a href="${inc.url}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
+                ? wrap(`<a href="${safe(inc.url)}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
                 : wrap(`<button class="${cls}" disabled>🔗 Incidencia no disponible</button>`));
 
             // 📊 Estado de materiales
             const matUrl = state === 'working' ? inc.materials_url : null;
             links.push(matUrl
-                ? wrap(`<a href="${matUrl}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
+                ? wrap(`<a href="${safe(matUrl)}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
                 : wrap(`<button class="${cls}" disabled>📊 Estado de materiales no disponible</button>`));
 
             // 🔍 Historial del componente
             links.push(inc.history_url
-                ? wrap(`<a href="${inc.history_url}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
+                ? wrap(`<a href="${safe(inc.history_url)}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
                 : wrap(`<button class="${cls}" disabled>🔍 Historial del componente no disponible</button>`));
             return links.join('');
         }
@@ -2676,7 +2676,7 @@
             return `
                ${wrapStart}
                 <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
-                <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales"  onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales" ${inventoryLoadedOk ? '' : 'disabled'} onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
                 ${shouldShowSolicitarTraspaso() ? `<button class="btn btn-secondary" title="Solicitar traspaso temporalmente" aria-label="Solicitar traspaso temporalmente" onclick="solicitarTraspaso('${incident.id}')">🕐 Solicitar traspaso</button>` : ''}
@@ -2694,11 +2694,23 @@
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
         // ========================================
         let incidentsContainer = null;
-         document.addEventListener('DOMContentLoaded', () => {
+         document.addEventListener('DOMContentLoaded', async () => {
             incidentsContainer = document.querySelector('.incidents-section .incidents-list');
             checkDirectAccess();
 
-            loadInventoryLight();
+            try {
+              const inv = await loadInventoryLight();
+              inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
+              if (inventoryLoadedOk) {
+                document.querySelectorAll('button[aria-label="Solicitar materiales"]').forEach(btn => btn.disabled = false);
+              } else {
+                showToast('❌ Error cargando inventario');
+              }
+            } catch (err) {
+              showToast('❌ Error cargando inventario');
+            }
+            // Si en el futuro se refresca el inventario periódicamente,
+            // repetir esta lógica de habilitar/deshabilitar el botón de materiales.
 
             const emailInput = document.getElementById('emailInput');
             const loginBtn   = document.getElementById('loginBtn');
@@ -3246,7 +3258,7 @@
               const reqId = reqPhase.req || g.req || g.id;
               const reqPart = reqId ? `[${safe(reqId)}] ` : "";
               let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
-                `<span class="t-body">👷 ${reqPart}${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></li>`;
+                `<span class="t-body"><span class="req-chip pending">👷 ${reqPart}${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></span></li>`;
                 
               if (respPhase) {
                 const cls = `phase-${respPhase.phase.toLowerCase()}`;
@@ -3258,8 +3270,9 @@
                 if (respMeta.reason) extras.push(safe(respMeta.reason));
                 const extraStr = extras.length ? ` · ${extras.join(" · ")}` : "";
                 const respReqPart = reqId ? `[${safe(reqId)}] ` : "";
+                const chipCls = respPhase.phase.toLowerCase();
                 lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
-                  `<span class="t-body">🧑‍💼 ${respReqPart}${safe(respPhase.phase)}${extraStr}</span></li>`;
+                  `<span class="t-body"><span class="req-chip ${chipCls}">🧑‍💼 ${respReqPart}${safe(respPhase.phase)}${extraStr}</span></span></li>`;
               }
               return lines;
             }).join("");
