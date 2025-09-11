@@ -62,11 +62,6 @@ module.exports = async function handler(req, res) {
       (email || '').split('@')[0]?.split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || '';
 
     const norm = { ...data };
-    if (typeof norm.materials_used === 'string') {
-      norm.materials_used = norm.materials_used
-        .split(',').map(s => s.trim()).filter(Boolean)
-        .map(x => ({ materialName: x, quantity: 1 }));
-    }
     if (norm.description && !norm.help_description) norm.help_description = norm.description;
     if (norm.description && !norm.information_content) norm.information_content = norm.description;
     if (typeof norm.read_only === 'string') norm.read_only = norm.read_only === 'true';
@@ -99,10 +94,6 @@ module.exports = async function handler(req, res) {
         makePayload.pin = data.pin || '';
         makePayload.solution_description = data.solution_description;
         makePayload.materiales_resultado = data.materiales_resultado;
-        makePayload.materials_count = makePayload.materiales_resultado.length;
-        makePayload.materials_summary = makePayload.materiales_resultado
-          .map(m => `${m.materialName || m.nombre || 'Material'} (${m.quantity || m.cantidad || 1})`)
-          .join(', ');
         break;
       case 'request_materials': {
         const list = Array.isArray(data.items) ? data.items : [];
