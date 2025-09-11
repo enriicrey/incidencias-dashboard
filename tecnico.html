@@ -1064,6 +1064,11 @@
         <div class="modal-body">
             <!-- Formulario de nuevo material -->
             <div class="form-grid">
+            <!-- Filtro por familia -->
+            <label for="matFamilyFilter" class="form-label">Familia</label>
+            <select id="matFamilyFilter" class="form-control">
+              <option value="">Todas</option>
+            </select>
                 <input id="matSelect" list="matOptions" placeholder="Material" class="form-control" oninput="onMaterialChange()">
                 <datalist id="matOptions"></datalist>
                 <input type="number" id="matQty" placeholder="Cantidad" class="form-control" step="1">
@@ -1300,6 +1305,35 @@
             return inventory;
         }
 
+        function getUniqueFamilies() {
+          const fams = new Set();
+          (inventory || []).forEach(i => { if (i.family) fams.add(String(i.family).trim()); });
+          return Array.from(fams).sort((a,b) => a.localeCompare(b, 'es'));
+        }
+        
+        function getCurrentFamily() {
+          const sel = document.getElementById('matFamilyFilter');
+          return sel ? (sel.value || '') : '';
+        }
+        
+        function setupFamilyFilter() {
+          const sel = document.getElementById('matFamilyFilter');
+          if (!sel) return;
+          const fams = getUniqueFamilies();
+          sel.innerHTML = '<option value="">Todas</option>' +
+            fams.map(f => `<option value="${safe(f)}">${safe(f)}</option>`).join('');
+          sel.onchange = () => populateInventorySelector(sel.value);
+        }
+        
+        /** Acepta: código, nombre, o "CODE - Nombre" mostrado en el datalist */
+        function resolveInventoryItem(val) {
+          const v = String(val || '').trim();
+          if (!v) return null;
+          const codePart = v.includes(' - ') ? v.split(' - ')[0] : v;
+          return (inventory || []).find(i => i.code === codePart)
+              || (inventory || []).find(i => (i.name || '').toLowerCase() === v.toLowerCase());
+        }
+
         function updateTechnicianHeader(technician) {
             const tech = technician || currentTechnician || {};
             const nameEl = document.getElementById('technicianName');
@@ -1457,19 +1491,30 @@
                  }
                 
                 if (data.status === 'success' && data.incidents) {
-                    allIncidents = data.incidents;
-                    updateStatistics();
-                    applyFiltersAndRender();
-                    updateTechnicianHeader(currentTechnician);
-                    lastSeen = new Date();
-                    localStorage.setItem('lastSeen', lastSeen.toISOString());
-                    try {
-                        await loadInventoryLight();
-                        populateInventorySelector();
-                    } catch (err) {
-                        console.error('Error cargando inventario:', err);
-                        showToast('❌ Error cargando inventario');
-                    }
+                  // 1) Inventario primero
+                  try {
+                    const inv = await loadInventoryLight();
+                    inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
+                    setupFamilyFilter();
+                    populateInventorySelector(getCurrentFamily());
+                  } catch (err) {
+                    console.error('Error cargando inventario:', err);
+                    inventoryLoadedOk = false;
+                    showToast('❌ Error cargando inventario');
+                  }
+                
+                  // 2) Incidencias y render (ya con inventoryLoadedOk listo)
+                  allIncidents = data.incidents;
+                  updateStatistics();
+                  applyFiltersAndRender();
+                  updateTechnicianHeader(currentTechnician);
+                
+                  // 3) Habilitar botones "📦 Materiales" en caliente si procede
+                  document.querySelectorAll('button[aria-label="Solicitar materiales"]')
+                    .forEach(btn => btn.disabled = !inventoryLoadedOk);
+                
+                  lastSeen = new Date();
+                  localStorage.setItem('lastSeen', lastSeen.toISOString());
                 } else {
                     let msg = data.message || 'Error al cargar incidencias';
                     const extras = [];
@@ -1751,7 +1796,7 @@
                return;
            } else {
                if (retryBtn) retryBtn.classList.add('hidden');
-               populateInventorySelector();
+               populateInventorySelector(getCurrentFamily());
                validateMateriales();
            }
            const modal = document.getElementById('materialesModal');
@@ -1767,6 +1812,7 @@
                return;
            }
            if (retryBtn) retryBtn.classList.add('hidden');
+           populateInventorySelector(getCurrentFamily());
            showMaterialesModal(currentIncidentId);
        }
 
@@ -2807,12 +2853,14 @@
             checkDirectAccess();
 
             try {
-              const inv = await loadInventoryLight();
-              inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
-              if (inventoryLoadedOk) {
-                document.querySelectorAll('button[aria-label="Solicitar materiales"]').forEach(btn => btn.disabled = false);
-              } else {
-                showToast('❌ Error cargando inventario');
+            const inv = await loadInventoryLight();
+            inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
+            if (inventoryLoadedOk) {
+              setupFamilyFilter();
+              populateInventorySelector(getCurrentFamily());
+              document.querySelectorAll('button[aria-label="Solicitar materiales"]').forEach(btn => btn.disabled = false);
+            } else {
+              showToast('❌ Error cargando inventario');
               }
             } catch (err) {
               showToast('❌ Error cargando inventario');
@@ -3032,39 +3080,47 @@
                 }
             }
 
-            function populateInventorySelector() {
-               const list = document.getElementById('matOptions');
-               if (!list) return;
-               list.innerHTML = inventory.map(i =>
-                 `<option value="${safe(i.code)}" label="${safe(i.code)} - ${safe(i.name)}"></option>`).join('');
+            function populateInventorySelector(family = '') {
+              const list = document.getElementById('matOptions');
+              if (!list) return;
+            
+              const src = family
+                ? (inventory || []).filter(i => (i.family || '') === family)
+                : (inventory || []);
+            
+              // Valor visible: "CODE - Nombre (unidad) · [Familia]"
+              list.innerHTML = src.map(i => {
+                const unit = i.unit ? ` (${i.unit})` : '';
+                const fam = i.family ? ` · [${i.family}]` : '';
+                const label = `${i.code} - ${i.name}${unit}${fam}`;
+                // usamos value con el label completo para que el usuario vea y el resolver lo soporte
+                return `<option value="${safe(label)}"></option>`;
+              }).join('');
             }
 
+
             function onMaterialChange() {
-                const val = document.getElementById('matSelect').value.trim();
-                const item = (inventory || []).find(i => i.code === val)
-                         || (inventory || []).find(i => (i.name || '').toLowerCase() === val.toLowerCase())
-                         || (inventory || []).find(i => {
-                              const p = val.split(' - ')[0];   // admite "CODE - Nombre"
-                              return i.code === p;
-                            });
-                const qtyInput = document.getElementById('matQty');
-                const info = document.getElementById('matInfo');
-                const allowDecimal = ['kg', 'l', 'm'];
-                if (item) {
-                    const unit = normalizeUnit(item.unit);
-                    qtyInput.step = allowDecimal.includes(unit) ? '0.01' : '1';
-                    if (info) info.textContent = `Unidad: ${unit} (${item.consumo})`;
-                } else {
-                    qtyInput.step = '1';
-                    if (info) info.textContent = '';
-                }
+              const val = document.getElementById('matSelect').value.trim();
+              const item = resolveInventoryItem(val);
+              const qtyInput = document.getElementById('matQty');
+              const info = document.getElementById('matInfo');
+              const allowDecimal = ['kg', 'l', 'm'];
+              if (item) {
+                const unit = normalizeUnit(item.unit);
+                qtyInput.step = allowDecimal.includes(unit) ? '0.01' : '1';
+                if (info) info.textContent = `Unidad: ${unit} (${item.consumo})`;
+              } else {
+                qtyInput.step = '1';
+                if (info) info.textContent = '';
+              }
             }
+
         
             function agregarMaterial() {
               const val = document.getElementById('matSelect').value.trim();
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
-              const item = (inventory || []).find(i => i.code === val);
+              const item = resolveInventoryItem(val);
               const urgenciasValidas = ['alta', 'media', 'baja'];
               if (!item || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
                 showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
