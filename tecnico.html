@@ -390,6 +390,24 @@
         .materials-ok{ background:#e6f7ee; color:#166534; border-color:#a7f3d0; }
         .materials-pending{ background:#fff8e5; color:#92400e; border-color:#fde68a; }
 
+        .materials-table{
+          width:100%;
+          border-collapse: collapse;
+          font-size:14px;
+        }
+        .materials-table th,
+        .materials-table td{
+          border:1px solid var(--gray-200);
+          padding:8px 10px;
+          text-align:left;
+          vertical-align: middle;
+        }
+        .materials-table th{ background: var(--gray-100); font-weight:700; }
+        .materials-table td.num{ text-align:right; }
+        .materials-table td.nowrap{ white-space:nowrap; }
+        .materials-table td.ellipsis{ max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+
         .chips{ display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:thin; }
 
         .req-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-height:calc(2 * 34px);overflow-y:auto;scrollbar-width:thin;}
@@ -1928,27 +1946,26 @@
 
         document.getElementById('solutionDescription').addEventListener('input', updateResolverValidation);
 
-        function renderReferenceLinks(inc, state, asButtons = false) {
-            const wrap = content => `<div>${content}</div>`;
-            const cls = asButtons ? 'btn btn-primary' : '';
-            const links = [];
-            const safe = url => encodeURI(String(url));
+         function renderReferenceLinks(inc, state, asButtons=false){
+              const wrap = c => `<div>${c}</div>`;
+              const cls = asButtons ? 'btn btn-primary' : '';
+              const encodeURL = url => encodeURI(String(url||''));
             // 🔗 Incidencia
-            links.push(inc.url
-                ? wrap(`<a href="${safe(inc.url)}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
+              links.push(inc.url
+                ? wrap(`<a href="${encodeURL(inc.url)}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
                 : wrap(`<button class="${cls}" disabled>🔗 Incidencia no disponible</button>`));
 
             // 📊 Estado de materiales
-            const matUrl = state === 'working' ? inc.materials_url : null;
-            links.push(matUrl
-                ? wrap(`<a href="${safe(matUrl)}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
+              const matUrl = state === 'working' ? inc.materials_url : null;
+              links.push(matUrl
+                ? wrap(`<a href="${encodeURL(matUrl)}" target="_blank" class="${cls}">📊 Estado de materiales</a>`)
                 : wrap(`<button class="${cls}" disabled>📊 Estado de materiales no disponible</button>`));
 
             // 🔍 Historial del componente
-            links.push(inc.history_url
-                ? wrap(`<a href="${safe(inc.history_url)}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
+              links.push(inc.history_url
+                ? wrap(`<a href="${encodeURL(inc.history_url)}" target="_blank" class="${cls}">🔍 Historial del componente</a>`)
                 : wrap(`<button class="${cls}" disabled>🔍 Historial del componente no disponible</button>`));
-            return links.join('');
+              return links.join('');
         }
         
         function showReferenciasModal(incidentId) {
@@ -3528,6 +3545,26 @@
     
       incidentsContainer.appendChild(frag);
       renderSlaStickyBar();
+
+      try {
+      if (directIncidentId && !directScrollDone) {
+        scrollToIncident(directIncidentId);
+        directScrollDone = true;
+        // dispara la acción si viene ?action=...
+        if (pendingAction) {
+          if (pendingAction === 'acepto') {
+            // pide PIN si hace falta y ejecuta
+            showActionPINModal('acepto', directIncidentId);
+          } else if (pendingAction === 'materiales') {
+            showMaterialesModal(directIncidentId);
+          } else if (pendingAction === 'resolver') {
+            showResolverModal(directIncidentId);
+          } else if (pendingAction === 'rechazo') {
+            showReasonModal('rechazo', directIncidentId);
+          }
+        }
+      }
+    } catch {}
     }
     
     // ---------- Aplicar filtros y pintar ----------
