@@ -3340,10 +3340,7 @@
             requestButtonsHTML.trim()
               ? `<div class="chips"><div class="req-chips">${requestButtonsHTML}</div></div>`
               : `<div class="chips"><span class="chip">✔️ Sin validaciones pendientes</span></div>`;
-          const notifs = buildNotificationsFromLog(inc);
-          const notifHTML = notifs.length
-          ? `<div class="chips">${notifs.map(n => `<span class="chip">${safe(n.message)}</span>`).join('')}</div>`
-          : '';
+          const notifHTML = '';
           const news = countNewItems(inc);
             // Extrae prioridad desde el ID si viene incluida allí
           const idWithPriority = String(inc.id || '');
@@ -3377,7 +3374,6 @@
               </div>
         
               ${chipsBlockHTML}
-              ${notifHTML}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
@@ -3465,7 +3461,8 @@
                     ev = map[ev] || ev;
                 }
                 ev = safe(ev);
-                const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected' : (r.ev === 'ASSIGNED' ? 'phase-approved' : 'phase-pending');
+                const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected'
+                  : (r.ev === 'ASSIGNED' ? 'phase-pending' : 'phase-approved');
                 return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatTimeOrDate(r.when)}</span>`+
                        `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
             }).join('');
