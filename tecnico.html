@@ -1829,25 +1829,71 @@
           const unit = (u || '').toLowerCase().trim();
           return unit === 'm' || unit === 'kg' || unit === 'l';
         }
+
         function renderMaterialesResultado(items = []) {
-          const tbody = document.getElementById('materialesResultadoBody');
-          if (!tbody) return;
-          const rowsHtml = items.map(it => {
-            const unit = normalizeUnit(it.unit || '');
+          const wrap = document.getElementById('materialesResultadoWrapper');
+          if (!wrap) return;
+        
+          if (!Array.isArray(items) || items.length === 0) {
+            wrap.innerHTML = '<div class="muted">No hay materiales aprobados.</div>';
+            updateResolverValidation();
+            return;
+          }
+        
+          // Esqueleto de tabla
+          wrap.innerHTML = `
+            <table class="materials-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Unidad</th>
+                  <th>Solicitado</th>
+                  <th>Aprobado</th>
+                  <th>Consumido</th>
+                  <th>Devuelto</th>
+                  <th>Desechado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="materialesResultadoBody"></tbody>
+            </table>
+          `;
+        
+          const tbody = wrap.querySelector('#materialesResultadoBody');
+        
+          const unitAllowsDecimal = u => ['m','kg','l'].includes(String(u||'').toLowerCase());
+          const norm = normalizeUnit; // ya definida en tu archivo
+        
+          const rows = items.map(it => {
+            const unit = norm(it.unit || '');
             const step = unitAllowsDecimal(unit) ? '0.01' : '1';
+            const qtySol = Number(it.qty_solicitada || it.qty || 0);
+            const qtyApr = Number(it.qty_aprobada  ?? qtySol);
+        
             return `
-              <tr data-req="${escapeHtml(it.req || '')}" data-code="${escapeHtml(it.code || '')}">
-                <td class="nowrap">${escapeHtml(it.code || '')}</td>
-                <td class="ellipsis" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name || '')}</td>
-                <td class="nowrap">${escapeHtml(unit)}</td>
-                <td class="num">${Number(it.qty_solicitada || 0)}</td>
-                <td class="num">${Number(it.qty_aprobada ?? it.qty_solicitada ?? 0)}</td>
+              <tr data-req="${safe(it.req || '')}"
+                  data-code="${safe(it.code || '')}"
+                  data-qty_solicitada="${qtySol}"
+                  data-qty_aprobada="${qtyApr}">
+                <td class="nowrap">${safe(it.code || '')}</td>
+                <td class="ellipsis" title="${safe(it.name || '')}">${safe(it.name || '')}</td>
+                <td class="nowrap">${safe(unit)}</td>
+                <td class="num">${qtySol}</td>
+                <td class="num">${qtyApr}</td>
                 <td><input class="consumida-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
                 <td><input class="devuelta-input"  type="number" min="0" step="${step}" inputmode="decimal"></td>
                 <td><input class="desechada-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
-              </tr>`;
+                <td><div class="mat-error" style="color:#dc2626;font-size:12px;"></div></td>
+              </tr>
+            `;
           }).join('');
-          tbody.innerHTML = rowsHtml;
+        
+          tbody.innerHTML = rows;
+        
+          // Validar en caliente
+          tbody.querySelectorAll('input').forEach(i => i.addEventListener('input', updateResolverValidation));
+          updateResolverValidation();
         }
 
         function updateResolverValidation() {
@@ -3275,6 +3321,10 @@
             requestButtonsHTML.trim()
               ? `<div class="chips"><div class="req-chips">${requestButtonsHTML}</div></div>`
               : `<div class="chips"><span class="chip">✔️ Sin validaciones pendientes</span></div>`;
+          const notifs = buildNotificationsFromLog(inc);
+          const notifHTML = notifs.length
+          ? `<div class="chips">${notifs.map(n => `<span class="chip">${safe(n.message)}</span>`).join('')}</div>`
+          : '';
           const news = countNewItems(inc);
             // Extrae prioridad desde el ID si viene incluida allí
           const idWithPriority = String(inc.id || '');
@@ -3308,6 +3358,7 @@
               </div>
         
               ${chipsBlockHTML}
+              ${notifHTML}
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
