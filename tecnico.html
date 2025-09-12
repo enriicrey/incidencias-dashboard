@@ -1950,6 +1950,8 @@
               const wrap = c => `<div>${c}</div>`;
               const cls = asButtons ? 'btn btn-primary' : '';
               const encodeURL = url => encodeURI(String(url||''));
+
+              const links = [];
             // 🔗 Incidencia
               links.push(inc.url
                 ? wrap(`<a href="${encodeURL(inc.url)}" target="_blank" class="${cls}">🔗 Incidencia</a>`)
