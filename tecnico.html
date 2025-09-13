@@ -3165,7 +3165,7 @@
                 const unit = i.unit ? ` (${i.unit})` : '';
                 const fam = i.family ? ` · [${i.family}]` : '';
                 const label = `${i.code} - ${i.name}${unit}${fam}`;
-                return `<option value="${escapeHtml(i.code)}" data-label="${escapeHtml(label)}"></option>`;
+                return `<option value="${safe(i.code)}" data-label="${safe(label)}"></option>`;
               }).join('');
             }
 
