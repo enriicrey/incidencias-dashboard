@@ -1953,28 +1953,29 @@
         document.getElementById('solutionDescription').addEventListener('input', updateResolverValidation);
 
         function openResourcesModal(incident) {
-            currentIncidentId = incident.id;
-            const state = getIncidentRealState(incident, currentTechnician?.email || "");
-            const encodeURL = url => encodeURI(String(url || ''));
-            const wrap = content => `<div>${content}</div>`;
-
-            const matUrl = state === 'working' ? incident.materials_url : null;
-            const links = [
-                incident.url
-                    ? wrap(`<a class="btn-link" href="${encodeURL(incident.url)}" target="_blank" rel="noopener noreferrer">🔗 Incidencia</a>`)
-                    : wrap(`<a class="btn-link disabled">🔗 Incidencia no disponible</a>`),
-                matUrl
-                    ? wrap(`<a class="btn-link" href="${encodeURL(matUrl)}" target="_blank" rel="noopener noreferrer">📊 Estado de materiales</a>`)
-                    : wrap(`<a class="btn-link disabled">📊 Estado de materiales no disponible</a>`),
-                incident.history_url
-                    ? wrap(`<a class="btn-link" href="${encodeURL(incident.history_url)}" target="_blank" rel="noopener noreferrer">🔍 Historial del componente</a>`)
-                    : wrap(`<a class="btn-link disabled">🔍 Historial del componente no disponible</a>`)
-            ].join('');
-
-            const list = document.getElementById('referenciasList');
-            if (list) list.innerHTML = links;
-            document.getElementById('referenciasModal')?.classList.remove('hidden');
+          currentIncidentId = incident.id;
+          const state = getIncidentRealState(incident, currentTechnician?.email || "");
+        
+          const enc = s => encodeURI(String(s || ""));
+          const pill = (label, href, prim=false) =>
+            href
+              ? `<a class="btn ${prim ? 'btn-resource' : 'btn-secondary'}" href="${enc(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+              : `<span class="btn btn-secondary" style="opacity:.5;pointer-events:none;">${label} no disponible</span>`;
+        
+          const matUrl = state === 'working' ? incident.materials_url : null;
+        
+          const html = `
+            <div class="action-buttons" style="justify-content:flex-start;gap:12px;flex-wrap:wrap">
+              ${pill('🔗 Incidencia', incident.url, true)}
+              ${pill('📊 Estado de materiales', matUrl)}
+              ${pill('🔍 Historial del componente', incident.history_url)}
+            </div>`;
+        
+          const list = document.getElementById('referenciasList');
+          if (list) list.innerHTML = html;
+          document.getElementById('referenciasModal')?.classList.remove('hidden');
         }
+
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
@@ -2371,29 +2372,32 @@
           }
           return map;
         }
-          function renderSlaPillInHeader(inc, state, card){
-          const L = getCurrentLevel(inc);
-          const end = getSlaEndForLevel(inc, L);
-          if (!end) return false;
-          const ms = Date.parse(end) - Date.now();
-
-         if (state === 'working') {
-            if (ms <= 0) return '';
-            let respText = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
-            let acept = "";
-            if (respText !== "{{emptystring}}") {
-              const rows = parseRespLog(respText, inc);
-              const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
-              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+          function renderSlaPillInHeader(inc, state, card) {
+              const L = getCurrentLevel(inc);
+              const end = getSlaEndForLevel(inc, L);
+              if (!end) return "";
+            
+              // Si está trabajando, enseñamos banner “Trabajando”
+              if (state === "working") {
+                let acept = "";
+                const respText = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
+                if (respText !== "{{emptystring}}") {
+                  const rows = parseRespLog(respText, inc);
+                  const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+                  if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+                }
+                return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
+              }
+            
+              // Solo mostrar temporizador si está PENDING y no ha vencido
+              if (state !== "pending") return "";
+              const ms = Date.parse(end) - Date.now();
+              if (ms <= 0) return ""; // nada si ya venció
+            
+              const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
+              return `<span class="sla-timer ${cls}">⏱️ ${formatRemain(ms)}</span>`;
             }
-            return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
-          }
 
-          if (state === 'seguimiento') return '';
-
-          const label = ms <= 0 ? `SLA vencido en L${L}` : `SLA en L${L} · ${formatRemain(ms)}`;
-          return `<span class="sla-timer">⏱️ ${label}</span>`;
-        }
         
         // --- ¿Qué categorías tienen pendientes? ---
         function getPendingCategoriesFromLog(logText="") {
