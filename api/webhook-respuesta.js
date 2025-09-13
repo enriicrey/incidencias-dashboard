@@ -93,7 +93,17 @@ module.exports = async function handler(req, res) {
         }
         makePayload.pin = data.pin || '';
         makePayload.solution_description = data.solution_description;
-        makePayload.materiales_resultado = data.materiales_resultado;
+        makePayload.materiales_resultado = data.materiales_resultado.map(m => ({
+          req: m.req,
+          code: m.code,
+          name: m.name,
+          unit: m.unit,
+          qty_solicitada: Number(m.qty_solicitada) || 0,
+          qty_aprobada: Number(m.qty_aprobada) || 0,
+          qty_consumida: Number(m.qty_consumida) || 0,
+          qty_devuelta: Number(m.qty_devuelta) || 0,
+          qty_desechada: Number(m.qty_desechada) || 0,
+        }));
         break;
       case 'request_materials': {
         const list = Array.isArray(data.items) ? data.items : [];
