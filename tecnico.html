@@ -777,6 +777,7 @@
         .timeline li.phase-transfer{ background:#e0f2fe; border-left:4px solid #0ea5e9; }
         .timeline li.phase-derivation{ background:#ede9fe; border-left:4px solid #8b5cf6; }
         .timeline li.phase-support{ background:#f1f5f9; border-left:4px solid #6b7280; }
+        .timeline li.phase-unassign{ background:#f3f4f6; border-left:4px solid #9ca3af; }
         
         /* --- CONTACTOS: enlaces de teléfono sin “pill” y sin solapes --- */
         
@@ -2574,8 +2575,7 @@
                 when: new Date(when),
                 level: parseInt(incident?.escalation_level) || 0,
                 email: email.trim(),
-                ev: ev.trim(),
-                support: true
+                ev: `APOYO_${ev.trim()}`
               });
               continue;
             }
@@ -2662,11 +2662,11 @@
           return rows;
         }
         
-        // ¿Quién es el titular vigente de un nivel?
+       // ¿Quién es el titular vigente de un nivel?
        function getCurrentOwnerByLevel(respRows, level){
           // último evento ASSIGNED de ese nivel → titular vigente
           const lastAssigned = respRows
-            .filter(r => r.level === level && r.ev === 'ASSIGNED' && !r.support)
+            .filter(r => r.level === level && r.ev === 'ASSIGNED')
             .slice(-1)[0];
           return lastAssigned ? lastAssigned.email : null;
         }
@@ -3587,6 +3587,12 @@
                     const title = map[r.ev] || r.ev;
                     const body = `🤝 L${r.level} · ${safe(title)} · ${who}`;
                     return `<li class="level-${r.level} phase-support"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                }
+                // Eventos de desasignación
+                if (r.ev === 'UNASSIGN') {
+                    const parts = [who, safe(r.type), safe(r.detail)].filter(Boolean);
+                    const body = `🚫 Desasignado${parts.length ? ' · ' + parts.join(' · ') : ''}`;
+                    return `<li class="level-${r.level} phase-unassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
                 }
                 let ev = r.ev;
                 if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
