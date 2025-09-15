@@ -704,9 +704,11 @@
         /* Grid del formulario de materiales */
         .form-grid{
           display:grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: 1fr 160px;
           gap:12px;
+          align-items:end;
         }
+        #matFamilyFilter{ justify-self:end; width:220px; }
         @media (max-width: 640px){
           .form-grid{ grid-template-columns: 1fr; }
         }
@@ -774,10 +776,11 @@
         .timeline li.phase-approved{ background:#eafaf1; border-left:4px solid #10b981; }
         .timeline li.phase-rejected{ background:#fdecea; border-left:4px solid #ef4444; }
         .timeline li.phase-request, .timeline li.phase-pending{ background:#fffbea; border-left:4px solid #f59e0b; }
-        .timeline li.phase-transfer{ background:#e0f2fe; border-left:4px solid #0ea5e9; }
-        .timeline li.phase-derivation{ background:#ede9fe; border-left:4px solid #8b5cf6; }
+        .timeline li.phase-transfer{ background:#e0f2fe; border-left:4px solid #9ca3af; }
+        .timeline li.phase-derivation{ background:#ede9fe; border-left:4px solid #9ca3af; }
         .timeline li.phase-support{ background:#f1f5f9; border-left:4px solid #6b7280; }
         .timeline li.phase-unassign{ background:#f3f4f6; border-left:4px solid #9ca3af; }
+        .timeline li.phase-reassign{ background:#f3f4f6; border-left:4px solid #9ca3af; }
         
         /* --- CONTACTOS: enlaces de teléfono sin “pill” y sin solapes --- */
         
@@ -1092,7 +1095,7 @@
             <select id="matFamilyFilter" class="form-control">
               <option value="">Todas</option>
             </select>
-                <input id="matSelect" list="matOptions" placeholder="Material" class="form-control" oninput="onMaterialChange()">
+                <input id="matSelect" list="matOptions" placeholder="Material" class="form-control">
                 <datalist id="matOptions"></datalist>
                 <input type="number" id="matQty" placeholder="Cantidad" class="form-control" step="1">
                 <select id="matUrgencia" class="form-control">
@@ -1105,7 +1108,7 @@
                 <input type="hidden" id="mat-unit">
             </div>
             <p id="matInfo" class="material-info"></p>
-            <button class="btn btn-secondary" onclick="agregarMaterial()">➕ Añadir a la lista</button>
+            <button id="addMaterialBtn" class="btn btn-secondary" type="button" onclick="agregarMaterial()" disabled>➕ Añadir a la lista</button>
 
             <!-- Lista de materiales añadidos -->
             <div class="materials-list" id="materialsList"></div>
@@ -1822,9 +1825,13 @@
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId) || {};
             const container = document.getElementById('resolverRequests');
-            if (container) container.innerHTML = renderSolicitudesResumen(inc);
-            const items = (inc.items && inc.items.length) ? inc.items : deriveApprovedItemsFromLog(inc);
-            renderMaterialesResultado(items);
+            if (container) {
+                container.innerHTML = '';
+                const section = container.closest('.form-group');
+                if (section) section.classList.add('hidden');
+            }
+            const approvedItems = deriveApprovedItemsFromLog(inc);
+            renderMaterialesResultado(approvedItems);
             document.getElementById('resolverModal').classList.remove('hidden');
             updateResolverValidation();
         }
@@ -1841,6 +1848,7 @@
                populateInventorySelector(getCurrentFamily());
                validateMateriales();
            }
+           validateMaterialesControls();
            const modal = document.getElementById('materialesModal');
            modal.classList.remove('hidden');
        }
@@ -1868,7 +1876,7 @@
           if (!wrap) return;
         
           if (!Array.isArray(items) || items.length === 0) {
-            wrap.innerHTML = '<div class="muted">No hay materiales aprobados.</div>';
+            wrap.innerHTML = '<div class="muted">No hay materiales aprobados. Si usaste material, solicita y espera aprobación del supervisor antes de resolver.</div>';
             updateResolverValidation();
             return;
           }
@@ -1909,7 +1917,7 @@
                   data-name="${safe(it.name || '')}"
                   data-unit="${safe(unit)}"
                   data-qty_solicitada="${qtySol}"
-                  data-qty_aprobada="${qtyApr}"
+                  data-qty_aprobada="${qtyApr}">
                 <td class="nowrap">${safe(it.code || '')}</td>
                 <td class="ellipsis" title="${safe(it.name || '')}">${safe(it.name || '')}</td>
                 <td class="nowrap">${safe(unit)}</td>
@@ -2010,6 +2018,7 @@
                 materialesTemp = [];
                 renderMaterialesList();
                 validateMateriales();
+                validateMaterialesControls();
             }
         }
 
@@ -2533,25 +2542,44 @@
           for (const key of keys) {
             const req = grouped[key];
             if (req.last?.phase !== "REQUEST") continue;
-            const meta = req.last.meta || {};
+            const meta = req.last?.meta || {};
             const info = REQUEST_CAT_INFO[req.cat] || { icon: "", label: req.cat };
-            let label = "";
+            const pick = (...vals) => {
+              for (const val of vals) {
+                if (val === undefined || val === null) continue;
+                const str = String(val).trim();
+                if (str) return str;
+              }
+              return "";
+            };
+            const icon = info.icon || "";
+            const iconPrefix = icon ? `${icon} ` : "";
+            let labelBody = "";
             if (req.cat === "MATERIAL") {
-              const qty = meta.qty ? ` ×${meta.qty}` : "";
-              label = `${info.icon} ${meta.name || info.label}${qty}`;
+              const name = pick(meta.name, meta.material, meta.item, info.label);
+              const qty = pick(meta.qty);
+              const unit = pick(meta.unit, meta.units, meta.unidad);
+              const qtyUnit = qty ? ` ×${qty}${unit ? ` ${unit}` : ""}` : "";
+              labelBody = `${name}${qtyUnit}`.trim(); 
             } else if (req.cat === "APOYO") {
-              label = `${info.icon} ${meta.detail || info.label}`;
+              const detail = pick(meta.detail, meta.detalle, meta.reason, meta.comment, meta.notes);
+              labelBody = `Apoyo${detail ? ` · ${detail}` : ""}`;
             } else if (req.cat === "DERIVACION" || req.cat === "TRASPASO" || req.cat === "REASIGNACION") {
-              label = `${info.icon} ${meta.to || info.label}`;
+              const action =
+                req.cat === "DERIVACION" ? "Derivar" :
+                req.cat === "TRASPASO" ? "Traspaso" :
+                "Reasignar";
+              const destination = pick(meta.to, meta.dest, meta.destino, meta.target, meta.detail, meta.detalle, meta.name);
+              labelBody = `${action}${destination ? ` · ${destination}` : ""}`;
             } else {
-              const parts = [];
-              if (meta.name) parts.push(meta.name);
-              if (meta.to) parts.push(meta.to);
-              if (meta.detail) parts.push(meta.detail);
-              label = `${info.icon} ${parts.join(" ")}`.trim();
+              const parts = [pick(meta.name), pick(meta.to), pick(meta.detail, meta.detalle, meta.reason)];
+              const content = parts.filter(Boolean).join(" · ");
+              labelBody = content || pick(info.label, req.cat);
             }
-            if (label.trim()) {
-              chips.push(`<span class="materials-badge req-chip ${req.status}">${safe(label)}</span>`);
+            const label = `${iconPrefix}${labelBody}`.trim();
+            if (label) {
+              const title = safe(req.last?.metaRaw || "");
+              chips.push(`<span class="materials-badge req-chip ${req.status}" title="${title}">${safe(label)}</span>`);
             }
           }
           return chips.length ? chips.join("") : "";
@@ -3005,6 +3033,31 @@
             incidentsContainer = document.querySelector('.incidents-section .incidents-list');
             checkDirectAccess();
 
+            const matSelect = document.getElementById('matSelect');
+            const matQty = document.getElementById('matQty');
+            const matUrgencia = document.getElementById('matUrgencia');
+
+            if (matSelect) {
+              matSelect.placeholder = 'Busca por nombre o pega el código…';
+              const handleMaterialInput = () => {
+                onMaterialChange();
+              };
+              matSelect.addEventListener('input', handleMaterialInput);
+              matSelect.addEventListener('change', handleMaterialInput);
+            }
+
+            if (matQty) {
+              const handleQtyChange = () => validateMaterialesControls();
+              matQty.addEventListener('input', handleQtyChange);
+              matQty.addEventListener('change', handleQtyChange);
+            }
+
+            if (matUrgencia) {
+              const handleUrgenciaChange = () => validateMaterialesControls();
+              matUrgencia.addEventListener('input', handleUrgenciaChange);
+              matUrgencia.addEventListener('change', handleUrgenciaChange);
+            }
+
             try {
             const inv = await loadInventoryLight();
             inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
@@ -3028,6 +3081,7 @@
             if (e.key === 'Enter') loginWithPIN();
           });
           loginBtn.addEventListener('click', loginWithPIN);
+          validateMaterialesControls();
         });
 
         function checkDirectAccess() {
@@ -3221,6 +3275,8 @@
             //  SOLICITAR MATERIALES - MULTIPLE
             // ========================================
             let materialesTemp = [];
+
+            const URGENCIAS_VALIDAS = ['alta', 'media', 'baja'];
             
             function validateMateriales() {
                 const btn = document.getElementById('enviarMaterialesBtn');
@@ -3231,6 +3287,27 @@
                     const hasInventory = Array.isArray(inventory) && inventory.length > 0;
                     retryBtn.classList.toggle('hidden', hasInventory);
                 }
+            }
+
+            function validateMaterialesControls() {
+                const addBtn = document.getElementById('addMaterialBtn');
+                if (!addBtn) return;
+
+                const matInput = document.getElementById('matSelect');
+                const qtyInput = document.getElementById('matQty');
+                const urgenciaInput = document.getElementById('matUrgencia');
+
+                const code = matInput?.dataset?.code ? String(matInput.dataset.code).trim() : '';
+                const rawValue = matInput ? matInput.value.trim() : '';
+                const item = code ? resolveInventoryItem(code) : resolveInventoryItem(rawValue);
+
+                const qty = qtyInput ? parseFloat(qtyInput.value) : NaN;
+                const qtyValid = Number.isFinite(qty) && qty > 0;
+
+                const urgencia = urgenciaInput ? urgenciaInput.value : '';
+                const urgValid = URGENCIAS_VALIDAS.includes(urgencia);
+
+                addBtn.disabled = !(item && qtyValid && urgValid);
             }
 
             function populateInventorySelector(family = '') {
@@ -3294,6 +3371,7 @@
                 if (unitField) unitField.value = '';
                 if (info) info.textContent = label;
               }
+              validateMaterialesControls();
             }
 
         
@@ -3303,8 +3381,7 @@
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
               const item = resolveInventoryItem(code);
-              const urgenciasValidas = ['alta', 'media', 'baja'];
-              if (!item || !code || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
+              if (!item || !code || isNaN(qty) || qty <= 0 || !URGENCIAS_VALIDAS.includes(urgencia)) {
                 showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
                 return;
               }
@@ -3578,7 +3655,7 @@
                     const reason = safe(r.reason || r.detail || '');
                     const mid = from && to ? `${from} → ${to}` : (from || to);
                     const body = `${icon} ${title}${mid ? ' · ' + mid : ''}${reason ? ' · ' + reason : ''}`;
-                    return `<li class="level-${r.level} ${phase}"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                    return `<li class="${phase}"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
                 }
                 // Eventos de apoyo
                 if (r.ev === 'APOYO_ASSIGNED' || r.ev === 'APOYO_ACCEPTED') {
@@ -3591,7 +3668,17 @@
                 if (r.ev === 'UNASSIGN') {
                     const parts = [who, safe(r.type), safe(r.detail)].filter(Boolean);
                     const body = `🚫 Desasignado${parts.length ? ' · ' + parts.join(' · ') : ''}`;
-                    return `<li class="level-${r.level} phase-unassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                    return `<li class="phase-unassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                }
+                // Eventos de reasignación
+                if (r.ev && r.ev.startsWith('REASSIGN_')) {
+                    const map = { REASSIGN_TO: 'Reasignado a', REASSIGN_FROM: 'Reasignado de' };
+                    const icon = r.ev === 'REASSIGN_TO' ? '➡️' : (r.ev === 'REASSIGN_FROM' ? '⬅️' : '🔄');
+                    const title = safe(map[r.ev] || r.ev);
+                    const detail = safe(r.detail);
+                    const extras = [detail, who].filter(Boolean).join(' · ');
+                    const body = `${icon} ${title}${extras ? ' · ' + extras : ''}`;
+                    return `<li class="phase-reassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
                 }
                 let ev = r.ev;
                 if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
@@ -3599,9 +3686,7 @@
                     const map = {
                         ASSIGNED: 'Asignado',
                         ACCEPTED: 'Aceptado',
-                        NO_RESPONSE: 'Sin Respuesta',
-                        REASSIGN_TO: 'Reasignado a',
-                        REASSIGN_FROM: 'Reasignado de'
+                         NO_RESPONSE: 'Sin Respuesta'
                     };
                     ev = map[ev] || ev;
                 }
