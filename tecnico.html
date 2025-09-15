@@ -765,6 +765,7 @@
                      padding:6px 8px;border-radius:8px;white-space:nowrap;overflow:hidden;}
         .timeline .t-time{flex:0 0 130px;color:#6b7280;}
         .timeline .t-body{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .timeline .note-item .t-body{white-space:normal;max-height:120px;overflow:auto;}
         .note-author{display:inline-flex;gap:6px;align-items:center;font-weight:600;}
         .timeline li.level-0{ border-left:4px solid #6366f1; }
         .timeline li.level-1{ border-left:4px solid #3b82f6; }
@@ -773,6 +774,9 @@
         .timeline li.phase-approved{ background:#eafaf1; border-left:4px solid #10b981; }
         .timeline li.phase-rejected{ background:#fdecea; border-left:4px solid #ef4444; }
         .timeline li.phase-request, .timeline li.phase-pending{ background:#fffbea; border-left:4px solid #f59e0b; }
+        .timeline li.phase-transfer{ background:#e0f2fe; border-left:4px solid #0ea5e9; }
+        .timeline li.phase-derivation{ background:#ede9fe; border-left:4px solid #8b5cf6; }
+        .timeline li.phase-support{ background:#f1f5f9; border-left:4px solid #6b7280; }
         
         /* --- CONTACTOS: enlaces de teléfono sin “pill” y sin solapes --- */
         
@@ -1096,6 +1100,8 @@
                     <option value="media">Media</option>
                     <option value="baja">Baja</option>
                 </select>
+                <input type="hidden" id="mat-type">
+                <input type="hidden" id="mat-unit">
             </div>
             <p id="matInfo" class="material-info"></p>
             <button class="btn btn-secondary" onclick="agregarMaterial()">➕ Añadir a la lista</button>
@@ -1358,11 +1364,17 @@
           };
         }
         
-        /** Busca un ítem de inventario por código directamente */
+        /** Busca un ítem de inventario por código o nombre */
         function resolveInventoryItem(val) {
-          const code = String(val || '').trim();
-          if (!code) return null;
-          return (inventory || []).find(i => i.code === code) || null;
+          const query = String(val || '').trim().toLowerCase();
+          if (!query) return null;
+          return (
+            (inventory || []).find(
+              i =>
+                String(i.code).toLowerCase() === query ||
+                String(i.name).toLowerCase() === query
+            ) || null
+          );
         }
 
         function updateTechnicianHeader(technician) {
@@ -1600,7 +1612,7 @@
             const derivation = getLastDerivation(rows);
             if (derivation) {
               rows = rows.filter(r => r.when >= derivation.when);
-              const hasActivity = rows.some(r => r.email && r.email.toLowerCase() === email);
+              const hasActivity = rows.some(r => r.email && r.email.toLowerCase() === email && r.ev !== 'UNASSIGN');
               if (!hasActivity) return 'seguimiento';
             }
             const transfer = getLastTransferFor(rows, email);
@@ -1618,7 +1630,7 @@
 
             if (lastMine) {
               if (lastMine.ev === 'ACCEPTED') return 'working';
-              if (lastMine.ev === 'REJECTED' || lastMine.ev === 'NO_RESPONSE' || lastMine.ev === 'REASSIGN_FROM') return 'seguimiento';
+              if (lastMine.ev === 'REJECTED' || lastMine.ev === 'NO_RESPONSE' || lastMine.ev === 'REASSIGN_FROM' || lastMine.ev === 'UNASSIGN') return 'seguimiento';
               if (lastMine.ev === 'ASSIGNED') {
                 // Apoyo aceptado: si cualquiera aceptó, ambos trabajan
                 if (lastAccepted) return 'working';
@@ -2309,6 +2321,14 @@
             }, 4000);
         }
 
+        const REQUEST_CAT_INFO = {
+          MATERIAL: { icon: "📦", label: "Material" },
+          APOYO: { icon: "🤝", label: "Apoyo" },
+          DERIVACION: { icon: "↪️", label: "Derivación" },
+          TRASPASO: { icon: "🔄", label: "Traspaso" },
+          REASIGNACION: { icon: "♻️", label: "Reasignación" },
+        };
+
         // --- Parsear log y agrupar por categoría + request_id ---
         function parseSolicitudesLog(logText = "") {
           if (Array.isArray(logText)) {
@@ -2431,6 +2451,8 @@
             MATERIAL: { APPROVED: 0, REJECTED: 0 },
             DERIVACION: { APPROVED: 0, REJECTED: 0 },
             APOYO: { APPROVED: 0, REJECTED: 0 },
+            TRASPASO: { APPROVED: 0, REJECTED: 0 },
+            REASIGNACION: { APPROVED: 0, REJECTED: 0 },
           };
         
           for (const key of Object.keys(grouped)) {
@@ -2450,6 +2472,12 @@
           // Apoyo
           if (counters.APOYO.APPROVED) out.push({ type: "support_approved", message: `🟢 Apoyos aprobados (${counters.APOYO.APPROVED})` });
           if (counters.APOYO.REJECTED) out.push({ type: "support_rejected", message: `🔴 Apoyos rechazados (${counters.APOYO.REJECTED})` });
+          // Traspaso
+          if (counters.TRASPASO.APPROVED) out.push({ type: "traspaso_approved", message: `🟢 Traspasos aprobados (${counters.TRASPASO.APPROVED})` });
+          if (counters.TRASPASO.REJECTED) out.push({ type: "traspaso_rejected", message: `🔴 Traspasos rechazados (${counters.TRASPASO.REJECTED})` });
+          // Reasignación
+          if (counters.REASIGNACION.APPROVED) out.push({ type: "reasignacion_approved", message: `🟢 Reasignaciones aprobadas (${counters.REASIGNACION.APPROVED})` });
+          if (counters.REASIGNACION.REJECTED) out.push({ type: "reasignacion_rejected", message: `🔴 Reasignaciones rechazadas (${counters.REASIGNACION.REJECTED})` });
         
           return out;
         }
@@ -2506,15 +2534,23 @@
             const req = grouped[key];
             if (req.last?.phase !== "REQUEST") continue;
             const meta = req.last.meta || {};
-            const parts = [];
-            if (meta.name) {
+            const info = REQUEST_CAT_INFO[req.cat] || { icon: "", label: req.cat };
+            let label = "";
+            if (req.cat === "MATERIAL") {
               const qty = meta.qty ? ` ×${meta.qty}` : "";
-              parts.push(`📦 ${meta.name}${qty}`);
+              label = `${info.icon} ${meta.name || info.label}${qty}`;
+            } else if (req.cat === "APOYO") {
+              label = `${info.icon} ${meta.detail || info.label}`;
+            } else if (req.cat === "DERIVACION" || req.cat === "TRASPASO" || req.cat === "REASIGNACION") {
+              label = `${info.icon} ${meta.to || info.label}`;
+            } else {
+              const parts = [];
+              if (meta.name) parts.push(meta.name);
+              if (meta.to) parts.push(meta.to);
+              if (meta.detail) parts.push(meta.detail);
+              label = `${info.icon} ${parts.join(" ")}`.trim();
             }
-            if (meta.to) parts.push(`↪️ ${meta.to}`);
-            if (meta.detail) parts.push(`👥 ${meta.detail}`);
-            const label = parts.join(" ").trim();
-            if (label) {
+            if (label.trim()) {
               chips.push(`<span class="materials-badge req-chip ${req.status}">${safe(label)}</span>`);
             }
           }
@@ -2530,8 +2566,21 @@
           const lines = String(text).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
           const rows = [];
           for (const line of lines) {
+          // [fecha] RESP#APOYO#<email>|ASSIGNED|ACCEPTED
+            let m = line.match(/^\[(.+?)\]\s+RESP#APOYO#([^|]+)\|(ASSIGNED|ACCEPTED)$/);
+            if (m) {
+              const [, when, email, ev] = m;
+              rows.push({
+                when: new Date(when),
+                level: parseInt(incident?.escalation_level) || 0,
+                email: email.trim(),
+                ev: ev.trim(),
+                support: true
+              });
+              continue;
+            }
             // [fecha] RESP#TRANSFER|from=...;to=...;reason=...
-            let m = line.match(/^\[(.+?)\]\s+RESP#TRANSFER\|from=([^;]+);to=([^;]+);reason=(.*)$/);
+            m = line.match(/^\[(.+?)\]\s+RESP#TRANSFER\|from=([^;]+);to=([^;]+);reason=(.*)$/);
             if (m) {
               const [, when, from, to, reason] = m;
               rows.push({
@@ -2543,6 +2592,20 @@
                 reason: (reason || "").trim(),
                 from: from.trim(),
                 to: to.trim()
+              });
+              continue;
+            }
+            // [fecha] RESP#UNASSIGN#<email>|<TIPO>|<motivo>
+            m = line.match(/^\[(.+?)\]\s+RESP#UNASSIGN#([^|]+)\|([^|]+)\|?(.*)$/);
+            if (m) {
+              const [, when, email, type, detail] = m;
+              rows.push({
+                when: new Date(when),
+                level: parseInt(incident?.escalation_level) || 0,
+                email: email.trim(),
+                ev: 'UNASSIGN',
+                type: (type || '').trim(),
+                detail: (detail || '').trim()
               });
               continue;
             }
@@ -2603,7 +2666,7 @@
        function getCurrentOwnerByLevel(respRows, level){
           // último evento ASSIGNED de ese nivel → titular vigente
           const lastAssigned = respRows
-            .filter(r => r.level === level && r.ev === 'ASSIGNED')
+            .filter(r => r.level === level && r.ev === 'ASSIGNED' && !r.support)
             .slice(-1)[0];
           return lastAssigned ? lastAssigned.email : null;
         }
@@ -2865,9 +2928,19 @@
               (L===2 && incident.l2_reject_reasons) ||
               "";
           }
+
+          // ¿Fue aceptado por otro técnico?
+          const myEmail = (currentTechnician?.email || '').toLowerCase();
+          const acceptedRows = rows.filter(r => r.level === L && r.ev === 'ACCEPTED');
+          const acceptedByOther = acceptedRows.some(r => r.email.toLowerCase() !== myEmail);
+          if (acceptedByOther) {
+            setIncidentBanner(card, `<div class="seguimiento-banner">ℹ️ En seguimiento</div>`);
+            return true;
+          }
         
           const finTxt = end ? formatDate(end) : "";
-          if (vencido) {
+          const hasAccepted = acceptedRows.length > 0;
+          if (!hasAccepted && vencido) {
             setIncidentBanner(card, `<div class="seguimiento-banner">⏰ <strong>SLA vencido</strong> en L${L}${finTxt ? ` · ${finTxt}` : ''}</div>`);
             return true;
           }
@@ -3169,42 +3242,70 @@
                 ? (inventory || []).filter(i => (i.family || '') === family)
                 : (inventory || []);
             
-              // Cada opción muestra el código como value y guarda el label completo
-              list.innerHTML = src.map(i => {
-                const unit = i.unit ? ` (${i.unit})` : '';
-                const fam = i.family ? ` · [${i.family}]` : '';
-                const label = `${i.code} - ${i.name}${unit}${fam}`;
-                return `<option value="${safe(i.code)}" data-label="${safe(label)}"></option>`;
-              }).join('');
+              // Cada opción usa el nombre como value y guarda el código en data-code
+              list.innerHTML = src
+                .map(i => {
+                  const unit = i.unit ? ` (${i.unit})` : '';
+                  const fam = i.family ? ` · [${i.family}]` : '';
+                  const label = `${i.code} - ${i.name}${unit}${fam}`;
+                  return `<option value="${safe(i.name)}" data-code="${safe(i.code)}" data-label="${safe(label)}" label="${safe(label)}"></option>`;
+                })
+                .join('');
             }
 
             function onMaterialChange() {
               const input = document.getElementById('matSelect');
               const val = input.value.trim();
               const option = document.querySelector(`#matOptions option[value="${CSS.escape(val)}"]`);
-              const label = option ? option.dataset.label : '';
-              const item = resolveInventoryItem(val);
+              let item = null;
+              let label = '';
+
+              if (option) {
+                const code = option.dataset.code;
+                input.dataset.code = code || '';
+                item = resolveInventoryItem(code);
+                label = option.dataset.label || '';
+              } else {
+                item = resolveInventoryItem(val);
+                if (item) {
+                  input.dataset.code = item.code;
+                  const unit = item.unit ? ` (${item.unit})` : '';
+                  const fam = item.family ? ` · [${item.family}]` : '';
+                  label = `${item.code} - ${item.name}${unit}${fam}`;
+                  input.value = item.name; // normaliza a nombre
+                } else {
+                  input.dataset.code = '';
+                }
+              }
+
+              const typeField = document.getElementById('mat-type');
+              const unitField = document.getElementById('mat-unit');
               const qtyInput = document.getElementById('matQty');
               const info = document.getElementById('matInfo');
               const allowDecimal = ['kg', 'l', 'm'];
               if (item) {
                 const unit = normalizeUnit(item.unit);
                 qtyInput.step = allowDecimal.includes(unit) ? '0.01' : '1';
+                if (typeField) typeField.value = item.consumo || '';
+                if (unitField) unitField.value = unit;
                 if (info) info.textContent = label ? `${label} · Consumo: ${item.consumo}` : `Unidad: ${unit} (${item.consumo})`;
               } else {
                 qtyInput.step = '1';
+                if (typeField) typeField.value = '';
+                if (unitField) unitField.value = '';
                 if (info) info.textContent = label;
               }
             }
 
         
             function agregarMaterial() {
-              const val = document.getElementById('matSelect').value.trim();
+              const input = document.getElementById('matSelect');
+              const code = input.dataset.code || '';
               const qty = parseFloat(document.getElementById('matQty').value);
               const urgencia = document.getElementById('matUrgencia').value;
-              const item = resolveInventoryItem(val);
+              const item = resolveInventoryItem(code);
               const urgenciasValidas = ['alta', 'media', 'baja'];
-              if (!item || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
+              if (!item || !code || isNaN(qty) || qty <= 0 || !urgenciasValidas.includes(urgencia)) {
                 showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
                 return;
               }
@@ -3466,7 +3567,27 @@
               .sort((a, b) => a.level - b.level || a.when - b.when);
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
+                const time = formatTimeOrDate(r.when);
                 const who = safe(r.email);
+                // Eventos de transferencia y derivación
+                if (r.ev === 'TRANSFER' || r.ev === 'DERIVATION') {
+                    const title = r.ev === 'TRANSFER' ? 'Transferencia' : 'Derivación';
+                    const icon = r.ev === 'TRANSFER' ? '🔀' : '🏢';
+                    const phase = r.ev === 'TRANSFER' ? 'phase-transfer' : 'phase-derivation';
+                    const from = safe(r.from || r.kv?.from || '');
+                    const to = safe(r.to || r.kv?.to || '');
+                    const reason = safe(r.reason || r.detail || '');
+                    const mid = from && to ? `${from} → ${to}` : (from || to);
+                    const body = `${icon} ${title}${mid ? ' · ' + mid : ''}${reason ? ' · ' + reason : ''}`;
+                    return `<li class="level-${r.level} ${phase}"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                }
+                // Eventos de apoyo
+                if (r.ev === 'APOYO_ASSIGNED' || r.ev === 'APOYO_ACCEPTED') {
+                    const map = { APOYO_ASSIGNED: 'Apoyo Asignado', APOYO_ACCEPTED: 'Apoyo Aceptado' };
+                    const title = map[r.ev] || r.ev;
+                    const body = `🤝 L${r.level} · ${safe(title)} · ${who}`;
+                    return `<li class="level-${r.level} phase-support"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+                }
                 let ev = r.ev;
                 if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
                 else {
@@ -3482,7 +3603,7 @@
                 ev = safe(ev);
                 const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected'
                   : (r.ev === 'ASSIGNED' ? 'phase-pending' : 'phase-approved');
-                return `<li class="level-${r.level} ${phase}"><span class="t-time">${formatTimeOrDate(r.when)}</span>`+
+                return `<li class="level-${r.level} ${phase}"><span class="t-time">${time}</span>`+
                        `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
             }).join('');
             return `<ul class="timeline">${items}</ul>`;
@@ -3492,7 +3613,7 @@
           const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
           if (log === "{{emptystring}}") return `<div class="muted">Sin solicitudes</div>`;
 
-          const rows = parseSolicitudesLog(log).filter(r => r.cat === "MATERIAL");
+          const rows = parseSolicitudesLog(log).filter(r => REQUEST_CAT_INFO[r.cat]);
           const grouped = groupByRequest(rows);
             
           const items = Object.values(grouped)
@@ -3505,12 +3626,24 @@
               const reqMeta = reqPhase.meta || {};
               const respMeta = respPhase?.meta || {};
                 
-              const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
-              const unitPart = reqMeta.unit ? ` ${safe(reqMeta.unit)}` : "";
+              const info = REQUEST_CAT_INFO[g.cat] || { icon: "", label: g.cat };
               const reqId = reqPhase.req || g.req || g.id;
               const reqPart = reqId ? `[${safe(reqId)}] ` : "";
+              let details = "";
+              if (g.cat === "MATERIAL") {
+                const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
+                const unitPart = reqMeta.unit ? ` ${safe(reqMeta.unit)}` : "";
+                details = `${safe(reqMeta.name || "")}${qtyPart}${unitPart}`;
+              } else if (g.cat === "APOYO") {
+                details = safe(reqMeta.detail || "");
+              } else {
+                const toPart = reqMeta.to ? `${safe(reqMeta.to)}` : "";
+                const reasonPart = reqMeta.reason ? ` · ${safe(reqMeta.reason)}` : "";
+                details = `${toPart}${reasonPart}`;
+              }
+              const detailStr = details ? ` · ${details}` : "";
               let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
-                `<span class="t-body"><span class="req-chip pending">👷 ${reqPart}${safe(reqMeta.name || "")}${qtyPart}${unitPart}</span></span></li>`;
+                `<span class="t-body"><span class="req-chip pending">${info.icon} ${reqPart}${info.label}${detailStr}</span></span></li>`;
                 
               if (respPhase) {
                 const cls = `phase-${respPhase.phase.toLowerCase()}`;
@@ -3524,7 +3657,7 @@
                 const respReqPart = reqId ? `[${safe(reqId)}] ` : "";
                 const chipCls = respPhase.phase.toLowerCase();
                 lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
-                  `<span class="t-body"><span class="req-chip ${chipCls}">🧑‍💼 ${respReqPart}${safe(respPhase.phase)}${extraStr}</span></span></li>`;
+                  `<span class="t-body"><span class="req-chip ${chipCls}">${info.icon} ${respReqPart}${info.label} ${safe(respPhase.phase)}${extraStr}</span></span></li>`;
               }
               return lines;
             }).join("");
