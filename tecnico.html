@@ -424,11 +424,30 @@
           border:1px solid #e5e7eb;
           font-weight:600;
           background:#f9fafb;
+          box-shadow: 0 1px 0 rgba(0,0,0,.04);
         }
         .req-chip.approved{background:#e8f5e9;border-color:#c8e6c9;}
         .req-chip.rejected{background:#ffebee;border-color:#ffcdd2;}
         .req-chip.pending{background:#fff8e1;border-color:#ffe0b2;}
         
+        .chip-request{
+          display:inline-flex;
+          align-items:center;
+          gap:6px;
+          padding:6px 12px;
+          border-radius:9999px;
+          border:1px solid var(--gray-200);
+          background:#ffffff;
+          color:var(--gray-700);
+          font-weight:600;
+          font-size:13px;
+          line-height:1.2;
+          cursor:default;
+          white-space:nowrap;
+          transition:var(--transition);
+        }
+        .chip-request:hover{background:var(--gray-100);}
+        .chip-request:focus{outline:none;box-shadow:0 0 0 2px rgba(52,152,219,0.2);}
 
         .state-pending { background: #fef3c7; color: #92400e; }
         .state-working { background: #dbeafe; color: #1e40af; }
@@ -557,21 +576,59 @@
             justify-content: flex-end;
         }
 
-        #materialesModal .form-grid {
+        #materialesModal .mat-grid {
             display: grid;
-            grid-template-columns: 1.2fr .5fr .6fr;
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
             gap: 12px;
             align-items: end;
         }
 
-        #matInfo {
-            font-size: 12px;
-            color: var(--gray-600);
-            margin-top: 4px;
-            grid-column: 1 / -1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        #materialesModal .mat-grid .form-group {
+            margin-bottom: 0;
+        }
+
+        #materialesModal .mat-grid .mat-action {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #materialesModal .mat-grid .mat-action .form-label {
+            visibility: hidden;
+            margin-bottom: 8px;
+        }
+
+        #materialesModal .mat-grid .mat-action .btn {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            #materialesModal .mat-grid {
+                grid-template-columns: repeat(2, minmax(160px, 1fr));
+            }
+        }
+
+        .materials-table.compact th,
+        .materials-table.compact td {
+            padding: 6px 8px;
+            font-size: 13px;
+        }
+
+        #matList .empty td {
+            text-align: center;
+            color: var(--gray-500);
+        }
+
+        #matList button[data-remove] {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--danger-color);
+        }
+
+        #matList button[data-remove]:hover {
+            color: var(--danger-dark);
         }
 
         .form-group { margin-bottom: 20px; }
@@ -675,60 +732,9 @@
             flex-direction: column;
             gap: 12px;
         }
-        /* ========================================
-           MODAL SOLICITAR MATERIALES
-           Permite gestionar múltiples materiales
-        ======================================== */
-        .materials-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        
-        .material-item {
-            border: 1px solid var(--gray-200);
-            border-radius: var(--border-radius);
-            padding: 12px;
-            background: var(--gray-50);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .material-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-        
-        .material-actions button {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 4px 10px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .material-actions button:hover {
-            background: var(--danger-dark);
-        }
-  
+       
         /* Modales grandes (Solicitar ayuda / Materiales) */
         .modal.large-modal { max-width: 900px; }
-        
-        /* Grid del formulario de materiales */
-        .form-grid{
-          display:grid;
-          grid-template-columns: 1fr 160px;
-          gap:12px;
-          align-items:end;
-        }
-        #matFamilyFilter{ justify-self:end; width:220px; }
-        @media (max-width: 640px){
-          .form-grid{ grid-template-columns: 1fr; }
-        }
         
        /* Masonry definitivo */
        .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px; }
@@ -1069,10 +1075,6 @@
                     <label class="form-label">📦 Materiales solicitados:</label>
                     <div id="materialesResultadoWrapper"></div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Solicitudes recientes:</label>
-                    <div id="resolverRequests"></div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('resolverModal')">Cancelar</button>
@@ -1100,43 +1102,51 @@
     <!-- Modal de Solicitar Materiales -->
     <div id="materialesModal" class="modal-overlay hidden">
     <div class="modal large-modal">
-        <div class="modal-header">
-            <h3>📦 Solicitar Materiales</h3>
-            <button class="modal-close" onclick="closeModal('materialesModal')">×</button>
-        </div>
-        <div class="modal-body">
-            <!-- Formulario de nuevo material -->
-            <div class="form-grid">
-            <!-- Filtro por familia -->
-            <label for="matFamilyFilter" class="form-label">Familia</label>
-            <select id="matFamilyFilter" class="form-control">
-              <option value="">Todas</option>
-            </select>
-                <input id="matSelect" list="matOptions" placeholder="Material" class="form-control">
-                <datalist id="matOptions"></datalist>
-                <input type="number" id="matQty" placeholder="Cantidad" class="form-control" step="1">
-                <select id="matUrgencia" class="form-control">
-                    <option value="">-- Urgencia --</option>
-                    <option value="alta">Alta</option>
-                    <option value="media">Media</option>
-                    <option value="baja">Baja</option>
-                </select>
-                <input type="hidden" id="mat-type">
-                <input type="hidden" id="mat-unit">
+            <div class="modal-header">
+                <h3 class="modal-title">📦 Solicitar materiales</h3>
+                <button class="modal-close" onclick="closeModal('materialesModal')">×</button>
             </div>
-            <p id="matInfo" class="material-info"></p>
-            <button id="addMaterialBtn" class="btn btn-secondary" type="button" onclick="agregarMaterial()" disabled>➕ Añadir a la lista</button>
-
-            <!-- Lista de materiales añadidos -->
-            <div class="materials-list" id="materialsList"></div>
-        </div>
-        <div class="modal-footer">
-            <button id="retryInventoryBtn" class="btn btn-secondary" onclick="retryInventory()">🔄 Reintentar</button>
-            <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
-            <button id="enviarMaterialesBtn" class="btn btn-success" onclick="enviarMateriales()" disabled>✅ Enviar solicitud</button>
+           <div class="modal-body">
+                <div class="mat-grid">
+                    <div class="form-group">
+                        <label for="matCode" class="form-label">Código</label>
+                        <input id="matCode" class="form-control" placeholder="Ej: MAT-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="matUnit" class="form-label">Unidad</label>
+                        <input id="matUnit" class="form-control" placeholder="Ej: ud">
+                    </div>
+                    <div class="form-group">
+                        <label for="matQty" class="form-label">Cantidad</label>
+                        <input type="number" id="matQty" class="form-control" min="0" step="0.01" placeholder="0">
+                    </div>
+                    <div class="form-group mat-action">
+                        <label class="form-label">&nbsp;</label>
+                        <button id="addMat" class="btn btn-secondary" type="button" disabled>+ Añadir</button>
+                    </div>
+                </div>
+            <table id="matList" class="materials-table compact">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Unidad</th>
+                            <th>Cantidad</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="empty">
+                            <td colspan="4">Sin materiales añadidos.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('materialesModal')">Cancelar</button>
+                <button id="sendMatReq" class="btn btn-success" disabled>✅ Enviar solicitud</button>
+            </div>
         </div>
     </div>
-</div>
 
 
         <!-- Modal de Solicitar ayuda -->
@@ -1355,49 +1365,6 @@
             return inventory;
         }
 
-        function getUniqueFamilies() {
-          const fams = new Set();
-          (inventory || []).forEach(i => { if (i.family) fams.add(String(i.family).trim()); });
-          return Array.from(fams).sort((a,b) => a.localeCompare(b, 'es'));
-        }
-        
-        function getCurrentFamily() {
-          const sel = document.getElementById('matFamilyFilter');
-          return sel ? (sel.value || '') : '';
-        }
-        
-        function setupFamilyFilter() {
-          const sel = document.getElementById('matFamilyFilter');
-          if (!sel) return;
-        
-          // Construir opciones
-          const fams = getUniqueFamilies();
-          sel.innerHTML = '<option value="">Todas</option>' +
-            fams.map(f => `<option value="${safe(f)}">${safe(f)}</option>`).join('');
-          // Al cambiar familia: repoblar datalist y limpiar selección
-          sel.onchange = (e) => {
-            populateInventorySelector(e.target.value);
-            const matInput = document.getElementById('matSelect');
-            if (matInput) {
-              matInput.value = '';
-              onMaterialChange(); // restablece hint de unidad/consumo y step del qty
-            }
-          };
-        }
-        
-        /** Busca un ítem de inventario por código o nombre */
-        function resolveInventoryItem(val) {
-          const query = String(val || '').trim().toLowerCase();
-          if (!query) return null;
-          return (
-            (inventory || []).find(
-              i =>
-                String(i.code).toLowerCase() === query ||
-                String(i.name).toLowerCase() === query
-            ) || null
-          );
-        }
-
         function updateTechnicianHeader(technician) {
             const tech = technician || currentTechnician || {};
             const nameEl = document.getElementById('technicianName');
@@ -1559,12 +1526,13 @@
                   try {
                     const inv = await loadInventoryLight();
                     inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
-                    setupFamilyFilter();
-                    populateInventorySelector(getCurrentFamily());
+                    if (!inventoryLoadedOk) {
+                      showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
+                    }
                   } catch (err) {
                     console.error('Error cargando inventario:', err);
                     inventoryLoadedOk = false;
-                    showToast('❌ Error cargando inventario');
+                    showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
                   }
                 
                   // 2) Incidencias y render (ya con inventoryLoadedOk listo)
@@ -1575,7 +1543,7 @@
                 
                   // 3) Habilitar botones "📦 Materiales" en caliente si procede
                   document.querySelectorAll('button[aria-label="Solicitar materiales"]')
-                    .forEach(btn => btn.disabled = !inventoryLoadedOk);
+                    .forEach(btn => btn.disabled = false);
                   lastSeen = new Date();
                   localStorage.setItem('lastSeen', lastSeen.toISOString());
                 } else {
@@ -1853,12 +1821,6 @@
         function showResolverModal(incidentId) {
             currentIncidentId = incidentId;
             const inc = allIncidents.find(i => i.id === incidentId) || {};
-            const container = document.getElementById('resolverRequests');
-            if (container) {
-                container.innerHTML = '';
-                const section = container.closest('.form-group');
-                if (section) section.classList.add('hidden');
-            }
             const approvedItems = deriveApprovedItemsFromLog(inc);
             renderMaterialesResultado(approvedItems);
             document.getElementById('resolverModal').classList.remove('hidden');
@@ -1867,33 +1829,25 @@
 
         function showMaterialesModal(incidentId) {
            currentIncidentId = incidentId;
-           const retryBtn = document.getElementById('retryInventoryBtn');
-           if (!inventory || inventory.length === 0) {
-               showToast('❌ Inventario no disponible');
-               if (retryBtn) retryBtn.classList.remove('hidden');
-               return;
-           } else {
-               if (retryBtn) retryBtn.classList.add('hidden');
-               populateInventorySelector(getCurrentFamily());
-               validateMateriales();
-           }
-           validateMaterialesControls();
-           const modal = document.getElementById('materialesModal');
-           modal.classList.remove('hidden');
-       }
 
-        async function retryInventory() {
-            await loadInventoryLight(true);
-           const retryBtn = document.getElementById('retryInventoryBtn');
-           if (!inventory || inventory.length === 0) {
-               showToast('❌ Inventario no disponible');
-               if (retryBtn) retryBtn.classList.remove('hidden');
-               return;
-           }
-           if (retryBtn) retryBtn.classList.add('hidden');
-           populateInventorySelector(getCurrentFamily());
-           showMaterialesModal(currentIncidentId);
-       }
+        if (!inventory || inventory.length === 0) {
+                showToast('⚠️ Inventario no disponible. Ingresa los datos manualmente.');
+            }
+
+            renderTmpMat();
+            resetMatForm();
+            updateMatControls();
+
+            const modal = document.getElementById('materialesModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+
+            const codeInput = document.getElementById('matCode');
+            if (codeInput) {
+                codeInput.focus();
+            }
+        }
 
         function unitAllowsDecimal(u) {
           const unit = (u || '').toLowerCase().trim();
@@ -2044,10 +1998,10 @@
             selectedReason = null;
             currentIncidentId = null;
             if (modalId === 'materialesModal') {
-                materialesTemp = [];
-                renderMaterialesList();
-                validateMateriales();
-                validateMaterialesControls();
+                tmpMat = [];
+                renderTmpMat();
+                resetMatForm();
+                updateMatControls();
             }
         }
 
@@ -2554,64 +2508,78 @@
           return obj;
         }
 
-        function renderRequestButtons(inc) {
-          const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
-          if (log === "{{emptystring}}") return "";
-          const rows = parseSolicitudesLog(log);
-          // Ordenar por ID de solicitud y fecha
-          rows.sort((a, b) =>
-            a.reqId.localeCompare(b.reqId) || new Date(a.when) - new Date(b.when)
-          );
-          if (!rows.length) return "";
+        function renderRequestChips(logText, mount) {
+          if (!mount) return;
+          mount.innerHTML = "";
+
+          const normalized = ensureLogString(logText);
+          if (normalized === "{{emptystring}}") return;
+
+          const rows = parseSolicitudesLog(normalized);
+          if (!rows.length) return;
           const grouped = groupByRequest(rows);
-          const chips = [];
-          const keys = Object.keys(grouped).sort((a, b) =>
-            grouped[a].id.localeCompare(grouped[b].id)
-          );
-          for (const key of keys) {
-            const req = grouped[key];
-            if (req.last?.phase !== "REQUEST") continue;
-            const meta = req.last?.meta || {};
+          const toTimestamp = when => {
+            const value = when ? Date.parse(when) : NaN;
+            return Number.isNaN(value) ? 0 : value;
+          };
+          const requests = Object.values(grouped)
+            .filter(req => req.status === "pending")
+            .sort((a, b) => toTimestamp(b.last?.when) - toTimestamp(a.last?.when));
+
+          if (!requests.length) return;
+
+          const frag = document.createDocumentFragment();
+          const pick = (...vals) => {
+            for (const val of vals) {
+              if (val === undefined || val === null) continue;
+              const str = String(val).trim();
+              if (!str || str === "{{emptystring}}") continue;
+              return str;
+            }
+            return "";
+          };
+
+          for (const req of requests) {
             const info = REQUEST_CAT_INFO[req.cat] || { icon: "", label: req.cat };
-            const pick = (...vals) => {
-              for (const val of vals) {
-                if (val === undefined || val === null) continue;
-                const str = String(val).trim();
-                if (str) return str;
-              }
-              return "";
-            };
-            const icon = info.icon || "";
-            const iconPrefix = icon ? `${icon} ` : "";
-            let labelBody = "";
+            const meta = req.last?.meta || {};
+            let detail = "";
             if (req.cat === "MATERIAL") {
-              const name = pick(meta.name, meta.material, meta.item, info.label);
+              const name = pick(meta.name, meta.material, meta.item);
               const qty = pick(meta.qty);
               const unit = pick(meta.unit, meta.units, meta.unidad);
               const qtyUnit = qty ? ` ×${qty}${unit ? ` ${unit}` : ""}` : "";
-              labelBody = `${name}${qtyUnit}`.trim(); 
+              detail = `${name || ""}${qtyUnit}`;
             } else if (req.cat === "APOYO") {
-              const detail = pick(meta.detail, meta.detalle, meta.reason, meta.comment, meta.notes);
-              labelBody = `Apoyo${detail ? ` · ${detail}` : ""}`;
+              detail = pick(meta.detail, meta.detalle, meta.reason, meta.comment, meta.notes);
             } else if (req.cat === "DERIVACION" || req.cat === "TRASPASO" || req.cat === "REASIGNACION") {
-              const action =
-                req.cat === "DERIVACION" ? "Derivar" :
-                req.cat === "TRASPASO" ? "Traspaso" :
-                "Reasignar";
               const destination = pick(meta.to, meta.dest, meta.destino, meta.target, meta.detail, meta.detalle, meta.name);
-              labelBody = `${action}${destination ? ` · ${destination}` : ""}`;
+              const reason = pick(meta.reason, meta.detail, meta.detalle);
+              detail = [destination, reason].filter(Boolean).join(" · ");
             } else {
-              const parts = [pick(meta.name), pick(meta.to), pick(meta.detail, meta.detalle, meta.reason)];
-              const content = parts.filter(Boolean).join(" · ");
-              labelBody = content || pick(info.label, req.cat);
+              detail = [pick(meta.name), pick(meta.to), pick(meta.detail, meta.detalle, meta.reason)]
+                .filter(Boolean)
+                .join(" · ");
             }
-            const label = `${iconPrefix}${labelBody}`.trim();
-            if (label) {
-              const title = safe(req.last?.metaRaw || "");
-              chips.push(`<span class="materials-badge req-chip ${req.status}" title="${title}">${safe(label)}</span>`);
-            }
+            detail = detail.replace(/\s+/g, " ").trim();
+
+            const baseLabel = (info.label || req.cat || "").trim();
+            let text = baseLabel;
+            if (detail) text += ` · ${detail}`;
+            if (info.icon) text = `${info.icon} ${text}`;
+
+            if (!text.trim()) continue;
+
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "chip-request";
+            chip.textContent = text.trim();
+            if (req.last?.metaRaw) chip.title = req.last.metaRaw;
+            frag.appendChild(chip);
           }
-          return chips.length ? chips.join("") : "";
+
+          if (frag.childNodes.length) {
+            mount.appendChild(frag);
+          }
         }
 
         // ==============================
@@ -2844,7 +2812,7 @@
         // =============================
         
         // Regex estrictas (ISO con zona, categorías/fases controladas)
-        const RX_SOL = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:MATERIAL|DERIVACION|APOYO)#[A-Za-z0-9_\-]+\|(REQUEST|APPROVED|REJECTED)\|.*$/;
+        const RX_SOL = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:MATERIAL|DERIVACION|APOYO|TRASPASO|REASIGNACION)#[A-Za-z0-9_\-]+\|(REQUEST|APPROVED|REJECTED)\|.*$/;
         const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|ACCEPTED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*$/;
         
         function validateLogLines({ lines, kind }) {
@@ -3040,7 +3008,7 @@
             return `
                ${wrapStart}
                 <button class="btn btn-secondary" title="Solicitar ayuda de otro técnico" aria-label="Solicitar ayuda de otro técnico" onclick="abrirAyuda('${incident.id}')">🛠️ Pedir ayuda</button>
-                <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales" ${inventoryLoadedOk ? '' : 'disabled'} onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
+                <button class="btn btn-secondary" title="Solicitar materiales" aria-label="Solicitar materiales" onclick="abrirMateriales('${incident.id}')">📦 Materiales</button>
                 <button class="btn btn-primary" ${resolveDisabled ? "disabled" : ""} ${resolveAttr}
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
                 ${shouldShowSolicitarTraspaso() ? `<button class="btn btn-secondary" title="Solicitar traspaso temporalmente" aria-label="Solicitar traspaso temporalmente" onclick="solicitarTraspaso('${incident.id}')">🕐 Solicitar traspaso</button>` : ''}
@@ -3062,46 +3030,57 @@
             incidentsContainer = document.querySelector('.incidents-section .incidents-list');
             checkDirectAccess();
 
-            const matSelect = document.getElementById('matSelect');
+            const matCode = document.getElementById('matCode');
+            const matUnit = document.getElementById('matUnit');
             const matQty = document.getElementById('matQty');
-            const matUrgencia = document.getElementById('matUrgencia');
+            const addMatBtn = document.getElementById('addMat');
+            const sendMatBtn = document.getElementById('sendMatReq');
+            const matList = document.getElementById('matList');
 
-            if (matSelect) {
-              matSelect.placeholder = 'Busca por nombre o pega el código…';
-              const handleMaterialInput = () => {
-                onMaterialChange();
-              };
-              matSelect.addEventListener('input', handleMaterialInput);
-              matSelect.addEventListener('change', handleMaterialInput);
+            const handleMatInput = () => updateMatControls();
+            [matCode, matUnit, matQty].forEach((input) => {
+              if (!input) return;
+              input.addEventListener('input', handleMatInput);
+              input.addEventListener('change', handleMatInput);
+            });
+            if (addMatBtn) {
+              addMatBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                addTmpMat();
+              });
             }
 
-            if (matQty) {
-              const handleQtyChange = () => validateMaterialesControls();
-              matQty.addEventListener('input', handleQtyChange);
-              matQty.addEventListener('change', handleQtyChange);
+            if (sendMatBtn) {
+              sendMatBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                sendMaterialRequest();
+              });
             }
 
-            if (matUrgencia) {
-              const handleUrgenciaChange = () => validateMaterialesControls();
-              matUrgencia.addEventListener('input', handleUrgenciaChange);
-              matUrgencia.addEventListener('change', handleUrgenciaChange);
+            if (matList) {
+              matList.addEventListener('click', (event) => {
+                const btn = event.target.closest('button[data-remove]');
+                if (!btn) return;
+                const index = Number(btn.dataset.remove);
+                if (Number.isInteger(index)) {
+                  removeTmpMat(index);
+                }
+              });
             }
+            renderTmpMat();
+            updateMatControls();
 
             try {
             const inv = await loadInventoryLight();
-            inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
-            if (inventoryLoadedOk) {
-              setupFamilyFilter();
-              populateInventorySelector(getCurrentFamily());
-              document.querySelectorAll('button[aria-label="Solicitar materiales"]').forEach(btn => btn.disabled = false);
-            } else {
-              showToast('❌ Error cargando inventario');
+              inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
+              if (!inventoryLoadedOk) {
+                showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
               }
             } catch (err) {
-              showToast('❌ Error cargando inventario');
+              inventoryLoadedOk = false;
+              showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
             }
-            // Si en el futuro se refresca el inventario periódicamente,
-            // repetir esta lógica de habilitar/deshabilitar el botón de materiales.
+            document.querySelectorAll('button[aria-label="Solicitar materiales"]').forEach(btn => btn.disabled = false);
 
             const emailInput = document.getElementById('emailInput');
             const loginBtn   = document.getElementById('loginBtn');
@@ -3110,7 +3089,6 @@
             if (e.key === 'Enter') loginWithPIN();
           });
           loginBtn.addEventListener('click', loginWithPIN);
-          validateMaterialesControls();
         });
 
         function checkDirectAccess() {
@@ -3301,193 +3279,121 @@
 
 
             // ========================================
-            //  SOLICITAR MATERIALES - MULTIPLE
+            //  SOLICITAR MATERIALES - SIMPLE
             // ========================================
-            let materialesTemp = [];
-
-            const URGENCIAS_VALIDAS = ['alta', 'media', 'baja'];
+            let tmpMat = [];
             
-            function validateMateriales() {
-                const btn = document.getElementById('enviarMaterialesBtn');
-                if (btn) btn.disabled = materialesTemp.length === 0;
+            function matFormValues() {
+                const codeInput = document.getElementById('matCode');
+                const unitInput = document.getElementById('matUnit');
+                const qtyInput = document.getElementById('matQty');
+                
+                const code = (codeInput?.value || '').trim();
+                const unitRaw = (unitInput?.value || '').trim();
+                const qtyText = (qtyInput?.value || '').trim().replace(',', '.');
+                const qty = Number(qtyText);
 
-                const retryBtn = document.getElementById('retryInventoryBtn');
-                if (retryBtn) {
-                    const hasInventory = Array.isArray(inventory) && inventory.length > 0;
-                    retryBtn.classList.toggle('hidden', hasInventory);
-                }
+                return {
+                    code,
+                    unit: unitRaw,
+                    qty,
+                    hasValidCode: code.length > 0,
+                    hasValidUnit: unitRaw.length > 0,
+                    hasValidQty: Number.isFinite(qty) && qty > 0
+                };
             }
 
-            function validateMaterialesControls() {
-                const addBtn = document.getElementById('addMaterialBtn');
+            function resetMatForm() {
+                const codeInput = document.getElementById('matCode');
+                const unitInput = document.getElementById('matUnit');
+                const qtyInput = document.getElementById('matQty');
+
+                if (codeInput) codeInput.value = '';
+                if (unitInput) unitInput.value = '';
+                if (qtyInput) qtyInput.value = '';
+            }
+
+            function updateMatControls() {
+                const addBtn = document.getElementById('addMat');
                 if (!addBtn) return;
 
-                const matInput = document.getElementById('matSelect');
-                const qtyInput = document.getElementById('matQty');
-                const urgenciaInput = document.getElementById('matUrgencia');
-
-                const code = matInput?.dataset?.code ? String(matInput.dataset.code).trim() : '';
-                const rawValue = matInput ? matInput.value.trim() : '';
-                const item = code ? resolveInventoryItem(code) : resolveInventoryItem(rawValue);
-
-                const qty = qtyInput ? parseFloat(qtyInput.value) : NaN;
-                const qtyValid = Number.isFinite(qty) && qty > 0;
-
-                const urgencia = urgenciaInput ? urgenciaInput.value : '';
-                const urgValid = URGENCIAS_VALIDAS.includes(urgencia);
-
-                addBtn.disabled = !(item && qtyValid && urgValid);
+                const { hasValidCode, hasValidUnit, hasValidQty } = matFormValues();
+                addBtn.disabled = !(hasValidCode && hasValidUnit && hasValidQty);
             }
 
-            function populateInventorySelector(family = '') {
-              const list = document.getElementById('matOptions');
-              if (!list) return;
-            
-              const src = family
-                ? (inventory || []).filter(i => (i.family || '') === family)
-                : (inventory || []);
-            
-              // Cada opción usa el nombre como value y guarda el código en data-code
-              list.innerHTML = src
-                .map(i => {
-                  const unit = i.unit ? ` (${i.unit})` : '';
-                  const fam = i.family ? ` · [${i.family}]` : '';
-                  const label = `${i.code} - ${i.name}${unit}${fam}`;
-                  return `<option value="${safe(i.name)}" data-code="${safe(i.code)}" data-label="${safe(label)}" label="${safe(label)}"></option>`;
-                })
-                .join('');
-            }
-
-            function onMaterialChange() {
-              const input = document.getElementById('matSelect');
-              const val = input.value.trim();
-              const option = document.querySelector(`#matOptions option[value="${CSS.escape(val)}"]`);
-              let item = null;
-              let label = '';
-
-              if (option) {
-                const code = option.dataset.code;
-                input.dataset.code = code || '';
-                item = resolveInventoryItem(code);
-                label = option.dataset.label || '';
-              } else {
-                item = resolveInventoryItem(val);
-                if (item) {
-                  input.dataset.code = item.code;
-                  const unit = item.unit ? ` (${item.unit})` : '';
-                  const fam = item.family ? ` · [${item.family}]` : '';
-                  label = `${item.code} - ${item.name}${unit}${fam}`;
-                  input.value = item.name; // normaliza a nombre
+            function renderTmpMat() {
+                const table = document.getElementById('matList');
+                const tbody = table ? table.querySelector('tbody') : null;
+                if (!tbody) return;
+                if (!Array.isArray(tmpMat) || tmpMat.length === 0) {
+                    tbody.innerHTML = `<tr class="empty"><td colspan="4">Sin materiales añadidos.</td></tr>`;
                 } else {
-                  input.dataset.code = '';
+                  tbody.innerHTML = tmpMat.map((item, index) => `
+                        <tr>
+                            <td>${safe(item.code)}</td>
+                            <td>${safe(item.unit)}</td>
+                            <td class="num">${safe(String(item.qty))}</td>
+                            <td style="width:40px;text-align:center;">
+                                <button type="button" data-remove="${index}" title="Quitar material">✖️</button>
+                            </td>
+                        </tr>
+                    `).join('');
                 }
-              }
 
-              const typeField = document.getElementById('mat-type');
-              const unitField = document.getElementById('mat-unit');
-              const qtyInput = document.getElementById('matQty');
-              const info = document.getElementById('matInfo');
-              const allowDecimal = ['kg', 'l', 'm'];
-              if (item) {
-                const unit = normalizeUnit(item.unit);
-                qtyInput.step = allowDecimal.includes(unit) ? '0.01' : '1';
-                if (typeField) typeField.value = item.consumo || '';
-                if (unitField) unitField.value = unit;
-                if (info) info.textContent = label ? `${label} · Consumo: ${item.consumo}` : `Unidad: ${unit} (${item.consumo})`;
-              } else {
-                qtyInput.step = '1';
-                if (typeField) typeField.value = '';
-                if (unitField) unitField.value = '';
-                if (info) info.textContent = label;
-              }
-              validateMaterialesControls();
+              const sendBtn = document.getElementById('sendMatReq');
+                if (sendBtn) {
+                    sendBtn.disabled = tmpMat.length === 0;
+                }
             }
-
-        
-            function agregarMaterial() {
-              const input = document.getElementById('matSelect');
-              const code = input.dataset.code || '';
-              const qty = parseFloat(document.getElementById('matQty').value);
-              const urgencia = document.getElementById('matUrgencia').value;
-              const item = resolveInventoryItem(code);
-              if (!item || !code || isNaN(qty) || qty <= 0 || !URGENCIAS_VALIDAS.includes(urgencia)) {
-                showNotification('Por favor selecciona material, cantidad (>0) y urgencia (alta, media o baja).', 'error');
-                return;
-              }
-              const unit = normalizeUnit(item.unit);
-              const allowDecimal = ['kg', 'l', 'm'];
-              if (!allowDecimal.includes(unit) && qty % 1 !== 0) {
-                showNotification('La cantidad debe ser un número entero', 'error');
-                return;
-              }
+            function addTmpMat() {
+                const { code, unit, qty, hasValidCode, hasValidUnit, hasValidQty } = matFormValues();
+                if (!hasValidCode || !hasValidUnit || !hasValidQty) return;
                 
-              materialesTemp.push({
-                code: item.code,
-                name: item.name,
-                unit,
-                consumo: item.consumo,
-                qty,
-                urgencia
-              });
-              
-              renderMaterialesList();
-
-              document.getElementById('matSelect').value = '';
-              document.getElementById('matQty').value = '';
-              document.getElementById('matUrgencia').value = '';
-              onMaterialChange();
-            }
-
-            function renderMaterialesList() {
-              const container = document.getElementById('materialsList');
-              if (materialesTemp.length === 0) {
-                container.innerHTML = '<p>No hay materiales añadidos.</p>';
-                validateMateriales();
-                return;
-              }
-              const rows = materialesTemp.map((mat, idx) => `
-                <tr>
-                  <td>${safe(mat.code)}</td>
-                  <td>${safe(mat.name)}</td>
-                  <td>${safe(String(mat.qty))} ${safe(mat.unit)} (${safe(mat.consumo)})</td>
-                  <td>${safe(mat.urgencia)}</td>
-                  <td><button onclick="eliminarMaterial(${idx})">🗑️</button></td>
-                </tr>
-              `).join('');
-              container.innerHTML = `<table class="materials-table"><thead><tr><th>Código</th><th>Nombre</th><th>Cantidad</th><th>Urgencia</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
-              validateMateriales();
-            }
-
-            function eliminarMaterial(index) {
-              materialesTemp.splice(index, 1);
-              renderMaterialesList();
-            }
-
-            async function enviarMateriales() {
-              if (materialesTemp.length === 0) {
-                showNotification('No hay materiales para enviar.', 'error');
-                return;
-              }
-
-              const btn = document.getElementById('enviarMaterialesBtn');
-              if (btn) btn.disabled = true;
-                
-              const items = materialesTemp.map(({code, name, unit, consumo, qty, urgencia}) => ({code, name, unit: normalizeUnit(unit), consumo, qty, urgencia}));
-              try {
-                const ok = await handleAction('request_materials', currentIncidentId, {
-                  items
+                tmpMat.push({
+                    code: code.toUpperCase(),
+                    unit,
+                    qty: Math.round(qty * 1000) / 1000
                 });
-                if (ok) {
-                  materialesTemp = [];
-                  renderMaterialesList();
-                  closeModal('materialesModal');
-                } else {
-                  showNotification('Error al enviar solicitud.', 'error');
+
+                renderTmpMat();
+                resetMatForm();
+                updateMatControls();
+            }
+
+            function removeTmpMat(index) {
+                if (!Number.isInteger(index) || index < 0 || index >= tmpMat.length) return;
+                tmpMat.splice(index, 1);
+                renderTmpMat();
+            }
+
+            async function sendMaterialRequest() {
+                if (!Array.isArray(tmpMat) || tmpMat.length === 0) {
+                    showNotification('No hay materiales para enviar.', 'error');
+                    return;
                 }
-              } catch (e) {
-                showNotification('Error al enviar solicitud.', 'error');
-              }
-              validateMateriales();
+                const btn = document.getElementById('sendMatReq');
+                if (btn) btn.disabled = true;
+
+                const items = tmpMat.map(({ code, unit, qty }) => ({
+                    code,
+                    unit: normalizeUnit(unit) || unit,
+                    qty: Number(qty)
+                }));
+
+                try {
+                    const ok = await handleAction('request_materials', currentIncidentId, { items });
+                    if (ok) {
+                        tmpMat = [];
+                        renderTmpMat();
+                        closeModal('materialesModal');
+                    } else {
+                        showNotification('Error al enviar solicitud.', 'error');
+                        if (btn) btn.disabled = tmpMat.length === 0;
+                    }
+                } catch (error) {
+                    showNotification('Error al enviar solicitud.', 'error');
+                    if (btn) btn.disabled = tmpMat.length === 0;
+                }
             }
             
     // Estado en memoria
@@ -3558,16 +3464,10 @@
     
 
     // --------- RENDER NUEVO (no tocar) ----------
-        function incidentCardHTML(inc) {
-          const state = getIncidentRealState(inc, currentTechnician?.email || "");
-          const requestButtonsHTML = renderRequestButtons(inc);
-          const chipsBlockHTML =
-            requestButtonsHTML.trim()
-              ? `<div class="chips"><div class="req-chips">${requestButtonsHTML}</div></div>`
-              : `<div class="chips"><span class="chip">✔️ Sin validaciones pendientes</span></div>`;
-          const notifHTML = '';
+        function incidentCardHTML(inc, stateOverride) {
+          const state = stateOverride ?? getIncidentRealState(inc, currentTechnician?.email || "");
           const news = countNewItems(inc);
-            // Extrae prioridad desde el ID si viene incluida allí
+          // Extrae prioridad desde el ID si viene incluida allí
           const idWithPriority = String(inc.id || '');
           const priorityFromId = idWithPriority.match(/\s*[—-]\s*(CRITICA|CRÍTICA|ALTA|MEDIA|BAJA)\s*$/i);
           let displayId = idWithPriority;
@@ -3576,8 +3476,12 @@
             priority = priorityFromId[1].toUpperCase();
             displayId = idWithPriority.slice(0, priorityFromId.index).trim();
           }
-          return `
-            <div class="incident-card" data-incident-id="${safe(inc.id)}">
+            
+          const card = document.createElement('div');
+          card.className = 'incident-card';
+          card.dataset.incidentId = inc?.id != null ? String(inc.id) : '';
+
+          card.innerHTML = `
               <div class="incident-banner"></div>
               <div class="incident-header">
                 <div>
@@ -3598,7 +3502,9 @@
                 </div>
               </div>
         
-              ${chipsBlockHTML}
+              <div class="chips">
+                <div class="req-chips"></div>
+              </div>
         
               <div class="section-title">Descripción incidencia</div>
               <div class="section-text">${safe(inc.description)}</div>
@@ -3610,7 +3516,16 @@
                  ${renderActionButtonsByState(state, inc)}
               </div>
               ${renderDetailsSection(inc, state, news)}
-            </div>`;
+           `;
+
+          const chipsWrapper = card.querySelector('.chips');
+          const chipsMount = card.querySelector('.req-chips');
+          renderRequestChips(inc["Solicitudes (log)"] || inc.solicitudes_log, chipsMount);
+          if (chipsWrapper && (!chipsMount || !chipsMount.childElementCount)) {
+            chipsWrapper.innerHTML = `<span class="chip">✔️ Sin validaciones pendientes</span>`;
+          }
+
+          return card;
         }
         
         function renderDetailsSection(inc, state, news) {
@@ -3799,10 +3714,9 @@
     
       const frag = document.createDocumentFragment();
       incidents.forEach(inc => {
-        const wrap = document.createElement('div');
-        wrap.innerHTML = incidentCardHTML(inc);
-        const card = wrap.firstElementChild;
         const state = getIncidentRealState(inc, currentTechnician?.email || "");
+        const card = incidentCardHTML(inc, state);
+        if (!card) return;
         const hasSeg = renderSeguimientoBanner(inc, state, card);
         if (!hasSeg) {
           const slaHTML = renderSlaPillInHeader(inc, state, card);
@@ -3877,12 +3791,6 @@
     window.selectReason = selectReason;
     window.confirmActionWithPIN = confirmActionWithPIN;
     window.closeActionPINModal   = closeActionPINModal;
-    window.agregarMaterial   = agregarMaterial;
-    window.eliminarMaterial  = eliminarMaterial;
-    window.enviarMateriales  = enviarMateriales;
-    window.onMaterialChange  = onMaterialChange;
-    window.retryInventory    = retryInventory;
-
         
     </script>
 </body>
