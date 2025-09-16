@@ -438,6 +438,7 @@
           border-radius:9999px;
           border:1px solid var(--gray-200);
           background:#ffffff;
+          box-shadow: 0 1px 0 rgba(0,0,0,.06);
           color:var(--gray-700);
           font-weight:600;
           font-size:13px;
@@ -1109,8 +1110,19 @@
            <div class="modal-body">
                 <div class="mat-grid">
                     <div class="form-group">
+                        <label for="matFamily" class="form-label">Familia</label>
+                        <select id="matFamily" class="form-control">
+                            <option value="">Todas las familias</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="matSearch" class="form-label">Material</label>
+                        <input id="matSearch" class="form-control" list="matOptions" placeholder="Busca por nombre o código">
+                        <datalist id="matOptions"></datalist>
+                    </div>
+                    <div class="form-group">
                         <label for="matCode" class="form-label">Código</label>
-                        <input id="matCode" class="form-control" placeholder="Ej: MAT-001">
+                        <input id="matCode" class="form-control" placeholder="Selecciona un material">
                     </div>
                     <div class="form-group">
                         <label for="matUnit" class="form-label">Unidad</label>
