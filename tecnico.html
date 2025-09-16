@@ -3083,7 +3083,8 @@
             updateMatControls();
 
             try {
-            const inv = await loadInventoryLight();
+              const inv = await loadInventoryLight();
+              await setupMaterialAutocomplete();
               inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
               if (!inventoryLoadedOk) {
                 showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
@@ -3293,6 +3294,182 @@
             // ========================================
             //  SOLICITAR MATERIALES - SIMPLE
             // ========================================
+            const __invByFamily = new Map();
+            const __invByCode = new Map();
+            let __matAutocompleteReady = false;
+            let __matHelperEl = null;
+
+            function buildMaterialIndexes(items = []) {
+                __invByFamily.clear();
+                __invByCode.clear();
+                if (!Array.isArray(items)) return;
+
+                items.forEach((raw) => {
+                    if (!raw) return;
+                    const code = String(raw.code || '').trim();
+                    if (!code) return;
+
+                    const family = String(raw.family || 'Otros').trim() || 'Otros';
+                    const normalizedCode = code.toUpperCase();
+                    const unit = normalizeUnit(raw.unit) || raw.unit || '';
+                    const name = String(raw.name || '').trim();
+                    const item = {
+                        ...raw,
+                        code: normalizedCode,
+                        unit,
+                        name,
+                        family,
+                        searchable: `${normalizedCode} ${name}`.toUpperCase()
+                    };
+
+                    __invByCode.set(normalizedCode, item);
+                    if (!__invByFamily.has(family)) {
+                        __invByFamily.set(family, []);
+                    }
+                    __invByFamily.get(family).push(item);
+                });
+
+                __invByFamily.forEach((list) => {
+                    list.sort((a, b) => a.code.localeCompare(b.code));
+                });
+            }
+
+            function ensureMatCodeDatalist() {
+                let datalist = document.getElementById('mat-code-options');
+                if (datalist) return datalist;
+                datalist = document.createElement('datalist');
+                datalist.id = 'mat-code-options';
+                document.body.appendChild(datalist);
+                return datalist;
+            }
+
+            function ensureMatHelperElement() {
+                if (__matHelperEl && document.body.contains(__matHelperEl)) return __matHelperEl;
+                const codeInput = document.getElementById('matCode');
+                if (!codeInput) return null;
+                const container = codeInput.closest('.form-group');
+                if (!container) return null;
+
+                let helper = container.querySelector('.mat-helper');
+                if (!helper) {
+                    helper = document.createElement('div');
+                    helper.className = 'mat-helper';
+                    helper.style.fontSize = '0.75rem';
+                    helper.style.marginTop = '4px';
+                    helper.style.color = 'var(--gray-600)';
+                    helper.style.minHeight = '1em';
+                    helper.style.transition = 'color 0.2s ease';
+                    container.appendChild(helper);
+                }
+                __matHelperEl = helper;
+                return helper;
+            }
+
+            function updateMatHelper(item, term = '') {
+                const helper = ensureMatHelperElement();
+                if (!helper) return;
+                if (item) {
+                    const parts = [item.name || ''];
+                    if (item.family) parts.push(item.family);
+                    helper.textContent = parts.filter(Boolean).join(' · ');
+                    helper.style.color = 'var(--gray-600)';
+                } else if (term) {
+                    helper.textContent = 'Código no encontrado en el inventario.';
+                    helper.style.color = 'var(--danger-dark)';
+                } else {
+                    helper.textContent = '';
+                    helper.style.color = 'var(--gray-600)';
+                }
+            }
+
+            function refreshMaterialOptions() {
+                const datalist = ensureMatCodeDatalist();
+                if (!datalist) return;
+                datalist.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                __invByFamily.forEach((items) => {
+                    items.forEach((item) => {
+                        const labelParts = [item.code];
+                        if (item.name) labelParts.push(item.name);
+                        if (item.family) labelParts.push(item.family);
+                        const option = document.createElement('option');
+                        const label = labelParts.join(' — ');
+                        option.value = item.code;
+                        option.label = label;
+                        option.textContent = label;
+                        fragment.appendChild(option);
+                    });
+                });
+                datalist.appendChild(fragment);
+            }
+
+            function applyInventoryMaterial(item) {
+                if (!item) return;
+                const codeInput = document.getElementById('matCode');
+                const unitInput = document.getElementById('matUnit');
+                if (codeInput) {
+                    codeInput.value = item.code;
+                    codeInput.setAttribute('data-selected-code', item.code);
+                    codeInput.title = item.name ? `${item.code} — ${item.name}` : item.code;
+                }
+                if (unitInput) {
+                    unitInput.value = item.unit || '';
+                }
+                updateMatHelper(item);
+                updateMatControls();
+            }
+
+            function handleMatCodeInput(ev) {
+                const value = (ev.target?.value || '').trim();
+                if (!value) {
+                    updateMatHelper(null);
+                    updateMatControls();
+                    return;
+                }
+                const item = __invByCode.get(value.toUpperCase());
+                if (item) {
+                    applyInventoryMaterial(item);
+                } else {
+                    updateMatHelper(null, value);
+                    updateMatControls();
+                }
+            }
+
+            async function setupMaterialAutocomplete() {
+                if (__matAutocompleteReady) return;
+                const codeInput = document.getElementById('matCode');
+                if (!codeInput) return;
+
+                const items = Array.isArray(inventory) && inventory.length
+                    ? inventory
+                    : await loadInventoryLight();
+
+                if (!Array.isArray(items) || !items.length) return;
+
+                buildMaterialIndexes(items);
+                refreshMaterialOptions();
+
+                codeInput.setAttribute('list', 'mat-code-options');
+                codeInput.setAttribute('autocomplete', 'off');
+
+                codeInput.addEventListener('input', handleMatCodeInput);
+                codeInput.addEventListener('change', handleMatCodeInput);
+                codeInput.addEventListener('blur', handleMatCodeInput);
+                codeInput.addEventListener('focus', () => {
+                    const current = __invByCode.get((codeInput.value || '').trim().toUpperCase());
+                    updateMatHelper(current || null);
+                });
+                codeInput.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') {
+                        const item = __invByCode.get((codeInput.value || '').trim().toUpperCase());
+                        if (item) applyInventoryMaterial(item);
+                    }
+                });
+
+                updateMatHelper(__invByCode.get((codeInput.value || '').trim().toUpperCase()) || null);
+                __matAutocompleteReady = true;
+            }
+        
             let tmpMat = [];
             
             function matFormValues() {
