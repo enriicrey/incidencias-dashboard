@@ -557,6 +557,23 @@
             justify-content: flex-end;
         }
 
+        #materialesModal .form-grid {
+            display: grid;
+            grid-template-columns: 1.2fr .5fr .6fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        #matInfo {
+            font-size: 12px;
+            color: var(--gray-600);
+            margin-top: 4px;
+            grid-column: 1 / -1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .form-group { margin-bottom: 20px; }
 
         .no-link {
@@ -1804,7 +1821,7 @@
               if (!it && name) it = inv.find(i => (i.name || '').toLowerCase() === String(name).toLowerCase());
               return it ? normalizeUnit(it.unit) : '';
               };
-              return rows
+              const items = rows
                 .filter(r => r.cat === 'MATERIAL' && r.phase === 'APPROVED')
                 .map(r => {
                     const m = r.meta || {};
@@ -1819,6 +1836,18 @@
                         qty_aprobada: Number(m.qty_aprobada || m.qty_apr || m.qty || 0)
                     };
                 });
+            const byKey = {};
+            items.forEach(it => {
+                const key = `${(it.code || '').toUpperCase()}|${normalizeUnit(it.unit || '')}`;
+                if (!byKey[key]) {
+                    byKey[key] = { ...it };
+                } else {
+                    byKey[key].qty_solicitada += it.qty_solicitada;
+                    byKey[key].qty_aprobada += it.qty_aprobada;
+                }
+            });
+
+            return Object.values(byKey);
         }
 
         function showResolverModal(incidentId) {
@@ -3718,7 +3747,6 @@
                 
               const info = REQUEST_CAT_INFO[g.cat] || { icon: "", label: g.cat };
               const reqId = reqPhase.req || g.req || g.id;
-              const reqPart = reqId ? `[${safe(reqId)}] ` : "";
               let details = "";
               if (g.cat === "MATERIAL") {
                 const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
@@ -3733,7 +3761,7 @@
               }
               const detailStr = details ? ` · ${details}` : "";
               let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
-                `<span class="t-body"><span class="req-chip pending">${info.icon} ${reqPart}${info.label}${detailStr}</span></span></li>`;
+                `<span class="t-body"><span class="req-chip pending">${info.icon} ${info.label}${detailStr}</span></span></li>`;
                 
               if (respPhase) {
                 const cls = `phase-${respPhase.phase.toLowerCase()}`;
@@ -3744,10 +3772,9 @@
                 }
                 if (respMeta.reason) extras.push(safe(respMeta.reason));
                 const extraStr = extras.length ? ` · ${extras.join(" · ")}` : "";
-                const respReqPart = reqId ? `[${safe(reqId)}] ` : "";
                 const chipCls = respPhase.phase.toLowerCase();
                 lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
-                  `<span class="t-body"><span class="req-chip ${chipCls}">${info.icon} ${respReqPart}${info.label} ${safe(respPhase.phase)}${extraStr}</span></span></li>`;
+                   `<span class="t-body"><span class="req-chip ${chipCls}">${info.icon} ${info.label} ${safe(respPhase.phase)}${extraStr}</span></span></li>`;
               }
               return lines;
             }).join("");
