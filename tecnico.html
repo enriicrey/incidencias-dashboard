@@ -447,6 +447,32 @@
           white-space:nowrap;
           transition:var(--transition);
         }
+
+        .chip-request.cat-material {
+          background:#fff7ed;
+          border-color:#f97316;
+          color:#9a3412;
+        }
+        .chip-request.cat-apoyo {
+          background:#ecfeff;
+          border-color:#22d3ee;
+          color:#0e7490;
+        }
+        .chip-request.cat-derivacion {
+          background:#eff6ff;
+          border-color:#60a5fa;
+          color:#1d4ed8;
+        }
+        .chip-request.cat-traspaso {
+          background:#f5f3ff;
+          border-color:#a855f7;
+          color:#6b21a8;
+        }
+        .chip-request.cat-reasignacion {
+          background:#fdf2f8;
+          border-color:#f472b6;
+          color:#9d174d;
+        }
         .chip-request:hover{background:var(--gray-100);}
         .chip-request:focus{outline:none;box-shadow:0 0 0 2px rgba(52,152,219,0.2);}
 
@@ -2586,6 +2612,7 @@
             chip.className = "chip-request";
             chip.textContent = text.trim();
             if (req.last?.metaRaw) chip.title = req.last.metaRaw;
+            chip.classList.add(`cat-${(req.cat||'').toLowerCase()}`);
             frag.appendChild(chip);
           }
 
@@ -3085,6 +3112,7 @@
             try {
               const inv = await loadInventoryLight();
               await setupMaterialAutocomplete();
+              await setupFamilyAndNameSearch();
               inventoryLoadedOk = Array.isArray(inv) && inv.length > 0;
               if (!inventoryLoadedOk) {
                 showToast('❌ Inventario no disponible. Ingresa los datos manualmente.');
@@ -3297,6 +3325,7 @@
             const __invByFamily = new Map();
             const __invByCode = new Map();
             let __matAutocompleteReady = false;
+            let __familySearchReady = false;
             let __matHelperEl = null;
 
             function buildMaterialIndexes(items = []) {
@@ -3468,6 +3497,112 @@
 
                 updateMatHelper(__invByCode.get((codeInput.value || '').trim().toUpperCase()) || null);
                 __matAutocompleteReady = true;
+            }
+
+            async function setupFamilyAndNameSearch() {
+                if (__familySearchReady) return;
+
+                const matFamily = document.getElementById('matFamily');
+                const matSearch = document.getElementById('matSearch');
+                const matOptions = document.getElementById('matOptions');
+
+                if (!matFamily || !matSearch || !matOptions) return;
+
+                const items = Array.isArray(inventory) && inventory.length
+                    ? inventory
+                    : await loadInventoryLight();
+
+                if (!Array.isArray(items) || !items.length) return;
+
+                if (!__invByCode.size || !__invByFamily.size) {
+                    buildMaterialIndexes(items);
+                }
+
+                const families = new Set();
+                __invByFamily.forEach((_items, family) => {
+                    if (family) families.add(family);
+                });
+
+                const sortedFamilies = Array.from(families).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+                matFamily.innerHTML = '';
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = 'Todas las familias';
+                matFamily.appendChild(allOption);
+                sortedFamilies.forEach((family) => {
+                    const option = document.createElement('option');
+                    option.value = family;
+                    option.textContent = family;
+                    matFamily.appendChild(option);
+                });
+
+                const allItems = Array.from(__invByCode.values());
+
+                const renderOptions = () => {
+                    const selectedFamily = matFamily.value;
+                    const baseList = selectedFamily
+                        ? (__invByFamily.get(selectedFamily) || [])
+                        : allItems;
+
+                    const uniqueByCode = new Map();
+                    baseList.forEach((item) => {
+                        if (!item || uniqueByCode.has(item.code)) return;
+                        uniqueByCode.set(item.code, item);
+                    });
+
+                    const sortedItems = Array.from(uniqueByCode.values()).sort((a, b) => {
+                        const nameA = (a.name || '').toLocaleLowerCase('es');
+                        const nameB = (b.name || '').toLocaleLowerCase('es');
+                        if (nameA === nameB) return a.code.localeCompare(b.code);
+                        return nameA.localeCompare(nameB);
+                    });
+
+                    matOptions.innerHTML = '';
+                    sortedItems.forEach((item) => {
+                        const option = document.createElement('option');
+                        const label = [item.name, item.code].filter(Boolean).join(' — ') || item.code;
+                        option.value = item.code;
+                        option.label = label;
+                        option.textContent = label;
+                        matOptions.appendChild(option);
+                    });
+                };
+
+                renderOptions();
+
+                matFamily.addEventListener('change', () => {
+                    renderOptions();
+                    matSearch.value = '';
+                });
+
+                matSearch.addEventListener('change', () => {
+                    const rawTerm = (matSearch.value || '').trim();
+                    if (!rawTerm) return;
+
+                    const normalizedTerm = rawTerm.toUpperCase();
+                    let item = __invByCode.get(normalizedTerm);
+
+                    if (!item) {
+                        item = allItems.find((candidate) => (candidate.name || '').toUpperCase() === rawTerm.toUpperCase());
+                    }
+
+                    if (!item && rawTerm.includes('—')) {
+                        const parts = rawTerm.split('—');
+                        const lastPart = parts[parts.length - 1]?.trim().toUpperCase();
+                        if (lastPart) {
+                            item = __invByCode.get(lastPart);
+                        }
+                    }
+
+                    if (item) {
+                        applyInventoryMaterial(item);
+                    } else {
+                        updateMatHelper(null, rawTerm);
+                    }
+                });
+
+                __familySearchReady = true;
             }
         
             let tmpMat = [];
