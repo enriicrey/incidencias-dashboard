@@ -2852,7 +2852,7 @@
         
         // Regex estrictas (ISO con zona, categorías/fases controladas)
         const RX_SOL = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:MATERIAL|DERIVACION|APOYO|TRASPASO|REASIGNACION)#[A-Za-z0-9_\-]+\|(REQUEST|APPROVED|REJECTED)\|.*$/;
-        const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|ACCEPTED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*$/;
+        const RX_RESP = /^\[(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2}))\]\s+(?:RESP#L[0-3]#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|ACCEPTED|REASSIGN_TO|REASSIGN_FROM|NO_RESPONSE|REJECTED::.+?)\|.*|RESP#APOYO#[^|@\s]+@[^|@\s]+\.[^|@\s]+\|(ASSIGNED|ACCEPTED)(?:\|.*)?|RESP#TRANSFER\|from=[^;]+;to=[^;]+;reason=.*|RESP#DERIVATION\|from=[^;]+;to=[^;]+;reason=.*|RESP#UNASSIGN#[^|]+\|[^|]+(?:\|.*)?)$/;
         
         function validateLogLines({ lines, kind }) {
           // kind: 'SOL' (Solicitudes) | 'RESP' (Respuestas)
