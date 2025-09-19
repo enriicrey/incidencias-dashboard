@@ -764,7 +764,7 @@
         .modal.large-modal { max-width: 900px; }
         
        /* Masonry definitivo */
-       .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px; }
+       .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px;column-fill: auto }
         .incident-card{
           display:flex;
           flex-direction:column;
@@ -777,6 +777,7 @@
           box-shadow:var(--shadow-sm);
         }
         .incident-card:hover{ background:#fafafa; }
+        .incident-card details { break-inside: avoid; }   
 
     
         /* Densidad y micro-ajustes */
@@ -807,6 +808,7 @@
           margin-top:8px;
           font-size:13px;
           color:#374151;
+          grid-template-columns: minmax(0,1fr) minmax(0,1fr);
         }
         .muted{ color:#6b7280; }
         .log{ white-space:pre-line; background:#f9fafb; border-radius:8px; padding:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
@@ -2532,6 +2534,15 @@
           return val.trim() ? val : '{{emptystring}}';
         }
 
+        function cleanLevelTags(str){
+          return String(str || '')
+            .replace(/\]\]L\d\b/g, '')     // quita "]]L0" "]]L1"...
+            .replace(/\bL\d\b/g, '')       // quita " L0 " suelto
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        }
+
+
         function parseMetaKV(str = "") {
           const obj = {};
           String(str || "")
@@ -2606,6 +2617,11 @@
             if (info.icon) text = `${info.icon} ${text}`;
 
             if (!text.trim()) continue;
+
+            detail = cleanLevelTags(detail);
+            let text = (info.icon ? `${info.icon} ` : "") + (info.label || req.cat || "");
+            if (detail) text += ` · ${detail}`;
+            text = cleanLevelTags(text);
 
             const chip = document.createElement("button");
             chip.type = "button";
@@ -3970,56 +3986,69 @@
         function renderSolicitudesResumen(inc) {
           const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
           if (log === "{{emptystring}}") return `<div class="muted">Sin solicitudes</div>`;
-
+        
           const rows = parseSolicitudesLog(log).filter(r => REQUEST_CAT_INFO[r.cat]);
           const grouped = groupByRequest(rows);
-            
+        
           const items = Object.values(grouped)
             .sort((a, b) => new Date(b.last.when) - new Date(a.last.when))
             .slice(0, 12)
             .map(g => {
-              const reqPhase = g.phases.find(p => p.phase === "REQUEST");
-              if (!reqPhase) return "";
-              const respPhase = g.phases.find(p => p.phase === "APPROVED" || p.phase === "REJECTED");
-              const reqMeta = reqPhase.meta || {};
-              const respMeta = respPhase?.meta || {};
-                
-              const info = REQUEST_CAT_INFO[g.cat] || { icon: "", label: g.cat };
-              const reqId = reqPhase.req || g.req || g.id;
-              let details = "";
+              const req = g.phases.find(p => p.phase === "REQUEST");
+              if (!req) return "";
+              const resp = g.phases.find(p => p.phase === "APPROVED" || p.phase === "REJECTED");
+        
+              const info = REQUEST_CAT_INFO[g.cat] || { icon:"", label:g.cat };
+              const reqMeta = req.meta || {};
+              const respMeta = resp?.meta || {};
+        
+              // Texto base por categoría (sin "Lx")
+              let detail = "";
               if (g.cat === "MATERIAL") {
-                const qtyPart = reqMeta.qty ? ` x ${safe(reqMeta.qty)}` : "";
-                const unitPart = reqMeta.unit ? ` ${safe(reqMeta.unit)}` : "";
-                details = `${safe(reqMeta.name || "")}${qtyPart}${unitPart}`;
+                const qty = reqMeta.qty ? ` x ${reqMeta.qty}` : "";
+                const unit = reqMeta.unit ? ` ${reqMeta.unit}` : "";
+                const name = reqMeta.name || reqMeta.material || reqMeta.item || "";
+                detail = `${name}${qty}${unit}`;
               } else if (g.cat === "APOYO") {
-                details = safe(reqMeta.detail || "");
+                detail = reqMeta.detail || reqMeta.reason || reqMeta.comment || "";
               } else {
-                const toPart = reqMeta.to ? `${safe(reqMeta.to)}` : "";
-                const reasonPart = reqMeta.reason ? ` · ${safe(reqMeta.reason)}` : "";
-                details = `${toPart}${reasonPart}`;
+                const to = reqMeta.to || reqMeta.dest || reqMeta.destino || reqMeta.target || "";
+                const reason = reqMeta.reason || reqMeta.detail || "";
+                detail = [to, reason].filter(Boolean).join(" · ");
               }
-              const detailStr = details ? ` · ${details}` : "";
-              let lines = `<li class="phase-request"><span class="t-time">${formatTimeOrDate(reqPhase.when)}</span>` +
-                `<span class="t-body"><span class="req-chip pending">${info.icon} ${info.label}${detailStr}</span></span></li>`;
-                
-              if (respPhase) {
-                const cls = `phase-${respPhase.phase.toLowerCase()}`;
-                const extras = [];
-                if (respMeta.qty) {
-                  const qUnit = respMeta.unit ? ` ${safe(respMeta.unit)}` : "";
-                  extras.push(`${safe(respMeta.qty)}${qUnit}`);
-                }
-                if (respMeta.reason) extras.push(safe(respMeta.reason));
-                const extraStr = extras.length ? ` · ${extras.join(" · ")}` : "";
-                const chipCls = respPhase.phase.toLowerCase();
-                lines += `<li class="${cls}"><span class="t-time">${formatTimeOrDate(respPhase.when)}</span>` +
-                   `<span class="t-body"><span class="req-chip ${chipCls}">${info.icon} ${info.label} ${safe(respPhase.phase)}${extraStr}</span></span></li>`;
+              detail = cleanLevelTags(detail);
+        
+              // ¿Hay respuesta? → una sola línea, con color final
+              const phase = resp ? resp.phase : "REQUEST";
+              const rowCls =
+                phase === "APPROVED" ? "phase-approved" :
+                phase === "REJECTED" ? "phase-rejected" : "phase-request";
+        
+              // Extras en la línea final (p.ej. cantidad aprobada)
+              const extras = [];
+              if (resp && respMeta.qty) {
+                const u = respMeta.unit || reqMeta.unit || "";
+                extras.push(`${respMeta.qty}${u ? " " + u : ""}`);
               }
-              return lines;
+              if (resp && respMeta.reason) extras.push(respMeta.reason);
+        
+              const suffix = extras.length ? ` · ${extras.map(cleanLevelTags).join(" · ")}` : "";
+        
+              const when = formatTimeOrDate((resp || req).when);
+              const label = cleanLevelTags(`${info.icon} ${info.label}${detail ? " · " + detail : ""}`);
+        
+              return `
+                <li class="${rowCls}">
+                  <span class="t-time">${when}</span>
+                  <span class="t-body">
+                    <span class="req-chip ${phase.toLowerCase()}">${label}${resp ? ` · ${phase}` : ""}${suffix}</span>
+                  </span>
+                </li>`;
             }).join("");
-            
+        
           return `<ul class="timeline">${items}</ul>`;
         }
+
 
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
