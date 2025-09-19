@@ -786,7 +786,6 @@
         }
         
         .incident-card{ display:flex; flex-direction:column; }
-        .incident-card details{ overflow:hidden; } /* previene artefactos al abrir/cerrar */
 
     
         /* Densidad y micro-ajustes */
@@ -2545,8 +2544,8 @@
 
         function cleanLevelTags(str){
           return String(str || '')
-            .replace(/\]\]L\d\b/g, '')     // quita "]]L0" "]]L1"...
-            .replace(/\bL\d\b/g, '')       // quita " L0 " suelto
+            .replace(/\]\]L\d+\)?/gi, '')   // quita "]]L0", "]]L1)", etc.
+            .replace(/\bL\d\b/gi, '')       // quita " L0 " suelto, en cualquier caso
             .replace(/\s{2,}/g, ' ')
             .trim();
         }
