@@ -764,11 +764,9 @@
         .modal.large-modal { max-width: 900px; }
         
        /* Masonry definitivo */
-       .incidents-list{ column-width:520px; column-gap:16px; padding:0 12px 18px;column-fill: auto }
         .incident-card{
           display:flex;
           flex-direction:column;
-          break-inside:avoid-column;
           margin:0 0 16px;
           border:1px solid #e5e7eb;
           border-radius:12px;
@@ -777,7 +775,18 @@
           box-shadow:var(--shadow-sm);
         }
         .incident-card:hover{ background:#fafafa; }
-        .incident-card details { break-inside: avoid; }   
+        .incidents-list{
+          display:grid;
+          grid-template-columns: repeat(2, minmax(340px, 1fr));
+          gap:16px;
+          padding:0 12px 18px;
+        }
+        @media (max-width: 1100px){
+          .incidents-list{ grid-template-columns: 1fr; }
+        }
+        
+        .incident-card{ display:flex; flex-direction:column; }
+        .incident-card details{ overflow:hidden; } /* previene artefactos al abrir/cerrar */
 
     
         /* Densidad y micro-ajustes */
@@ -2619,14 +2628,16 @@
             if (!text.trim()) continue;
 
             detail = cleanLevelTags(detail);
-            let text = (info.icon ? `${info.icon} ` : "") + (info.label || req.cat || "");
-            if (detail) text += ` · ${detail}`;
-            text = cleanLevelTags(text);
 
+            const base = (info.icon ? `${info.icon} ` : "") + (info.label || req.cat || "");
+            let displayText = base;
+            if (detail) displayText += ` · ${detail}`;
+            displayText = cleanLevelTags(displayText);
+            
             const chip = document.createElement("button");
             chip.type = "button";
             chip.className = "chip-request";
-            chip.textContent = text.trim();
+            chip.textContent = displayText.trim();
             if (req.last?.metaRaw) chip.title = req.last.metaRaw;
             chip.classList.add(`cat-${(req.cat||'').toLowerCase()}`);
             frag.appendChild(chip);
