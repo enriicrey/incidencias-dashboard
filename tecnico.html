@@ -1832,45 +1832,6 @@
             modal.classList.remove('hidden');
         }
 
-        function deriveApprovedItemsFromLog(inc) {
-            const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
-            if (log === '{{emptystring}}') return [];
-            const rows = parseSolicitudesLog(log);
-            const findUnit = (code, name) => {
-              const inv = (inventory || []);
-              let it = inv.find(i => i.code === code);
-              if (!it && name) it = inv.find(i => (i.name || '').toLowerCase() === String(name).toLowerCase());
-              return it ? normalizeUnit(it.unit) : '';
-              };
-              const items = rows
-                .filter(r => r.cat === 'MATERIAL' && r.phase === 'APPROVED')
-                .map(r => {
-                    const m = r.meta || {};
-                    const code = m.code || r.reqId || '';
-                    const unit = normalizeUnit(m.unit || findUnit(code, m.name));
-                    return {
-                        req: m.req || r.req || r.reqId || '',
-                        code,
-                        name: m.name || '',
-                        unit,
-                        qty_solicitada: Number(m.qty_solicitada || m.qty || 0),
-                        qty_aprobada: Number(m.qty_aprobada || m.qty_apr || m.qty || 0)
-                    };
-                });
-            const byKey = {};
-            items.forEach(it => {
-                const key = `${(it.code || '').toUpperCase()}|${normalizeUnit(it.unit || '')}`;
-                if (!byKey[key]) {
-                    byKey[key] = { ...it };
-                } else {
-                    byKey[key].qty_solicitada += it.qty_solicitada;
-                    byKey[key].qty_aprobada += it.qty_aprobada;
-                }
-            });
-
-            return Object.values(byKey);
-        }
-
         function showResolverModal(incidentId) {
           currentIncidentId = incidentId;
         
@@ -1944,107 +1905,6 @@
           // Devolver sólo los que tengan algo aprobado (>0)
           return Object.values(byKey).filter(it => Number(it.qty_aprobada) > 0);
         }
-        
-        // Algunas unidades permiten decimales (m, kg, l)
-        function unitAllowsDecimal(u) {
-          const unit = (u || '').toLowerCase().trim();
-          return unit === 'm' || unit === 'kg' || unit === 'l';
-        }
-        
-        // Pinta la tabla con inputs Consumido/Devuelto/Desechado
-        function renderMaterialesResultado(items = []) {
-          const wrap = document.getElementById('materialesResultadoWrapper');
-          if (!wrap) return;
-        
-          if (!Array.isArray(items) || items.length === 0) {
-            wrap.innerHTML = '<div class="muted">No hay materiales aprobados. Si usaste material, solicita y espera aprobación del supervisor antes de resolver.</div>';
-            updateResolverValidation();
-            return;
-          }
-        
-          wrap.innerHTML = `
-            <table class="materials-table">
-              <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Unidad</th>
-                  <th>Solicitado</th>
-                  <th>Aprobado</th>
-                  <th>Consumido</th>
-                  <th>Devuelto</th>
-                  <th>Desechado</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="materialesResultadoBody"></tbody>
-            </table>
-          `;
-        
-          const tbody = wrap.querySelector('#materialesResultadoBody');
-        
-          const rows = items.map(it => {
-            const step = unitAllowsDecimal(it.unit) ? '0.01' : '1';
-            const tr = document.createElement('tr');
-            tr.dataset.code = it.code || '';
-            tr.dataset.name = it.name || '';
-            tr.dataset.unit = it.unit || 'ud';
-            tr.innerHTML = `
-              <td class="nowrap">${escapeHtml(it.code || '')}</td>
-              <td class="ellipsis" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name || '')}</td>
-              <td class="nowrap">${escapeHtml(it.unit || 'ud')}</td>
-              <td class="num">${Number(it.qty_solicitada || 0)}</td>
-              <td class="num">${Number(it.qty_aprobada || 0)}</td>
-              <td><input type="number" min="0" step="${step}" class="mat-used form-control" placeholder="0"></td>
-              <td><input type="number" min="0" step="${step}" class="mat-returned form-control" placeholder="0"></td>
-              <td><input type="number" min="0" step="${step}" class="mat-scrap form-control" placeholder="0"></td>
-              <td class="nowrap"><span class="chip chip-small chip-muted">Pendiente</span></td>
-            `;
-            return tr;
-          });
-        
-          rows.forEach(r => tbody.appendChild(r));
-        
-          // Validar en tiempo real
-          tbody.querySelectorAll('input').forEach(inp => {
-            inp.addEventListener('input', updateResolverValidation);
-          });
-        
-          updateResolverValidation();
-        }
-        
-        // Habilita/deshabilita el botón "Confirmar resolución" y marca filas OK/KO
-        function updateResolverValidation() {
-          const wrap = document.getElementById('materialesResultadoWrapper');
-          if (!wrap) return;
-          const btn = document.getElementById('resolverConfirmBtn');
-          const tbody = wrap.querySelector('#materialesResultadoBody');
-          if (!tbody) {
-            if (btn) btn.disabled = false; // si no hay tabla, permitir resolver sin materiales
-            return;
-          }
-        
-          let allOk = true;
-          tbody.querySelectorAll('tr').forEach(tr => {
-            const approved = Number(tr.children[4].textContent || 0) || 0;
-            const used     = Number(tr.querySelector('.mat-used')?.value || 0) || 0;
-            const returned = Number(tr.querySelector('.mat-returned')?.value || 0) || 0;
-            const scrap    = Number(tr.querySelector('.mat-scrap')?.value || 0) || 0;
-        
-            const ok = Math.abs((used + returned + scrap) - approved) < 0.0001;
-            const statusCell = tr.lastElementChild;
-            statusCell.innerHTML = ok
-              ? '<span class="chip chip-small chip-approved">OK</span>'
-              : '<span class="chip chip-small chip-warning">Revisa</span>';
-        
-            tr.style.background = ok ? 'rgba(34,197,94,0.08)' : 'rgba(234,179,8,0.08)';
-            allOk = allOk && ok;
-          });
-        
-          if (btn) btn.disabled = !allOk;
-        }
-
-
 
         function showMaterialesModal(incidentId) {
            currentIncidentId = incidentId;
@@ -2393,8 +2253,8 @@
                   return;
                 }
 
-                materials_used.push({
-                  request_id: row.dataset.req || null,
+                materiales_resultado.push({
+                  req: row.dataset.req || null,
                   code: row.dataset.code || '',
                   name: row.dataset.name || '',
                   unit: row.dataset.unit || 'ud',
@@ -2408,11 +2268,11 @@
           }
           const result = await handleAction('resolver', currentIncidentId, {
             solution_description: solution,
-            materials_used
+            materiales_resultado
           });
           if (result) {
             closeModal('resolverModal');
-            showToast('✔️ Enviado para cierre del supervisor', 'success');
+            showToast('✔️ Enviado para cierre del supervisor', 3500);
             loadDashboard();
           }
         }
