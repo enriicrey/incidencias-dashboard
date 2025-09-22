@@ -1867,13 +1867,179 @@
         }
 
         function showResolverModal(incidentId) {
-            currentIncidentId = incidentId;
-            const inc = allIncidents.find(i => i.id === incidentId) || {};
-            const approvedItems = deriveApprovedItemsFromLog(inc);
-            renderMaterialesResultado(approvedItems);
-            document.getElementById('resolverModal').classList.remove('hidden');
-            updateResolverValidation();
+          currentIncidentId = incidentId;
+        
+          // limpiar bloque "solicitudes recientes" si existiese
+          const container = document.getElementById('resolverRequests');
+          if (container) {
+            container.innerHTML = '';
+            const section = container.closest('.form-group');
+            if (section) section.classList.add('hidden');
+          }
+        
+          // derivar de Solicitudes (log) los materiales aprobados
+          const inc = allIncidents.find(i => i.id === incidentId) || {};
+          const approvedItems = deriveApprovedItemsFromLog(inc);
+        
+          // pintar tabla con inputs (consumido/devuelto/desechado)
+          renderMaterialesResultado(approvedItems);
+        
+          // abrir modal y chequear validaciones
+          document.getElementById('resolverModal').classList.remove('hidden');
+          updateResolverValidation();
         }
+        // ——— Helpers para "Resolver" ———
+
+        // Lee "Solicitudes (log)" y agrupa por MATERIAL, sacando cantidad solicitada/aprobada
+        function deriveApprovedItemsFromLog(inc = {}) {
+          const text = ensureLogString(inc.solicitudes_log || inc.solicitudes || '');
+          const rows = parseSolicitudesLog(text);
+          if (!rows.length) return [];
+        
+          // Agrupamos por request (ya tienes groupByRequest en el archivo)
+          const grouped = groupByRequest(rows);
+        
+          // Quedarnos solo con MATERIAL
+          const mats = Object.values(grouped).filter(g => (g?.cat || '').toUpperCase() === 'MATERIAL');
+        
+          // Consolidar por código (fallback a nombre) y unidad
+          const byKey = {};
+          for (const g of mats) {
+            // Fase REQUEST para leer nombre/código/unidad/cant solicitada
+            const reqPhase = g.phases.find(p => (p.phase || '').toUpperCase() === 'REQUEST') || g.phases[0] || {};
+            const metaR = reqPhase.meta || {};
+            const code  = (metaR.code || metaR.material || metaR.item || g.id || '').toString().trim();
+            const name  = (metaR.name || metaR.material_name || metaR.label || '').toString().trim();
+            const unit  = normalizeUnit(metaR.unit || metaR.units || metaR.unidad || 'ud');
+        
+            const qtyReq = Number(metaR.qty || metaR.quantity || 0) || 0;
+        
+            // Cantidad aprobada = última fase APPROVED (si hay varias aprobaciones parciales, sumar)
+            const approvedPhases = g.phases.filter(p => (p.phase || '').toUpperCase() === 'APPROVED');
+            let qtyApr = 0;
+            for (const ap of approvedPhases) {
+              const m = ap.meta || {};
+              qtyApr += Number(m.approved || m.qty_approved || m.qty || 0) || 0;
+            }
+            // si no hay APPROVED explícito, asumimos 0 aprobado
+            const key = [code || name || 'SIN-CODIGO', unit].join('||');
+            if (!byKey[key]) {
+              byKey[key] = {
+                code: code || null,
+                name: name || (code || 'Material'),
+                unit,
+                qty_solicitada: 0,
+                qty_aprobada: 0
+              };
+            }
+            byKey[key].qty_solicitada += qtyReq;
+            byKey[key].qty_aprobada  += qtyApr;
+          }
+        
+          // Devolver sólo los que tengan algo aprobado (>0)
+          return Object.values(byKey).filter(it => Number(it.qty_aprobada) > 0);
+        }
+        
+        // Algunas unidades permiten decimales (m, kg, l)
+        function unitAllowsDecimal(u) {
+          const unit = (u || '').toLowerCase().trim();
+          return unit === 'm' || unit === 'kg' || unit === 'l';
+        }
+        
+        // Pinta la tabla con inputs Consumido/Devuelto/Desechado
+        function renderMaterialesResultado(items = []) {
+          const wrap = document.getElementById('materialesResultadoWrapper');
+          if (!wrap) return;
+        
+          if (!Array.isArray(items) || items.length === 0) {
+            wrap.innerHTML = '<div class="muted">No hay materiales aprobados. Si usaste material, solicita y espera aprobación del supervisor antes de resolver.</div>';
+            updateResolverValidation();
+            return;
+          }
+        
+          wrap.innerHTML = `
+            <table class="materials-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Unidad</th>
+                  <th>Solicitado</th>
+                  <th>Aprobado</th>
+                  <th>Consumido</th>
+                  <th>Devuelto</th>
+                  <th>Desechado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="materialesResultadoBody"></tbody>
+            </table>
+          `;
+        
+          const tbody = wrap.querySelector('#materialesResultadoBody');
+        
+          const rows = items.map(it => {
+            const step = unitAllowsDecimal(it.unit) ? '0.01' : '1';
+            const tr = document.createElement('tr');
+            tr.dataset.code = it.code || '';
+            tr.dataset.name = it.name || '';
+            tr.dataset.unit = it.unit || 'ud';
+            tr.innerHTML = `
+              <td class="nowrap">${escapeHtml(it.code || '')}</td>
+              <td class="ellipsis" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name || '')}</td>
+              <td class="nowrap">${escapeHtml(it.unit || 'ud')}</td>
+              <td class="num">${Number(it.qty_solicitada || 0)}</td>
+              <td class="num">${Number(it.qty_aprobada || 0)}</td>
+              <td><input type="number" min="0" step="${step}" class="mat-used form-control" placeholder="0"></td>
+              <td><input type="number" min="0" step="${step}" class="mat-returned form-control" placeholder="0"></td>
+              <td><input type="number" min="0" step="${step}" class="mat-scrap form-control" placeholder="0"></td>
+              <td class="nowrap"><span class="chip chip-small chip-muted">Pendiente</span></td>
+            `;
+            return tr;
+          });
+        
+          rows.forEach(r => tbody.appendChild(r));
+        
+          // Validar en tiempo real
+          tbody.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('input', updateResolverValidation);
+          });
+        
+          updateResolverValidation();
+        }
+        
+        // Habilita/deshabilita el botón "Confirmar resolución" y marca filas OK/KO
+        function updateResolverValidation() {
+          const wrap = document.getElementById('materialesResultadoWrapper');
+          if (!wrap) return;
+          const btn = document.getElementById('resolverConfirmBtn');
+          const tbody = wrap.querySelector('#materialesResultadoBody');
+          if (!tbody) {
+            if (btn) btn.disabled = false; // si no hay tabla, permitir resolver sin materiales
+            return;
+          }
+        
+          let allOk = true;
+          tbody.querySelectorAll('tr').forEach(tr => {
+            const approved = Number(tr.children[4].textContent || 0) || 0;
+            const used     = Number(tr.querySelector('.mat-used')?.value || 0) || 0;
+            const returned = Number(tr.querySelector('.mat-returned')?.value || 0) || 0;
+            const scrap    = Number(tr.querySelector('.mat-scrap')?.value || 0) || 0;
+        
+            const ok = Math.abs((used + returned + scrap) - approved) < 0.0001;
+            const statusCell = tr.lastElementChild;
+            statusCell.innerHTML = ok
+              ? '<span class="chip chip-small chip-approved">OK</span>'
+              : '<span class="chip chip-small chip-warning">Revisa</span>';
+        
+            tr.style.background = ok ? 'rgba(34,197,94,0.08)' : 'rgba(234,179,8,0.08)';
+            allOk = allOk && ok;
+          });
+        
+          if (btn) btn.disabled = !allOk;
+        }
+
+
 
         function showMaterialesModal(incidentId) {
            currentIncidentId = incidentId;
@@ -2198,37 +2364,53 @@
         }
 
       async function confirmResolver() {
-      const solution_description = document.getElementById('solutionDescription').value.trim();
-        if (solution_description.length < 10) {
-          showNotification('Describe la solución implementada (mínimo 10 caracteres)', 'error');
-          return;
+          const inc = allIncidents.find(i => i.id === currentIncidentId);
+          if (!inc) {
+            showToast('Incidencia no encontrada');
+            return;
+          }
+        
+          // Leer filas de la tabla
+          const wrap = document.getElementById('materialesResultadoWrapper');
+          const tbody = wrap?.querySelector('#materialesResultadoBody');
+          const materials_used = [];
+        
+          if (tbody) {
+            tbody.querySelectorAll('tr').forEach(tr => {
+              const code = tr.dataset.code || '';
+              const name = tr.dataset.name || '';
+              const unit = tr.dataset.unit || 'ud';
+              const approved = Number(tr.children[4].textContent || 0) || 0;
+              const used     = Number(tr.querySelector('.mat-used')?.value || 0) || 0;
+              const returned = Number(tr.querySelector('.mat-returned')?.value || 0) || 0;
+              const scrap    = Number(tr.querySelector('.mat-scrap')?.value || 0) || 0;
+        
+              // omitimos filas sin movimiento
+              if ((used + returned + scrap) > 0) {
+                materials_used.push({ code, name, unit, approved, used, returned, scrap });
+              }
+            });
+          }
+        
+          // Validación final (por si el botón se forzó)
+          for (const m of materials_used) {
+            const total = Number(m.used) + Number(m.returned) + Number(m.scrap);
+            if (Math.abs(total - Number(m.approved)) > 0.0001) {
+              showToast(`Revisa ${m.code || m.name}: ${total} ≠ aprobado ${m.approved}`);
+              return;
+            }
+          }
+        
+          // Enviar acción "resolver" con consumos a Make
+          await confirmAction('resolver', {
+            materials_used,
+            notes: (document.getElementById('resolverNotes')?.value || '').trim()
+          });
+        
+          closeModal('resolverModal');
+          showToast('✔️ Enviado para cierre del supervisor', 'success');
         }
 
-        const rows = Array.from(document.querySelectorAll('#materialesResultadoBody tr'));
-        const materiales_resultado = rows.map(row => {
-          const consumida = Number(row.querySelector('.consumida-input').value) || 0;
-          const devuelta = Number(row.querySelector('.devuelta-input').value) || 0;
-          const desechada = Number(row.querySelector('.desechada-input').value) || 0;
-          return {
-            req: row.dataset.req,
-            code: row.dataset.code || '',
-            name: row.dataset.name || '',
-            unit: row.dataset.unit || '',
-            qty_solicitada: Number(row.dataset.qty_solicitada) || 0,
-            qty_aprobada: Number(row.dataset.qty_aprobada) || 0,
-            qty_consumida: consumida,
-            qty_devuelta: devuelta,
-            qty_desechada: desechada
-          };
-        });
-          
-          const ok = await handleAction('resolver', currentIncidentId, {
-          solution_description,
-          materiales_resultado
-
-        });
-        if (ok) closeModal('resolverModal');
-      }
     
         // ========================================
         //  UTILIDADES Y HELPERS
