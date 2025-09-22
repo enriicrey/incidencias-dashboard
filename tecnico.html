@@ -2369,51 +2369,52 @@
         }
 
       async function confirmResolver() {
-          const inc = allIncidents.find(i => i.id === currentIncidentId);
-          if (!inc) {
-            showToast('Incidencia no encontrada');
+          const solution = (document.getElementById('solutionDescription')?.value || '').trim();
+          if (!solution) {
+            showToast('Describe la solución aplicada antes de continuar');
             return;
           }
         
-          // Leer filas de la tabla
-          const wrap = document.getElementById('materialesResultadoWrapper');
-          const tbody = wrap?.querySelector('#materialesResultadoBody');
+          const body = document.getElementById('materialesResultadoBody');
           const materials_used = [];
         
-          if (tbody) {
-            tbody.querySelectorAll('tr').forEach(tr => {
-              const code = tr.dataset.code || '';
-              const name = tr.dataset.name || '';
-              const unit = tr.dataset.unit || 'ud';
-              const approved = Number(tr.children[4].textContent || 0) || 0;
-              const used     = Number(tr.querySelector('.mat-used')?.value || 0) || 0;
-              const returned = Number(tr.querySelector('.mat-returned')?.value || 0) || 0;
-              const scrap    = Number(tr.querySelector('.mat-scrap')?.value || 0) || 0;
-        
-              // omitimos filas sin movimiento
-              if ((used + returned + scrap) > 0) {
-                materials_used.push({ code, name, unit, approved, used, returned, scrap });
+          if (body) {
+            for (const row of body.querySelectorAll('tr')) {
+              const qtyAprobada = Number(row.dataset.qty_aprobada || 0) || 0;
+              const qtyConsumida = Number(row.querySelector('.consumida-input')?.value || 0) || 0;
+              const qtyDevuelta = Number(row.querySelector('.devuelta-input')?.value || 0) || 0;
+              const qtyDesechada = Number(row.querySelector('.desechada-input')?.value || 0) || 0;
+              const total = qtyConsumida + qtyDevuelta + qtyDesechada;
+
+              if (total > 0) {
+                if (Math.abs(total - qtyAprobada) > 0.0001) {
+                  const label = row.dataset.code || row.dataset.name || 'material';
+                  showToast(`Revisa ${label}: ${total} ≠ aprobado ${qtyAprobada}`);
+                  return;
+                }
+
+                materials_used.push({
+                  request_id: row.dataset.req || null,
+                  code: row.dataset.code || '',
+                  name: row.dataset.name || '',
+                  unit: row.dataset.unit || 'ud',
+                  qty_aprobada: qtyAprobada,
+                  qty_consumida: qtyConsumida,
+                  qty_devuelta: qtyDevuelta,
+                  qty_desechada: qtyDesechada
+                });
               }
-            });
-          }
-        
-          // Validación final (por si el botón se forzó)
-          for (const m of materials_used) {
-            const total = Number(m.used) + Number(m.returned) + Number(m.scrap);
-            if (Math.abs(total - Number(m.approved)) > 0.0001) {
-              showToast(`Revisa ${m.code || m.name}: ${total} ≠ aprobado ${m.approved}`);
-              return;
             }
           }
-        
-          // Enviar acción "resolver" con consumos a Make
-          await confirmAction('resolver', {
-            materials_used,
-            notes: (document.getElementById('resolverNotes')?.value || '').trim()
+          const result = await handleAction('resolver', currentIncidentId, {
+            solution_description: solution,
+            materials_used
           });
-        
-          closeModal('resolverModal');
-          showToast('✔️ Enviado para cierre del supervisor', 'success');
+          if (result) {
+            closeModal('resolverModal');
+            showToast('✔️ Enviado para cierre del supervisor', 'success');
+            loadDashboard();
+          }
         }
 
     
