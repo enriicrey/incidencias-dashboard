@@ -438,7 +438,7 @@
           border-radius:9999px;
           border:1px solid var(--gray-200);
           background:#ffffff;
-          box-shadow: 0 1px 0 rgba(0,0,0,.06);
+          box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03) inset;
           color:var(--gray-700);
           font-weight:600;
           font-size:13px;
@@ -997,6 +997,9 @@
         .toast.show {
           opacity: 1;
         }
+        tr.row-ok td { background: #f0fdf4; }       
+        tr.row-warn td { background: #fffbea; }     
+
     </style>
 </head>
 <body>
@@ -1853,7 +1856,7 @@
 
         // Lee "Solicitudes (log)" y agrupa por MATERIAL, sacando cantidad solicitada/aprobada
         function deriveApprovedItemsFromLog(inc = {}) {
-          const text = ensureLogString(inc.solicitudes_log || inc.solicitudes || '');
+          const text = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log || inc.solicitudes || "");
           const rows = parseSolicitudesLog(text);
           if (!rows.length) return [];
         
@@ -1981,10 +1984,14 @@
               const scrap    = Number(tr.querySelector('.desechada-input')?.value || 0);
               const ok = Math.abs((used + returned + scrap) - approved) < 0.0001;
 
-              tr.querySelector('td:last-child').innerHTML = ok
-                ? '<span class="chip chip-small chip-approved">OK</span>'
-                : '<span class="chip chip-small chip-warning">Revisa</span>';
-              allOk = allOk && ok;
+              tr.classList.remove('row-ok','row-warn');
+                if (ok) {
+                  tr.classList.add('row-ok');
+                  tr.querySelector('td:last-child').innerHTML = '<span class="chip chip-small chip-approved">OK</span>';
+                } else {
+                  tr.classList.add('row-warn');
+                  tr.querySelector('td:last-child').innerHTML = '<span class="chip chip-small chip-warning">Revisa</span>';
+                }
             });
           }
 
@@ -2231,6 +2238,10 @@
               }
             }
           }
+          // Si no hay tabla o no hay filas con totales > 0, permitimos resolver solo con descripción.
+            if (!body || body.querySelectorAll('tr').length === 0) {
+              // materiales_resultado ya es [] -> resolver solo con solution_description
+            }
           const result = await handleAction('resolver', currentIncidentId, {
             solution_description: solution,
             materiales_resultado
@@ -4006,71 +4017,50 @@
             return `<ul class="timeline">${items}</ul>`;
         }
         
-        function renderSolicitudesResumen(inc) {
-          const log = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
-          if (log === "{{emptystring}}") return `<div class="muted">Sin solicitudes</div>`;
-        
-          const rows = parseSolicitudesLog(log).filter(r => REQUEST_CAT_INFO[r.cat]);
-          const grouped = groupByRequest(rows);
-        
-          const items = Object.values(grouped)
-            .sort((a, b) => new Date(b.last.when) - new Date(a.last.when))
-            .slice(0, 12)
-            .map(g => {
-              const req = g.phases.find(p => p.phase === "REQUEST");
-              if (!req) return "";
-              const resp = g.phases.find(p => p.phase === "APPROVED" || p.phase === "REJECTED");
-        
-              const info = REQUEST_CAT_INFO[g.cat] || { icon:"", label:g.cat };
-              const reqMeta = req.meta || {};
-              const respMeta = resp?.meta || {};
-        
-              // Texto base por categoría (sin "Lx")
-              let detail = "";
-              if (g.cat === "MATERIAL") {
-                const qty = reqMeta.qty ? ` x ${reqMeta.qty}` : "";
-                const unit = reqMeta.unit ? ` ${reqMeta.unit}` : "";
-                const name = reqMeta.name || reqMeta.material || reqMeta.item || "";
-                detail = `${name}${qty}${unit}`;
-              } else if (g.cat === "APOYO") {
-                detail = reqMeta.detail || reqMeta.reason || reqMeta.comment || "";
-              } else {
-                const to = reqMeta.to || reqMeta.dest || reqMeta.destino || reqMeta.target || "";
-                const reason = reqMeta.reason || reqMeta.detail || "";
-                detail = [to, reason].filter(Boolean).join(" · ");
-              }
-              detail = cleanLevelTags(detail);
-        
-              // ¿Hay respuesta? → una sola línea, con color final
-              const phase = resp ? resp.phase : "REQUEST";
-              const rowCls =
-                phase === "APPROVED" ? "phase-approved" :
-                phase === "REJECTED" ? "phase-rejected" : "phase-request";
-        
-              // Extras en la línea final (p.ej. cantidad aprobada)
-              const extras = [];
-              if (resp && respMeta.qty) {
-                const u = respMeta.unit || reqMeta.unit || "";
-                extras.push(`${respMeta.qty}${u ? " " + u : ""}`);
-              }
-              if (resp && respMeta.reason) extras.push(respMeta.reason);
-        
-              const suffix = extras.length ? ` · ${extras.map(cleanLevelTags).join(" · ")}` : "";
-        
-              const when = formatTimeOrDate((resp || req).when);
-              const label = cleanLevelTags(`${info.icon} ${info.label}${detail ? " · " + detail : ""}`);
-        
-              return `
-                <li class="${rowCls}">
-                  <span class="t-time">${when}</span>
-                  <span class="t-body">
-                    <span class="req-chip ${phase.toLowerCase()}">${label}${resp ? ` · ${phase}` : ""}${suffix}</span>
-                  </span>
-                </li>`;
-            }).join("");
-        
-          return `<ul class="timeline">${items}</ul>`;
-        }
+        function renderSolicitudesResumen(inc){
+  const t = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log || "");
+  if (t === "{{emptystring}}") return `<div class="muted">Sin solicitudes</div>`;
+
+  const rows = parseSolicitudesLog(t);
+  if (!rows.length) return `<div class="muted">Sin solicitudes</div>`;
+
+  const grouped = groupByRequest(rows);
+  const items = Object.values(grouped)
+    .sort((a,b)=> new Date(b.last?.when||0) - new Date(a.last?.when||0))
+    .map(g => {
+      const info = REQUEST_CAT_INFO[g.cat] || { icon:"", label:g.cat };
+      const reqPhase = g.phases.find(p => p.phase === 'REQUEST') || g.phases[0] || {};
+      const meta = reqPhase.meta || {};
+      let detail = '';
+      if (g.cat === 'MATERIAL') {
+        const name = (meta.name || meta.material || meta.item || '').trim();
+        const qty  = (meta.qty || meta.quantity || '').toString().trim();
+        const unit = (meta.unit || meta.units || meta.unidad || '').trim();
+        detail = [name, qty ? `×${qty}${unit ? ' '+unit : ''}` : ''].filter(Boolean).join(' · ');
+      } else if (g.cat === 'APOYO') {
+        detail = (meta.detail || meta.detalle || meta.reason || meta.comment || meta.notes || '').trim();
+      } else {
+        const to = (meta.to || meta.dest || meta.destino || meta.target || '').trim();
+        const why = (meta.reason || meta.detail || meta.detalle || '').trim();
+        detail = [to, why].filter(Boolean).join(' · ');
+      }
+      detail = cleanLevelTags(detail);
+
+      // clase por fase final
+      const phase = (g.last?.phase || 'REQUEST').toUpperCase();
+      const lineCls = phase === 'APPROVED' ? 'phase-approved'
+                    : phase === 'REJECTED' ? 'phase-rejected'
+                    : 'phase-pending';
+
+      return `<li class="${lineCls}">
+        <span class="t-time">${formatTimeOrDate(g.last?.when)}</span>
+        <span class="t-body">${info.icon || ''} <strong>${info.label || g.cat}</strong>${detail ? ' — ' + safe(detail) : ''}</span>
+      </li>`;
+    }).join('');
+
+  return `<ul class="timeline">${items}</ul>`;
+}
+
 
 
     function renderIncidents(incidents) {
@@ -4137,6 +4127,7 @@
       renderSlaStickyBar();
       clearInterval(window.__slaTick);
       window.__slaTick = setInterval(renderSlaStickyBar, 30000);
+      renderSlaStickyBar();
     }
     
     // Carga inicial
