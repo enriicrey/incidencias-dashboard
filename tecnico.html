@@ -1835,22 +1835,17 @@
         function showResolverModal(incidentId) {
           currentIncidentId = incidentId;
         
-          // limpiar bloque "solicitudes recientes" si existiese
+          // Oculta "Solicitudes recientes" dentro del modal si existiera
           const container = document.getElementById('resolverRequests');
           if (container) {
             container.innerHTML = '';
-            const section = container.closest('.form-group');
-            if (section) section.classList.add('hidden');
+            container.closest('.form-group')?.classList.add('hidden');
           }
         
-          // derivar de Solicitudes (log) los materiales aprobados
           const inc = allIncidents.find(i => i.id === incidentId) || {};
           const approvedItems = deriveApprovedItemsFromLog(inc);
-        
-          // pintar tabla con inputs (consumido/devuelto/desechado)
           renderMaterialesResultado(approvedItems);
         
-          // abrir modal y chequear validaciones
           document.getElementById('resolverModal').classList.remove('hidden');
           updateResolverValidation();
         }
@@ -1862,47 +1857,30 @@
           const rows = parseSolicitudesLog(text);
           if (!rows.length) return [];
         
-          // Agrupamos por request (ya tienes groupByRequest en el archivo)
           const grouped = groupByRequest(rows);
         
-          // Quedarnos solo con MATERIAL
           const mats = Object.values(grouped).filter(g => (g?.cat || '').toUpperCase() === 'MATERIAL');
         
-          // Consolidar por código (fallback a nombre) y unidad
           const byKey = {};
           for (const g of mats) {
-            // Fase REQUEST para leer nombre/código/unidad/cant solicitada
             const reqPhase = g.phases.find(p => (p.phase || '').toUpperCase() === 'REQUEST') || g.phases[0] || {};
             const metaR = reqPhase.meta || {};
             const code  = (metaR.code || metaR.material || metaR.item || g.id || '').toString().trim();
-            const name  = (metaR.name || metaR.material_name || metaR.label || '').toString().trim();
+            const name  = (metaR.name || metaR.material_name || metaR.label || code || 'Material').toString().trim();
             const unit  = normalizeUnit(metaR.unit || metaR.units || metaR.unidad || 'ud');
-        
             const qtyReq = Number(metaR.qty || metaR.quantity || 0) || 0;
         
-            // Cantidad aprobada = última fase APPROVED (si hay varias aprobaciones parciales, sumar)
             const approvedPhases = g.phases.filter(p => (p.phase || '').toUpperCase() === 'APPROVED');
             let qtyApr = 0;
             for (const ap of approvedPhases) {
               const m = ap.meta || {};
               qtyApr += Number(m.approved || m.qty_approved || m.qty || 0) || 0;
             }
-            // si no hay APPROVED explícito, asumimos 0 aprobado
-            const key = [code || name || 'SIN-CODIGO', unit].join('||');
-            if (!byKey[key]) {
-              byKey[key] = {
-                code: code || null,
-                name: name || (code || 'Material'),
-                unit,
-                qty_solicitada: 0,
-                qty_aprobada: 0
-              };
-            }
+            const key = [code || name, unit].join('||');
+            if (!byKey[key]) byKey[key] = { code, name, unit, qty_solicitada: 0, qty_aprobada: 0 };
             byKey[key].qty_solicitada += qtyReq;
             byKey[key].qty_aprobada  += qtyApr;
           }
-        
-          // Devolver sólo los que tengan algo aprobado (>0)
           return Object.values(byKey).filter(it => Number(it.qty_aprobada) > 0);
         }
 
@@ -1937,26 +1915,19 @@
           const wrap = document.getElementById('materialesResultadoWrapper');
           if (!wrap) return;
         
-          if (!Array.isArray(items) || items.length === 0) {
-            wrap.innerHTML = '<div class="muted">No hay materiales aprobados. Si usaste material, solicita y espera aprobación del supervisor antes de resolver.</div>';
+         if (!Array.isArray(items) || !items.length) {
+            wrap.innerHTML = '<div class="muted">No hay materiales aprobados. Solicita y espera aprobación antes de resolver.</div>';
             updateResolverValidation();
             return;
           }
         
-          // Esqueleto de tabla
           wrap.innerHTML = `
             <table class="materials-table">
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Unidad</th>
-                  <th>Solicitado</th>
-                  <th>Aprobado</th>
-                  <th>Consumido</th>
-                  <th>Devuelto</th>
-                  <th>Desechado</th>
-                  <th></th>
+                  <th>Código</th><th>Nombre</th><th>Unidad</th>
+                  <th>Solicitado</th><th>Aprobado</th>
+                  <th>Consumido</th><th>Devuelto</th><th>Desechado</th><th>Estado</th>
                 </tr>
               </thead>
               <tbody id="materialesResultadoBody"></tbody>
@@ -1964,72 +1935,61 @@
           `;
         
           const tbody = wrap.querySelector('#materialesResultadoBody');
-        
-          const norm = normalizeUnit; // ya definida en tu archivo
-        
-          const rows = items.map(it => {
-            const unit = norm(it.unit || '');
-            const step = unitAllowsDecimal(unit) ? '0.01' : '1';
-            const qtySol = Number(it.qty_solicitada || it.qty || 0);
-            const qtyApr = Number(it.qty_aprobada  ?? qtySol);
-        
-            return `
-              <tr data-req="${safe(it.req || '')}"
-                  data-code="${safe(it.code || '')}"
-                  data-name="${safe(it.name || '')}"
-                  data-unit="${safe(unit)}"
-                  data-qty_solicitada="${qtySol}"
-                  data-qty_aprobada="${qtyApr}">
-                <td class="nowrap">${safe(it.code || '')}</td>
-                <td class="ellipsis" title="${safe(it.name || '')}">${safe(it.name || '')}</td>
-                <td class="nowrap">${safe(unit)}</td>
-                <td class="num">${qtySol}</td>
-                <td class="num">${qtyApr}</td>
-                <td><input class="consumida-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
-                <td><input class="devuelta-input"  type="number" min="0" step="${step}" inputmode="decimal"></td>
-                <td><input class="desechada-input" type="number" min="0" step="${step}" inputmode="decimal"></td>
-                <td><div class="mat-error" style="color:#dc2626;font-size:12px;"></div></td>
-              </tr>
+          items.forEach(it => {
+            const step = unitAllowsDecimal(it.unit) ? '0.01' : '1';
+            const tr = document.createElement('tr');
+            tr.dataset.req = it.req || '';
+            tr.dataset.code = it.code || '';
+            tr.dataset.name = it.name || '';
+            tr.dataset.unit = it.unit || 'ud';
+            tr.dataset.qty_aprobada = Number(it.qty_aprobada || 0);
+            tr.dataset.qty_solicitada = Number(it.qty_solicitada || 0);
+
+            tr.innerHTML = `
+              <td class="nowrap">${safe(it.code || '')}</td>
+              <td class="ellipsis" title="${safe(it.name || '')}">${safe(it.name || '')}</td>
+              <td class="nowrap">${safe(it.unit || 'ud')}</td>
+              <td class="num">${Number(it.qty_solicitada || 0)}</td>
+              <td class="num">${Number(it.qty_aprobada || 0)}</td>
+              <td><input type="number" min="0" step="${step}" class="consumida-input form-control" placeholder="0"></td>
+              <td><input type="number" min="0" step="${step}" class="devuelta-input form-control"  placeholder="0"></td>
+              <td><input type="number" min="0" step="${step}" class="desechada-input form-control" placeholder="0"></td>
+              <td class="nowrap"><span class="chip chip-small chip-muted">Pendiente</span></td>
             `;
-          }).join('');
-        
-          tbody.innerHTML = rows;
-        
-          // Validar en caliente
-          tbody.querySelectorAll('input').forEach(i => i.addEventListener('input', updateResolverValidation));
+            tbody.appendChild(tr);
+          });
+
+          tbody.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('input', updateResolverValidation);
+          });
           updateResolverValidation();
         }
 
         function updateResolverValidation() {
-            const btn = document.getElementById('resolverSubmitBtn');
-            const body = document.getElementById('materialesResultadoBody');
-            if (!btn) return;
-            let allValid = true;
-            if (body) {
-                body.querySelectorAll('tr').forEach(row => {
-                    const limit = Number(row.dataset.qty_aprobada) || Number(row.dataset.qty_solicitada) || 0;
-                    const unit = row.dataset.unit || '';
-                    const allowsDec = unitAllowsDecimal(unit);
-                    const c = Number(row.querySelector('.consumida-input').value) || 0;
-                    const d = Number(row.querySelector('.devuelta-input').value) || 0;
-                    const x = Number(row.querySelector('.desechada-input').value) || 0;
-                    const sum = c + d + x;
-                    const err = row.querySelector('.mat-error');
-                    let rowValid = true;
-                    if (sum > limit) {
-                        rowValid = false;
-                        if (err) err.textContent = `Excede (${sum}/${limit})`;
-                    } else if (!allowsDec && [c,d,x].some(v => !Number.isInteger(v))) {
-                        rowValid = false;
-                        if (err) err.textContent = 'Sólo números enteros';
-                    } else {
-                        if (err) err.textContent = '';
-                    }
-                    if (!rowValid) allValid = false;
-                });
-            }
-            const solution = document.getElementById('solutionDescription').value.trim();
-            btn.disabled = !allValid || !solution;
+          const btn = document.getElementById('resolverSubmitBtn');
+          const wrap = document.getElementById('materialesResultadoWrapper');
+          const tbody = wrap?.querySelector('#materialesResultadoBody');
+          const hasTable = !!tbody;
+
+          let allOk = true;
+
+          if (hasTable) {
+            tbody.querySelectorAll('tr').forEach(tr => {
+              const approved = Number(tr.dataset.qty_aprobada || 0);
+              const used     = Number(tr.querySelector('.consumida-input')?.value || 0);
+              const returned = Number(tr.querySelector('.devuelta-input')?.value  || 0);
+              const scrap    = Number(tr.querySelector('.desechada-input')?.value || 0);
+              const ok = Math.abs((used + returned + scrap) - approved) < 0.0001;
+
+              tr.querySelector('td:last-child').innerHTML = ok
+                ? '<span class="chip chip-small chip-approved">OK</span>'
+                : '<span class="chip chip-small chip-warning">Revisa</span>';
+              allOk = allOk && ok;
+            });
+          }
+
+          const hasDescription = (document.getElementById('solutionDescription')?.value || '').trim().length > 0;
+          if (btn) btn.disabled = !(allOk && hasDescription);
         }
 
         function showAyudaModal(incidentId) {
@@ -2229,6 +2189,9 @@
         }
 
       async function confirmResolver() {
+          const inc = allIncidents.find(i => i.id === currentIncidentId);
+          if (!inc) { showToast('Incidencia no encontrada'); return; }
+          
           const solution = (document.getElementById('solutionDescription')?.value || '').trim();
           if (!solution) {
             showToast('Describe la solución aplicada antes de continuar');
@@ -2236,11 +2199,12 @@
           }
         
           const body = document.getElementById('materialesResultadoBody');
-          const materials_used = [];
+          const materiales_resultado = [];
         
           if (body) {
             for (const row of body.querySelectorAll('tr')) {
               const qtyAprobada = Number(row.dataset.qty_aprobada || 0) || 0;
+              const qtySolicitada = Number(row.dataset.qty_solicitada || 0) || 0;
               const qtyConsumida = Number(row.querySelector('.consumida-input')?.value || 0) || 0;
               const qtyDevuelta = Number(row.querySelector('.devuelta-input')?.value || 0) || 0;
               const qtyDesechada = Number(row.querySelector('.desechada-input')?.value || 0) || 0;
@@ -2258,6 +2222,7 @@
                   code: row.dataset.code || '',
                   name: row.dataset.name || '',
                   unit: row.dataset.unit || 'ud',
+                  qty_solicitada: qtySolicitada,
                   qty_aprobada: qtyAprobada,
                   qty_consumida: qtyConsumida,
                   qty_devuelta: qtyDevuelta,
