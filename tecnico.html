@@ -1985,13 +1985,20 @@
               const ok = Math.abs((used + returned + scrap) - approved) < 0.0001;
 
               tr.classList.remove('row-ok','row-warn');
-                if (ok) {
-                  tr.classList.add('row-ok');
-                  tr.querySelector('td:last-child').innerHTML = '<span class="chip chip-small chip-approved">OK</span>';
-                } else {
-                  tr.classList.add('row-warn');
-                  tr.querySelector('td:last-child').innerHTML = '<span class="chip chip-small chip-warning">Revisa</span>';
+               const statusCell = tr.querySelector('td:last-child');
+
+              if (ok) {
+                tr.classList.add('row-ok');
+                if (statusCell) {
+                  statusCell.innerHTML = '<span class="chip chip-small chip-approved">OK</span>';
                 }
+              } else {
+                allOk = false;
+                tr.classList.add('row-warn');
+                if (statusCell) {
+                  statusCell.innerHTML = '<span class="chip chip-small chip-warning">Revisa</span>';
+                }
+              }
             });
           }
 
