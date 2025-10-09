@@ -2781,6 +2781,66 @@
           rows.sort((a,b)=> a.when - b.when);
           return rows;
         }
+
+                // Detecta solicitudes pendientes dirigidas explícitamente al técnico indicado
+        function getPendingRequestsForTechnician(logText = "", technicianEmail = "") {
+          const normalized = ensureLogString(logText);
+          const email = String(technicianEmail || "").trim().toLowerCase();
+          if (normalized === "{{emptystring}}" || !email) return [];
+
+          const rows = parseSolicitudesLog(normalized);
+          if (!rows.length) return [];
+
+          const grouped = groupByRequest(rows);
+          const matchesEmail = value => {
+            if (value === undefined || value === null) return false;
+            const text = String(value).trim();
+            if (!text) return false;
+            const lower = text.toLowerCase();
+            if (lower === email) return true;
+            if (lower.includes(email)) return true;
+            return false;
+          };
+
+          const out = [];
+          for (const key of Object.keys(grouped)) {
+            const req = grouped[key];
+            if (!req || (req.last?.phase || "").toUpperCase() !== "REQUEST") continue;
+            const meta = req.last?.meta || {};
+            const fieldsToCheck = [
+              meta.to,
+              meta.dest,
+              meta.destino,
+              meta.target,
+              meta.email,
+              meta.mail,
+              meta.correo,
+              meta.technician,
+              meta.tecnico,
+              meta.tech,
+              meta.assignee,
+              meta.assign,
+              meta.assign_to,
+              meta.asignado_a,
+              meta.asignar_a,
+              meta.user,
+              meta.owner,
+              meta.receiver,
+              meta.receptor
+            ];
+
+            let directed = fieldsToCheck.some(matchesEmail);
+            if (!directed) {
+              const raw = String(req.last?.metaRaw || "").trim().toLowerCase();
+              if (raw && raw.includes(email)) directed = true;
+            }
+
+            if (directed) out.push(req);
+          }
+
+          return out;
+        }
+
         
        // ¿Quién es el titular vigente de un nivel?
        function getCurrentOwnerByLevel(respRows, level){
