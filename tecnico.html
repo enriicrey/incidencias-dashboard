@@ -998,8 +998,35 @@
           padding: 10px 14px;
         }
         .sla-sticky .badge {
-          font-weight: 700; font-size: 12px; padding:6px 10px; border-radius:999px;
-          background:#fff; border:1px solid var(--gray-300);
+          font-weight: 700;
+          font-size: 12px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #fff;
+          color: var(--gray-700);
+          border: 1px solid var(--gray-300);
+        }
+        .sla-sticky .badge.sla-good {
+          background: #16a34a;
+          color: #fff;
+          border-color: transparent;
+        }
+        .sla-sticky .badge.sla-warning {
+          background: #d97706;
+          color: #fff;
+          border-color: transparent;
+        }
+        .sla-sticky .badge.sla-critical {
+          background: #dc2626;
+          color: #fff;
+          border-color: transparent;
+        }
+        .sla-sticky .badge.active {
+          animation: blink 1.2s ease-in-out infinite;
+    
         }
         .sla-sticky .cta {
           padding:8px 12px; border-radius:8px; border:0; cursor:pointer;
