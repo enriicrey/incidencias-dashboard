@@ -492,7 +492,7 @@
             flex-wrap: wrap;
             align-items: center;
         }
-                .receiver-actions-wrapper {
+        .receiver-actions-wrapper {
             flex-basis: 100%;
             width: 100%;
             order: 10;
@@ -504,6 +504,26 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+        }
+
+        .receiver-actions-wrapper.blink {
+            animation: blink 1.2s ease-in-out infinite;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+            border-color: rgba(220, 38, 38, 0.35);
+        }
+
+        .receiver-actions-wrapper.expired {
+            background: #fef2f2;
+            border-color: rgba(220, 38, 38, 0.45);
+        }
+
+        .receiver-actions-wrapper.expired .countdown {
+            color: #b91c1c;
+        }
+
+        .receiver-actions-wrapper .countdown {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
         }
 
         .receiver-actions-title {
@@ -1831,16 +1851,19 @@
 
         function updateStatistics() {
             const technicianEmail = currentTechnician?.email || '';
-            const relevantIncidents = allIncidents.filter(incident => {
+            const annotated = allIncidents
+              .map(incident => {
                 const state = getIncidentRealState(incident, technicianEmail);
-                return ['pending', 'working', 'seguimiento'].includes(state);
-            });
+                const directed = hasDirectedPendingRequests(incident);
+                return { incident, state, directed };
+              })
+              .filter(item => ['pending', 'working', 'seguimiento'].includes(item.state));
 
             const stats = {
-                total: relevantIncidents.length,
-                pending: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'pending').length,
-                working: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'working').length,
-                seguimiento: relevantIncidents.filter(i => getIncidentRealState(i, technicianEmail) === 'seguimiento').length
+                total: annotated.length,
+                pending: annotated.filter(item => item.state === 'pending' || item.directed).length,
+                working: annotated.filter(item => item.state === 'working').length,
+                seguimiento: annotated.filter(item => item.state === 'seguimiento' && !item.directed).length
             };
 
             document.getElementById('totalCount').textContent = stats.total;
@@ -1852,7 +1875,8 @@
           // sólo incidencias en 'pending' para este técnico
           const list = (incidents || []).map(inc => {
             const st = getIncidentRealState(inc, email);
-            if (st !== 'pending') return null;
+            const directed = hasDirectedPendingRequests(inc);
+            if (st !== 'pending' && !directed) return null;
             const end = getSlaEndForLevel(inc, getCurrentLevel(inc));
             if (!end) return null;
             const t = Date.parse(end);
@@ -1931,7 +1955,14 @@
             ? 'receiver_accept_request'
             : 'receiver_reject_request';
 
-          await handleAction(action, incidentId, extra);
+          const ok = await handleAction(action, incidentId, extra, { skipReload: true });
+          if (ok) {
+            if (typeof loadDashboard === 'function') {
+              loadDashboard();
+            } else if (typeof location !== 'undefined' && typeof location.reload === 'function') {
+              location.reload();
+            }
+          }
         }
 
                 function abrirAyuda(id){ showAyudaModal(id); }
@@ -2220,11 +2251,13 @@
         // ========================================
         //  ACCIONES PRINCIPALES CON PIN
         // ========================================
-        async function handleAction(action, incidentId, extraData = {}) {
+        async function handleAction(action, incidentId, extraData = {}, options = {}) {
             if (!currentTechnician?.authenticated) {
                 showNotification('Debes estar autenticado para realizar acciones', 'error');
                 return;
             }
+
+            const { skipReload = false } = options || {};
 
             // Si no hay PIN guardado, solicitarlo
             if (!currentTechnician.pin) {
@@ -2251,7 +2284,13 @@
                 
                 if (data.status === 'success') {
                     showNotification(`✅ ${getActionMessage(action)}`, 'success');
-                    loadDashboard(); // Recargar datos
+                if (!skipReload) {
+                        if (typeof loadDashboard === 'function') {
+                            loadDashboard();
+                        } else if (typeof location !== 'undefined' && typeof location.reload === 'function') {
+                            location.reload();
+                        }
+                    }
                     return true;
                 } else {
                     let msg = data.message || 'Acción no completada';
@@ -3087,6 +3126,15 @@
 
           return out;
         }
+
+        function hasDirectedPendingRequests(incident) {
+          if (!incident || !currentTechnician?.email) return false;
+          const log = incident["Solicitudes (log)"] ?? incident.solicitudes_log ?? "";
+          const who = currentTechnician.email || "";
+          if (!who) return false;
+          const arr = getPendingRequestsForTechnician(log, who);
+          return Array.isArray(arr) && arr.length > 0;
+        }
         
        // ¿Quién es el titular vigente de un nivel?
        function getCurrentOwnerByLevel(respRows, level){
@@ -3436,6 +3484,9 @@
           const pending = getPendingRequestsForTechnician(log, currentTechnician.email);
           if (!pending.length) return "";
 
+          const _lvl = getCurrentLevel(incident);
+          const _deadline = getSlaEndForLevel(incident, _lvl) || "";
+
           const sorted = [...pending].sort((a, b) => {
             const aw = a?.last?.when ? Date.parse(a.last.when) : 0;
             const bw = b?.last?.when ? Date.parse(b.last.when) : 0;
@@ -3450,6 +3501,7 @@
           return `
             <div class="receiver-actions-wrapper">
               <div class="receiver-actions-title">${title}</div>
+              ${_deadline ? `<div class="receiver-action-meta">Responder en <span class="countdown" data-deadline="${safe(_deadline)}"></span></div>` : ``}
               ${items}
             </div>
           `;
@@ -3492,6 +3544,39 @@
               </div>
             </div>
           `;
+        }
+
+        function initDirectedCountdowns(){
+          document.querySelectorAll('.receiver-actions-wrapper .countdown').forEach(span => {
+            if (!span || span.dataset.countdownInit === '1') return;
+            const dd = span.dataset.deadline;
+            if (!dd) return;
+            const target = Date.parse(dd);
+            if (Number.isNaN(target)) {
+              span.textContent = '--:--';
+              return;
+            }
+            span.dataset.countdownInit = '1';
+            const box = span.closest('.receiver-actions-wrapper');
+            if (!box) return;
+            box.classList.remove('expired');
+            box.classList.remove('blink');
+            const tick = () => {
+              const ms = target - Date.now();
+              if (ms <= 0) {
+                span.textContent = '00:00';
+                box.classList.remove('blink');
+                box.classList.add('expired');
+                return;
+              }
+              const m = Math.floor(ms / 60000);
+              const s = Math.floor((ms % 60000) / 1000);
+              span.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+              box.classList.toggle('blink', ms <= 5 * 60 * 1000);
+              requestAnimationFrame(tick);
+            };
+            tick();
+          });
         }
 
         function describeReceiverRequest(req) {
@@ -4547,6 +4632,7 @@
     
       incidentsContainer.appendChild(frag);
       renderSlaStickyBar();
+      initDirectedCountdowns();
 
       try {
       if (directIncidentId && !directScrollDone) {
@@ -4574,7 +4660,11 @@
       const tech = currentTechnician?.email || '';
       const list = allIncidents.filter(inc => {
         const st = getIncidentRealState(inc, tech);
+        const directed = hasDirectedPendingRequests(inc);
         if (currentStatusFilter === 'all') return true;
+        if (currentStatusFilter === 'pending') {
+          return st === 'pending' || directed;
+        }
         return st === currentStatusFilter;
       });
       renderIncidents(list);
