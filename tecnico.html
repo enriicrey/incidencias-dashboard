@@ -1871,11 +1871,13 @@
           if (!next) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
         
           const ms = next.t - Date.now();
-          const cls = ms <= 0 ? 'sla-critical' : (ms <= 120*60000 ? 'sla-warning' : 'sla-good');
+          const severity = ms <= 30*60000 ? 'sla-critical' : (ms <= 120*60000 ? 'sla-warning' : 'sla-good');
+          const blink = ms <= 2*60000 ? 'active' : '';
+          const countdownClasses = ['badge', severity, blink].filter(Boolean).join(' ');
           const left = formatRemain(ms);
           bar.classList.remove('hidden');
           bar.innerHTML = `
-            <span class="badge ${cls}">⏱️ Próxima respuesta: ${left}</span>
+            <span class="${countdownClasses}">⏱️ Próxima respuesta: ${left}</span>
             <span class="badge">Inc: ${safe(next.inc.id)}</span>
             <button class="cta" onclick="scrollToIncident('${safe(next.inc.id)}')">Ir a la tarjeta</button>
           `;
@@ -2641,8 +2643,10 @@
               const ms = Date.parse(end) - Date.now();
               if (ms <= 0) return ""; // nada si ya venció
             
-              const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
-              return `<span class="sla-timer ${cls}">⏱️ ${formatRemain(ms)}</span>`;
+              const severity = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
+              const blink = ms <= 2*60000 ? "active" : "";
+              const classes = ["sla-timer", severity, blink].filter(Boolean).join(" ");
+              return `<span class="${classes}">⏱️ ${formatRemain(ms)}</span>`;
             }
 
         
@@ -3184,7 +3188,8 @@
               role,
               text: (msg||"").trim(),
               displayName: formatNameFromEmail(emailTrim),
-              ...meta
+              icon: meta.icon || '',
+              class: meta.class || ''
             });
           }
           out.sort((a,b)=> a.when - b.when);
@@ -4575,7 +4580,7 @@
       renderIncidents(list);
       renderSlaStickyBar();
       clearInterval(window.__slaTick);
-      window.__slaTick = setInterval(renderSlaStickyBar, 30000);
+      window.__slaTick = setInterval(renderSlaStickyBar, 10000);
       renderSlaStickyBar();
     }
     
