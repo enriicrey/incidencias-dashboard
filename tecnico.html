@@ -492,6 +492,84 @@
             flex-wrap: wrap;
             align-items: center;
         }
+                .receiver-actions-wrapper {
+            flex-basis: 100%;
+            width: 100%;
+            order: 10;
+            margin-top: 8px;
+            background: #f8fafc;
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .receiver-actions-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .receiver-action-item {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .receiver-action-main {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            flex: 1 1 220px;
+        }
+
+        .receiver-action-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .receiver-action-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .receiver-action-label {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 14px;
+        }
+
+        .receiver-action-detail {
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        .receiver-action-meta {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .receiver-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .receiver-action-buttons .btn {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
 
         .btn {
             padding: 8px 12px;
@@ -1783,6 +1861,50 @@
           if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
         }
 
+        async function receiverDecision(incidentId, encodedRequest, decision) {
+          if (!incidentId || !encodedRequest || !decision) return;
+          let payload = null;
+          try {
+            payload = JSON.parse(decodeURIComponent(atob(encodedRequest)));
+          } catch (error) {
+            console.error('receiverDecision decode error', error);
+            showToast('No se pudo interpretar la solicitud. Inténtalo nuevamente.');
+            return;
+          }
+          if (!payload || typeof payload !== 'object') {
+            showToast('Solicitud inválida.');
+            return;
+          }
+
+          const extra = {
+            receiver_decision: decision,
+            request_category: payload.cat || '',
+            request_id: payload.id || '',
+            request_req: payload.req || '',
+            request_level: payload.level,
+            request_when: payload.when || '',
+            request_meta: payload.meta || {},
+            request_meta_raw: payload.metaRaw || '',
+            request_summary: payload.summary || ''
+          };
+
+          if (decision === 'reject') {
+            const reason = prompt('Describe el motivo del rechazo:');
+            if (reason === null) return;
+            if (!reason.trim()) {
+              showToast('Debes indicar un motivo para rechazar la solicitud.');
+              return;
+            }
+            extra.reason = reason.trim();
+          }
+
+          const action = decision === 'accept'
+            ? 'receiver_accept_request'
+            : 'receiver_reject_request';
+
+          await handleAction(action, incidentId, extra);
+        }
+
                 function abrirAyuda(id){ showAyudaModal(id); }
                 function abrirMateriales(id){ showMaterialesModal(id); }
                 function abrirResolver(id){ showResolverModal(id); }
@@ -2329,7 +2451,9 @@
                 'solicitar_traspaso': 'Solicitud de traspaso enviada al supervisor',
                 'solicitar_apoyo': 'Solicitud de apoyo enviada al supervisor',
                 'solicitar_asignacion': 'Solicitud de asignación enviada',
-                'notes': 'Notas agregadas a la incidencia'
+                'notes': 'Notas agregadas a la incidencia',
+                'receiver_accept_request': 'Respuesta enviada: has aceptado la solicitud',
+                'receiver_reject_request': 'Respuesta enviada: has rechazado la solicitud'
             };
             return messages[action] || `Acción ${action} procesada correctamente`;
         }
@@ -2784,55 +2908,147 @@
 
                 // Detecta solicitudes pendientes dirigidas explícitamente al técnico indicado
         function getPendingRequestsForTechnician(logText = "", technicianEmail = "") {
-          const normalized = ensureLogString(logText);
-          const email = String(technicianEmail || "").trim().toLowerCase();
-          if (normalized === "{{emptystring}}" || !email) return [];
+          const normalizedLog = ensureLogString(logText);
+          if (normalizedLog === "{{emptystring}}") return [];
 
-          const rows = parseSolicitudesLog(normalized);
+          const collectTokens = (value) => {
+            if (value === undefined || value === null) return [];
+            if (Array.isArray(value)) {
+              return value.flatMap(collectTokens).filter(Boolean);
+            }
+            if (typeof value === "object") {
+              return Object.values(value).flatMap(collectTokens).filter(Boolean);
+            }
+            const raw = String(value).trim();
+            if (!raw || raw === "{{emptystring}}") return [];
+
+            const tokens = new Set();
+            tokens.add(raw.toLowerCase());
+
+            const parts = raw.split(/[;,]/);
+            if (parts.length > 1) {
+              for (const part of parts) {
+                const cleaned = part.trim().toLowerCase();
+                if (cleaned) tokens.add(cleaned);
+              }
+            }
+
+            const emailMatches = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi);
+            if (emailMatches) {
+              for (const mail of emailMatches) {
+                tokens.add(mail.trim().toLowerCase());
+              }
+            }
+
+            return Array.from(tokens).filter(Boolean);
+          };
+
+          const targetTokens = new Set(collectTokens(technicianEmail));
+          if (!targetTokens.size) return [];
+
+          const rows = parseSolicitudesLog(normalizedLog);
           if (!rows.length) return [];
 
           const grouped = groupByRequest(rows);
-          const matchesEmail = value => {
-            if (value === undefined || value === null) return false;
-            const text = String(value).trim();
-            if (!text) return false;
-            const lower = text.toLowerCase();
-            if (lower === email) return true;
-            if (lower.includes(email)) return true;
+          const out = [];
+          const candidateFields = [
+            "to",
+            "dest",
+            "destino",
+            "target",
+            "email",
+            "mail",
+            "correo",
+            "technician",
+            "tecnico",
+            "tech",
+            "agent",
+            "agente",
+            "assignee",
+            "assign",
+            "assign_to",
+            "assignTo",
+            "assigned_to",
+            "assignedTo",
+            "assignado_a",
+            "asignado_a",
+            "asignar_a",
+            "requested_to",
+            "requestedTo",
+            "solicitado_a",
+            "solicitadoA",
+            "notificado_a",
+            "notificadoA",
+            "notify",
+            "notif_to",
+            "notifTo",
+            "to_email",
+            "toEmail",
+            "target_email",
+            "targetEmail",
+            "dest_email",
+            "destEmail",
+            "destino_email",
+            "destinoEmail",
+            "mail_to",
+            "mailTo",
+            "user",
+            "owner",
+            "receiver",
+            "receptor",
+            "contact",
+            "contacto",
+            "contact_email",
+            "contactEmail",
+            "responsable",
+            "responsable_email",
+            "responsableEmail",
+            "emails",
+            "cc",
+            "bcc",
+            "copy",
+            "copias"
+          ];
+
+          const intersectsTargets = (values) => {
+            for (const token of collectTokens(values)) {
+              if (targetTokens.has(token)) return true;
+            }
             return false;
           };
 
-          const out = [];
-          for (const key of Object.keys(grouped)) {
-            const req = grouped[key];
+          for (const req of Object.values(grouped)) {
             if (!req || (req.last?.phase || "").toUpperCase() !== "REQUEST") continue;
             const meta = req.last?.meta || {};
-            const fieldsToCheck = [
-              meta.to,
-              meta.dest,
-              meta.destino,
-              meta.target,
-              meta.email,
-              meta.mail,
-              meta.correo,
-              meta.technician,
-              meta.tecnico,
-              meta.tech,
-              meta.assignee,
-              meta.assign,
-              meta.assign_to,
-              meta.asignado_a,
-              meta.asignar_a,
-              meta.user,
-              meta.owner,
-              meta.receiver,
-              meta.receptor
-            ];
 
-            let directed = fieldsToCheck.some(matchesEmail);
-            if (!directed) {
-              const raw = String(req.last?.metaRaw || "").trim().toLowerCase();
-              if (raw && raw.includes(email)) directed = true;
+            let directed = false;
+            for (const field of candidateFields) {
+              if (field in meta && intersectsTargets(meta[field])) {
+                directed = true;
+                break;
+              }
+            }
+
+            if (!directed && intersectsTargets(meta)) {
+              directed = true;
+            }
+
+            if (!directed && intersectsTargets(req.last?.metaRaw || "")) {
+              directed = true;
+            }
+
+            if (!directed && Array.isArray(req.phases)) {
+              for (const phase of [...req.phases].reverse()) {
+                if ((phase.phase || "").toUpperCase() !== "REQUEST") continue;
+                if (intersectsTargets(phase.meta || {})) {
+                  directed = true;
+                  break;
+                }
+                if (intersectsTargets(phase.metaRaw || "")) {
+                  directed = true;
+                  break;
+                }
+              }
             }
 
             if (directed) out.push(req);
@@ -2840,7 +3056,6 @@
 
           return out;
         }
-
         
        // ¿Quién es el titular vigente de un nivel?
        function getCurrentOwnerByLevel(respRows, level){
@@ -3148,6 +3363,7 @@
             : `title="Resolver incidencia" aria-label="Resolver incidencia"`;
 
           const incidentData = b64EncodeUnicode(JSON.stringify(incident));
+          const receiverBlock = renderReceiverActionBlock(incident);
             
           const wrapStart = `<div class="action-buttons">`;
           const wrapEnd = `</div>`;
@@ -3158,6 +3374,7 @@
               <button class="btn btn-primary" title="Aceptar incidencia" aria-label="Aceptar incidencia" onclick="aceptarIncidencia('${incident.id}')">✅ Aceptar</button>
               <button class="btn btn-secondary" title="Rechazar incidencia" aria-label="Rechazar incidencia" onclick="rechazarIncidencia('${incident.id}')">❌ Rechazar</button>
               <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="openResourcesModal(JSON.parse(decodeURIComponent(atob('${incidentData}'))))">📚 Recursos</button>
+             ${receiverBlock}
             ${wrapEnd}`;
         }
           if (state === "working") {
@@ -3169,6 +3386,7 @@
                 onclick="!this.disabled && abrirResolver('${incident.id}')">✅ Resolver</button>
                 ${shouldShowSolicitarTraspaso() ? `<button class="btn btn-secondary" title="Solicitar traspaso temporalmente" aria-label="Solicitar traspaso temporalmente" onclick="solicitarTraspaso('${incident.id}')">🕐 Solicitar traspaso</button>` : ''}
                 <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="openResourcesModal(JSON.parse(decodeURIComponent(atob('${incidentData}'))))">📚 Recursos</button>
+                ${receiverBlock}
               ${wrapEnd}`;
           }
           // seguimiento
@@ -3176,7 +3394,144 @@
             ${wrapStart}
               <button class="btn btn-primary" title="Solicitar asignación" aria-label="Solicitar asignación" onclick="solicitarAsignacion('${incident.id}')">📌 Solicitar asignación</button>
               <button class="btn btn-resource" title="Consultar recursos de referencia" aria-label="Consultar recursos de referencia" onclick="openResourcesModal(JSON.parse(decodeURIComponent(atob('${incidentData}'))))">📚 Recursos</button>
+              ${receiverBlock}
             ${wrapEnd}`;
+        }
+
+        function renderReceiverActionBlock(incident) {
+          if (!incident || !currentTechnician?.email) return "";
+          const log = incident["Solicitudes (log)"] ?? incident.solicitudes_log;
+          const pending = getPendingRequestsForTechnician(log, currentTechnician.email);
+          if (!pending.length) return "";
+
+          const sorted = [...pending].sort((a, b) => {
+            const aw = a?.last?.when ? Date.parse(a.last.when) : 0;
+            const bw = b?.last?.when ? Date.parse(b.last.when) : 0;
+            return aw - bw;
+          });
+
+          const items = sorted.map(req => renderReceiverActionItem(req, incident)).join("");
+          const title = pending.length === 1
+            ? "📥 Tienes 1 solicitud pendiente de tu respuesta"
+            : `📥 Tienes ${pending.length} solicitudes pendientes de tu respuesta`;
+
+          return `
+            <div class="receiver-actions-wrapper">
+              <div class="receiver-actions-title">${title}</div>
+              ${items}
+            </div>
+          `;
+        }
+
+        function renderReceiverActionItem(req, incident) {
+          if (!req || !incident) return "";
+          const info = REQUEST_CAT_INFO[req.cat] || { icon: "📥", label: req.cat };
+          const summary = describeReceiverRequest(req);
+          const when = req?.last?.when ? formatTimeOrDate(req.last.when) : "";
+          const levelLabel = Number.isFinite(req?.level) ? `L${req.level}` : "";
+
+          const payload = b64EncodeUnicode(JSON.stringify({
+            cat: req.cat,
+            id: req.id,
+            req: req.req,
+            level: req.level,
+            when: req?.last?.when || null,
+            meta: req?.last?.meta || {},
+            metaRaw: req?.last?.metaRaw || "",
+            summary: summary.plain
+          }));
+
+          const incidentIdJSON = JSON.stringify(incident.id ?? "");
+          const payloadJSON = JSON.stringify(payload);
+
+          return `
+            <div class="receiver-action-item">
+              <div class="receiver-action-main">
+                <div class="receiver-action-icon">${safe(info.icon || "📥")}</div>
+                <div class="receiver-action-text">
+                  <div class="receiver-action-label">${safe(info.label || req.cat)}${levelLabel ? ` · ${safe(levelLabel)}` : ""}</div>
+                  <div class="receiver-action-detail">${summary.html}</div>
+                  ${when ? `<div class="receiver-action-meta">Solicitada ${safe(when)}</div>` : ""}
+                </div>
+              </div>
+              <div class="receiver-action-buttons">
+                <button class="btn btn-primary" type="button" onclick="receiverDecision(${incidentIdJSON}, ${payloadJSON}, 'accept')">✅ Aceptar</button>
+                <button class="btn btn-secondary" type="button" onclick="receiverDecision(${incidentIdJSON}, ${payloadJSON}, 'reject')">❌ Rechazar</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function describeReceiverRequest(req) {
+          const meta = req?.last?.meta || {};
+          const pick = (...keys) => {
+            for (const key of keys) {
+              if (!(key in meta)) continue;
+              const value = meta[key];
+              if (value === undefined || value === null) continue;
+              const str = String(value).trim();
+              if (!str || str === "{{emptystring}}") continue;
+              return str;
+            }
+            return "";
+          };
+
+          const htmlParts = [];
+          const plainParts = [];
+          const pushPart = (value, opts = {}) => {
+            if (!value) return;
+            const cleaned = cleanLevelTags(String(value));
+            if (!cleaned) return;
+            const htmlValue = safe(cleaned);
+            if (opts.prefix) {
+              htmlParts.push(`${opts.prefix}${htmlValue}`);
+              const plainPrefix = opts.prefixPlain || opts.prefix;
+              plainParts.push(`${plainPrefix} ${cleaned}`.trim());
+            } else {
+              htmlParts.push(htmlValue);
+              plainParts.push(cleaned);
+            }
+          };
+
+          const cat = (req?.cat || "").toUpperCase();
+          if (cat === "MATERIAL") {
+            const name = pick("name", "material", "item", "code", "material_name", "label");
+            const qty = pick("qty", "quantity", "qty_requested");
+            const unit = pick("unit", "units", "unidad");
+            let base = name;
+            if (qty) {
+              const quantity = unit ? `×${qty} ${unit}` : `×${qty}`;
+              base = [base, quantity].filter(Boolean).join(" · ");
+            }
+            pushPart(base || pick("req"));
+            pushPart(pick("reason", "detail", "detalle", "justification", "notes", "comment"));
+          } else if (cat === "APOYO") {
+            pushPart(pick("detail", "detalle", "reason", "comment", "notes", "justification"));
+          } else if (["TRASPASO", "DERIVACION", "REASIGNACION"].includes(cat)) {
+            pushPart(pick("to", "dest", "destino", "target", "name"));
+            const shift = pick("shift", "turno");
+            if (shift) pushPart(`Turno ${shift}`);
+            pushPart(pick("reason", "detail", "detalle", "justification", "comment", "notes"));
+            const origin = pick("from", "by", "requester", "requested_by", "solicitado_por", "origin");
+            if (origin) pushPart(origin, { prefix: "👤 ", prefixPlain: "Solicitado por" });
+          } else {
+            pushPart(pick("detail", "detalle", "reason", "comment", "notes", "description", "info", "information"));
+          }
+
+          const requester = pick("from", "by", "requester", "requested_by", "solicitado_por", "owner", "contact");
+          if (requester && !plainParts.some(part => part.includes(requester))) {
+            pushPart(requester, { prefix: "👤 ", prefixPlain: "Solicitado por" });
+          }
+
+          if (!htmlParts.length) {
+            const fallback = "Revisa y responde la solicitud.";
+            return { html: safe(fallback), plain: fallback };
+          }
+
+          return {
+            html: htmlParts.join(" · "),
+            plain: plainParts.join(" · ")
+          };
         }
         // ========================================
         //  INICIALIZACIÓN Y ACCESO DIRECTO URL
@@ -4220,6 +4575,7 @@
     window.abrirResolver = abrirResolver;
     window.solicitarAsignacion = solicitarAsignacion;
     window.solicitarTraspaso = solicitarTraspaso;
+    window.receiverDecision = receiverDecision;
     window.confirmResolver = confirmResolver;
     window.confirmAction = confirmAction;
     window.selectReason = selectReason;
