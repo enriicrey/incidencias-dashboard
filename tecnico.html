@@ -2059,8 +2059,12 @@
             let qtyApr = 0;
             for (const ap of approvedPhases) {
               const m = ap.meta || {};
-              // *** OBLIGATORIO mandar qty en APPROVED; si no, asumimos 0 ***
-              qtyApr += Number(m.qty || m.qty_approved || m.approved || 0) || 0;
+              let rawQty = m.qty;
+              if (rawQty === undefined || rawQty === null || rawQty === "") rawQty = m.qty_approved;
+              if (rawQty === undefined || rawQty === null || rawQty === "") rawQty = m.approved;
+              if (rawQty === undefined || rawQty === null || rawQty === "") rawQty = mR.qty;
+              if (rawQty === undefined || rawQty === null || rawQty === "") rawQty = reqPhase?.meta?.qty;
+              qtyApr += Number(rawQty) || 0;
             }
             const key = [code||name, unit].join('||');
             if (!byKey[key]) byKey[key] = { code, name, unit, qty_solicitada: 0, qty_aprobada: 0 };
@@ -2866,6 +2870,9 @@
             const base = (info.icon ? `${info.icon} ` : "") + (info.label || req.cat || "");
             let displayText = base;
             if (detail) displayText += ` · ${detail}`;
+            const requesterRaw = (req.last?.meta?.by || req.last?.meta?.from || req.last?.meta?.requested_by || "");
+            const requester = requesterRaw ? nameFromEmail(String(requesterRaw)) : "";
+            if (requester) displayText += ` · 👤 ${requester}`;
             displayText = cleanLevelTags(displayText);
             
             const chip = document.createElement("button");
