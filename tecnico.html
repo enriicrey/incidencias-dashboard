@@ -2038,7 +2038,7 @@
 
         // Lee "Solicitudes (log)" y agrupa por MATERIAL, sacando cantidad solicitada/aprobada
         function deriveApprovedItemsFromLog(inc = {}) {
-          const text = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log || inc.solicitudes || "");
+          const text = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log || "");
           const rows = parseSolicitudesLog(text);
           if (!rows.length) return [];
         
@@ -2048,25 +2048,35 @@
         
           const byKey = {};
           for (const g of mats) {
-            const reqPhase = g.phases.find(p => (p.phase || '').toUpperCase() === 'REQUEST') || g.phases[0] || {};
-            const metaR = reqPhase.meta || {};
-            const code  = (metaR.code || metaR.material || metaR.item || g.id || '').toString().trim();
-            const name  = (metaR.name || metaR.material_name || metaR.label || code || 'Material').toString().trim();
-            const unit  = normalizeUnit(metaR.unit || metaR.units || metaR.unidad || 'ud');
-            const qtyReq = Number(metaR.qty || metaR.quantity || 0) || 0;
-        
-            const approvedPhases = g.phases.filter(p => (p.phase || '').toUpperCase() === 'APPROVED');
+            const reqPhase = g.phases.find(p => p.phase === 'REQUEST') || g.phases[0] || {};
+            const mR = reqPhase.meta || {};
+            const code = String(mR.code || g.id || '').trim();
+            const name = String(mR.name || 'Material').trim();
+            const unit = normalizeUnit(mR.unit || 'ud');
+            const qtyReq = Number(mR.qty || 0) || 0;
+
+            const approvedPhases = g.phases.filter(p => p.phase === 'APPROVED');
             let qtyApr = 0;
             for (const ap of approvedPhases) {
               const m = ap.meta || {};
-              qtyApr += Number(m.approved || m.qty_approved || m.qty || 0) || 0;
+              // *** OBLIGATORIO mandar qty en APPROVED; si no, asumimos 0 ***
+              qtyApr += Number(m.qty || m.qty_approved || m.approved || 0) || 0;
             }
-            const key = [code || name, unit].join('||');
+            const key = [code||name, unit].join('||');
             if (!byKey[key]) byKey[key] = { code, name, unit, qty_solicitada: 0, qty_aprobada: 0 };
             byKey[key].qty_solicitada += qtyReq;
             byKey[key].qty_aprobada  += qtyApr;
           }
           return Object.values(byKey).filter(it => Number(it.qty_aprobada) > 0);
+        }
+
+        function nameFromEmail(email=""){
+          const raw = String(email).split("@")[0].replace(/\d+/g,"");
+          if (!raw) return "";
+          return raw.split(/[._-]+/).filter(Boolean).map(s => s[0].toUpperCase()+s.slice(1)).join(" ");
+        }
+        function metaName(meta, who){
+          return (meta?.[`${who}_name`] || meta?.[who] && nameFromEmail(meta[who]) || "").trim();
         }
 
         function showMaterialesModal(incidentId) {
@@ -3295,38 +3305,27 @@
         // ===========================
         // VALIDACIONES PENDIENTES
         // ===========================
-       // ===== Validaciones Pendientes (array con etiquetas + emoji) =====
-        const VP = {
-          MATERIALES: "📦 Materiales",
-          DERIVACION: "🏢 Derivación de departamento",
-          APOYO: "👥 Apoyo segundo técnico",
-        };
+       // ===== Validaciones derivadas solo desde "Solicitudes (log)" =====
+        const VP = { MATERIALES: "📦 Materiales", DERIVACION: "🏢 Derivación de departamento", APOYO: "👥 Apoyo segundo técnico" };
         
         function getPendingValidations(incident) {
-          const arr = incident["Validaciones Pendientes"] ?? incident.validaciones_pendientes ?? [];
-          let list = Array.isArray(arr) ? arr.map(x => String(x).trim()) : [];
-          if (list.includes(VP.MATERIALES)) {
-            const log = ensureLogString(incident["Solicitudes (log)"] ?? incident.solicitudes_log);
-            if (log !== "{{emptystring}}") {
-              const rows = parseSolicitudesLog(log);
-              const grouped = groupByRequest(rows);
-              const hasPending = Object.values(grouped).some(g => g.cat === "MATERIAL" && g.last?.phase === "REQUEST");
-              if (!hasPending) {
-                list = list.filter(x => x !== VP.MATERIALES);
-              }
-            } else {
-              list = list.filter(x => x !== VP.MATERIALES);
-            }
-          }
-          return list;
+          const log = ensureLogString(incident["Solicitudes (log)"] ?? incident.solicitudes_log ?? "");
+          if (!log || log === "{{emptystring}}") return [];
+          const rows = parseSolicitudesLog(log);
+          const grouped = groupByRequest(rows);
+
+          const hasMatPending = Object.values(grouped).some(g => g.cat === "MATERIAL" && g.last?.phase === "REQUEST");
+          const hasApoyoPending = Object.values(grouped).some(g => g.cat === "APOYO" && g.last?.phase === "REQUEST");
+          const hasDerivPending = Object.values(grouped).some(g => g.cat === "DERIVACION" && g.last?.phase === "REQUEST");
+
+          const out = [];
+          if (hasMatPending) out.push(VP.MATERIALES);
+          if (hasApoyoPending) out.push(VP.APOYO);
+          if (hasDerivPending) out.push(VP.DERIVACION);
+          return out;
         }
-        function hasValidation(incident, label) {
-          return getPendingValidations(incident).includes(label);
-        }
-        function canResolve(incident) {
-          // Solo bloquea por Materiales
-          return !hasValidation(incident, VP.MATERIALES);
-        }
+        function hasValidation(incident, label){ return getPendingValidations(incident).includes(label); }
+        function canResolve(incident){ return !hasValidation(incident, VP.MATERIALES); }
         
         // ===== SLA (solo en pending, si no vencido) =====
         function getCurrentLevel(incident) {
@@ -4501,7 +4500,7 @@
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
                 const time = formatTimeOrDate(r.when);
-                const who = safe(r.email);
+                const who = safe(r.name || nameFromEmail(r.email) || r.email);
                 // Eventos de transferencia y derivación
                 if (r.ev === 'TRANSFER' || r.ev === 'DERIVATION') {
                     const title = r.ev === 'TRANSFER' ? 'Transferencia' : 'Derivación';
@@ -4585,6 +4584,11 @@
       }
       detail = cleanLevelTags(detail);
 
+      const metaForName = g.last?.meta || meta;
+      const whoRaw = metaName(metaForName, 'req_by') || metaName(metaForName, 'by') || metaName(metaForName, 'to');
+      const whoSafe = safe(whoRaw);
+      const whoTag = whoSafe ? ` · <span class="muted">${whoSafe}</span>` : "";
+
       // clase por fase final
       const phase = (g.last?.phase || 'REQUEST').toUpperCase();
       const lineCls = phase === 'APPROVED' ? 'phase-approved'
@@ -4593,7 +4597,7 @@
 
       return `<li class="${lineCls}">
         <span class="t-time">${formatTimeOrDate(g.last?.when)}</span>
-        <span class="t-body">${info.icon || ''} <strong>${info.label || g.cat}</strong>${detail ? ' — ' + safe(detail) : ''}</span>
+        <span class="t-body">${info.icon || ''} <strong>${info.label || g.cat}</strong>${detail ? ' — ' + safe(detail) : ''}${whoTag}</span>
       </li>`;
     }).join('');
 
