@@ -1749,7 +1749,35 @@
         // ========================================
         //  GESTIÓN DE ESTADOS Y FILTROS
         // ========================================
+         function computeCycleState(incident, technicianEmail) {
+          const email = String(technicianEmail || "").trim().toLowerCase();
+          if (!incident || !email) return "seguimiento";
+
+          const split = getSplitContext(incident);
+          const currentResponses = Array.isArray(split?.current) ? split.current : [];
+          const currBodies = currentResponses.map(entry => entry?.body || entry?.raw || "");
+          const emailEscaped = escapeRegExp(email);
+          const acceptedRegex = new RegExp(`RESP#L\\d#${emailEscaped}\\|ACCEPTED\\|`, "i");
+          const assignedRegex = new RegExp(`RESP#L\\d#${emailEscaped}\\|ASSIGNED\\|`, "i");
+
+          const acceptedByTech = currBodies.some(line => acceptedRegex.test(line));
+          const assignedToTech = currBodies.some(line => assignedRegex.test(line));
+
+          const requestEntries = split?.requests?.current || [];
+          const requestText = requestEntries.map(entry => entry?.raw || "").filter(Boolean).join("\n");
+          const pendingForTech = getPendingRequestsForTechnician(requestText, email) || [];
+          const hasPendingDirected = pendingForTech.length > 0;
+
+          if (hasPendingDirected) return "pending";
+          if (acceptedByTech) return "working";
+          if (assignedToTech) return "pending";
+          return "seguimiento";
+        }
         function getIncidentRealState(incident, technicianEmail) {
+            const computedState = computeCycleState(incident, technicianEmail);
+          if (computedState !== undefined && computedState !== null) {
+            return computedState;
+          }
           const level = parseInt(incident.escalation_level) || 0;
           const email = (technicianEmail || '').toLowerCase();
 
@@ -2680,16 +2708,17 @@
               if (!end) return "";
             
               // Si está trabajando, enseñamos banner “Trabajando”
-              if (state === "working") {
-                let acept = "";
-                const respText = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
-                if (respText !== "{{emptystring}}") {
-                  const rows = parseRespLog(respText, inc);
-                  const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
-                  if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
-                }
-                return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
-              }
+            if (state === "working") {
+            let acept = "";
+            const split = getSplitContext(inc);
+            const respText = (split?.current || []).map(entry => entry.raw).join("\n");
+            if (respText.trim()) {
+              const rows = parseRespLog(respText, inc);
+              const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+            }
+            return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
+          }
             
               // Solo mostrar temporizador si está PENDING y no ha vencido
               if (state !== "pending") return "";
@@ -2779,6 +2808,95 @@
           else if (typeof val !== 'string') val = JSON.stringify(val ?? '');
           val = String(val || '');
           return val.trim() ? val : '{{emptystring}}';
+        }
+        function toPlainLogString(val) {
+          if (Array.isArray(val)) val = val.join("\n");
+          if (val === undefined || val === null) return "";
+          if (typeof val === "string") {
+            const trimmed = val.trim();
+            return trimmed === "{{emptystring}}" ? "" : val;
+          }
+          try {
+            const str = String(val || "");
+            return str === "{{emptystring}}" ? "" : str;
+          } catch (err) {
+            return "";
+          }
+        }
+
+        function parseLines(raw){
+          const text = toPlainLogString(raw);
+          if (!text) return [];
+          return text
+            .split(/\r?\n/)
+            .map(line => String(line || "").trim())
+            .filter(Boolean)
+            .map(line => {
+              const m = line.match(/^\[(.+?)\]\s+(\S+)/);
+              const tsRaw = m ? Date.parse(m[1]) : NaN;
+              const ts = Number.isFinite(tsRaw) ? tsRaw : 0;
+              const body = line.replace(/^\[[^\]]+\]\s*/, "").trim();
+              return { ts, raw: line, body };
+            })
+            .sort((a, b) => a.ts - b.ts);
+        }
+
+        function splitCycles(respuestasRaw, solicitudesRaw){
+          const resp = parseLines(respuestasRaw);
+          const reqs = parseLines(solicitudesRaw);
+          const cut = reqs
+            .filter(r => /^(TRASPASO|DERIVACION)#.+\|APPROVED/i.test(r.body || ""))
+            .pop();
+          if (!cut) {
+            return {
+              current: resp,
+              previous: [],
+              requests: { current: reqs, previous: [] },
+              cutTimestamp: null
+            };
+          }
+          const cutTs = cut.ts;
+          const currentResp = resp.filter(r => r.ts >= cutTs);
+          const previousResp = resp.filter(r => r.ts < cutTs);
+          const currentReq = reqs.filter(r => r.ts >= cutTs);
+          const previousReq = reqs.filter(r => r.ts < cutTs);
+          return {
+            current: currentResp,
+            previous: previousResp,
+            requests: { current: currentReq, previous: previousReq },
+            cutTimestamp: cutTs
+          };
+        }
+
+        function getSplitContext(incident) {
+          if (!incident) {
+            return {
+              current: [],
+              previous: [],
+              requests: { current: [], previous: [] },
+              cutTimestamp: null
+            };
+          }
+          if (!incident.__splitCyclesCache) {
+            let responsesRaw = toPlainLogString(incident.respuestas_log_full);
+            if (!responsesRaw) {
+              responsesRaw = toPlainLogString(incident["Respuestas (log)"]);
+            }
+            if (!responsesRaw) {
+              responsesRaw = toPlainLogString(incident.respuestas_log);
+            }
+
+            let requestsRaw = toPlainLogString(incident["Solicitudes (log)"]);
+            if (!requestsRaw) {
+              requestsRaw = toPlainLogString(incident.solicitudes_log);
+            }
+            incident.__splitCyclesCache = splitCycles(responsesRaw, requestsRaw);
+          }
+          return incident.__splitCyclesCache;
+        }
+
+        function escapeRegExp(str) {
+          return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
         function cleanLevelTags(str){
@@ -3146,7 +3264,8 @@
 
         function hasDirectedPendingRequests(incident) {
           if (!incident || !currentTechnician?.email) return false;
-          const log = incident["Solicitudes (log)"] ?? incident.solicitudes_log ?? "";
+          const split = getSplitContext(incident);
+          const log = (split?.requests?.current || []).map(entry => entry.raw).join("\n");
           const who = currentTechnician.email || "";
           if (!who) return false;
           const arr = getPendingRequestsForTechnician(log, who);
@@ -3379,7 +3498,8 @@
         
           const L = getCurrentLevel(incident);
           if (state === "working") {
-            let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+            const split = getSplitContext(incident);
+            const respText = (split?.current || []).map(entry => entry.raw).join("\n");
             let acept = "";
             if (respText !== "{{emptystring}}") {
               const rows = parseRespLog(respText, incident);
@@ -3395,10 +3515,11 @@
           const vencido = end ? (Date.now() > Date.parse(end)) : false;
         
           // Preferir motivo desde "Respuestas (log)"
-          let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
+          const split = getSplitContext(incident);
+          const respText = (split?.current || []).map(entry => entry.raw).join("\n");
           let rows = [];
           let reject = null;
-          if (respText !== "{{emptystring}}") {
+          if (respText.trim()) {
             rows = parseRespLog(respText, incident);
             reject = getLastRejectReasonByLevel(rows, L);
           } else {
@@ -3486,7 +3607,8 @@
 
         function renderReceiverActionBlock(incident) {
           if (!incident || !currentTechnician?.email) return "";
-          const log = incident["Solicitudes (log)"] ?? incident.solicitudes_log;
+          const split = getSplitContext(incident);
+          const log = (split?.requests?.current || []).map(entry => entry.raw).join("\n");
           const pending = getPendingRequestsForTechnician(log, currentTechnician.email);
           if (!pending.length) return "";
 
@@ -3534,7 +3656,10 @@
           const incidentIdJSON = JSON.stringify(incident.id ?? "");
           const payloadJSON = JSON.stringify(payload);
 
-          return `
+          const showDecisionButtons = (req?.last?.phase || '').toUpperCase() === 'REQUEST';
+
+          if (!showDecisionButtons) {
+            return `
             <div class="receiver-action-item">
               <div class="receiver-action-main">
                 <div class="receiver-action-icon">${safe(info.icon || "📥")}</div>
@@ -3544,11 +3669,24 @@
                   ${when ? `<div class="receiver-action-meta">Solicitada ${safe(when)}</div>` : ""}
                 </div>
               </div>
-              <div class="receiver-action-buttons">
+              </div>`;
+          }
+
+          return `
+                <div class="receiver-action-item">
+                  <div class="receiver-action-main">
+                    <div class="receiver-action-icon">${safe(info.icon || "📥")}</div>
+                    <div class="receiver-action-text">
+                      <div class="receiver-action-label">${safe(info.label || req.cat)}${levelLabel ? ` · ${safe(levelLabel)}` : ""}</div>
+                      <div class="receiver-action-detail">${summary.html}</div>
+                      ${when ? `<div class="receiver-action-meta">Solicitada ${safe(when)}</div>` : ""}
+                    </div>
+                  </div>
+                  <div class="receiver-action-buttons">
                 <button class="btn btn-primary" type="button" onclick="receiverDecision(${incidentIdJSON}, ${payloadJSON}, 'accept')">✅ Aceptar</button>
                 <button class="btn btn-secondary" type="button" onclick="receiverDecision(${incidentIdJSON}, ${payloadJSON}, 'reject')">❌ Rechazar</button>
               </div>
-            </div>
+               </div>
           `;
         }
 
@@ -4500,9 +4638,10 @@
                 }
 
         function renderEscalationHistory(inc){
-            let t = ensureLogString(inc["Respuestas (log)"] || inc.respuestas_log);
-            if(t === '{{emptystring}}') return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(t, inc)
+            const split = getSplitContext(inc);
+            const currentLines = (split?.current || []).map(entry => entry.raw).join("\n");
+            if(!currentLines.trim()) return `<div class="muted">Sin historial</div>`;
+            const rows = parseRespLog(currentLines, inc)
               .sort((a, b) => a.level - b.level || a.when - b.when);
             const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
             const items = limited.map(r => {
