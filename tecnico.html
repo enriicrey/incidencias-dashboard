@@ -1468,6 +1468,7 @@
         let currentIncidentId = null;
         let inventory = null;
         let inventoryLoadedOk = false;
+        let allIncidents = [];
 
         const MAX_LOG_ENTRIES = (() => {
             const v = Number(window?.MAX_LOG_ENTRIES);
@@ -4454,7 +4455,6 @@
             }
             
     // Estado en memoria
-    let allIncidents = [];
     let currentStatusFilter = 'all';   // 'all' | 'nueva' | 'asignada' | 'escalado' | 'seguimiento'
     
     // Spinner
@@ -4464,14 +4464,18 @@
     }
 
     // Helpers existentes (SLA / seguimiento / safe / fecha)
-    function safe(v){
-      if (v === undefined || v === null || v === '{{emptystring}}') return '';
-      return String(v)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    const HTML_ESCAPE_MAP = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+
+    function safe(value){
+      const str = String(value ?? '');
+      if (str === '{{emptystring}}') return '';
+      return str.replace(/[&<>"']/g, ch => HTML_ESCAPE_MAP[ch]);
     }
     function dateVisible(inc){
       return safe(inc.occurrence_date) || safe(inc.report_date) || '';
@@ -4637,68 +4641,106 @@
           </div>`;
                 }
 
+        function buildEscalationTimeline(entries, incident) {
+          if (!Array.isArray(entries) || !entries.length) return '';
+          const text = entries
+            .map(entry => entry?.raw)
+            .filter(Boolean)
+            .join('\n');
+          if (!text.trim()) return '';
+
+          const rows = parseRespLog(text, incident)
+            .sort((a, b) => a.level - b.level || a.when - b.when);
+          if (!rows.length) return '';
+
+          const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
+          const items = formatEscalationTimelineItems(limited);
+          return items ? `<ul class="timeline">${items}</ul>` : '';
+        }
+
+        function formatEscalationTimelineItems(rows) {
+          return rows.map(r => {
+            const time = formatTimeOrDate(r.when);
+            const who = safe(r.name || nameFromEmail(r.email) || r.email);
+
+            if (r.ev === 'TRANSFER' || r.ev === 'DERIVATION') {
+              const title = r.ev === 'TRANSFER' ? 'Transferencia' : 'Derivación';
+              const icon = r.ev === 'TRANSFER' ? '🔀' : '🏢';
+              const phase = r.ev === 'TRANSFER' ? 'phase-transfer' : 'phase-derivation';
+              const from = safe(r.from || r.kv?.from || '');
+              const to = safe(r.to || r.kv?.to || '');
+              const reason = safe(r.reason || r.detail || '');
+              const mid = from && to ? `${from} → ${to}` : (from || to);
+              const body = `${icon} ${title}${mid ? ' · ' + mid : ''}${reason ? ' · ' + reason : ''}`;
+              return `<li class="${phase}"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+            }
+
+            if (r.ev === 'APOYO_ASSIGNED' || r.ev === 'APOYO_ACCEPTED') {
+              const map = { APOYO_ASSIGNED: 'Apoyo Asignado', APOYO_ACCEPTED: 'Apoyo Aceptado' };
+              const title = map[r.ev] || r.ev;
+              const body = `🤝 L${r.level} · ${safe(title)} · ${who}`;
+              return `<li class="level-${r.level} phase-support"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+            }
+
+            if (r.ev === 'UNASSIGN') {
+              const parts = [who, safe(r.type), safe(r.detail)].filter(Boolean);
+              const body = `🚫 Desasignado${parts.length ? ' · ' + parts.join(' · ') : ''}`;
+              return `<li class="phase-unassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+            }
+
+            if (r.ev && r.ev.startsWith('REASSIGN_')) {
+              const map = { REASSIGN_TO: 'Reasignado a', REASSIGN_FROM: 'Reasignado de' };
+              const icon = r.ev === 'REASSIGN_TO' ? '➡️' : (r.ev === 'REASSIGN_FROM' ? '⬅️' : '🔄');
+              const title = safe(map[r.ev] || r.ev);
+              const detail = safe(r.detail);
+              const extras = [detail, who].filter(Boolean).join(' · ');
+              const body = `${icon} ${title}${extras ? ' · ' + extras : ''}`;
+              return `<li class="phase-reassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
+            }
+
+            let ev = r.ev || '';
+            if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
+            else {
+              const map = {
+                ASSIGNED: 'Asignado',
+                ACCEPTED: 'Aceptado',
+                NO_RESPONSE: 'Sin Respuesta'
+              };
+              ev = map[ev] || ev;
+            }
+            ev = safe(ev);
+            const phase = r.ev?.startsWith('REJECTED') ? 'phase-rejected'
+              : (r.ev === 'ASSIGNED' ? 'phase-pending' : 'phase-approved');
+            return `<li class="level-${r.level} ${phase}"><span class="t-time">${time}</span><span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
+          }).join('');
+        }
+
         function renderEscalationHistory(inc){
-            const split = getSplitContext(inc);
-            const currentLines = (split?.current || []).map(entry => entry.raw).join("\n");
-            if(!currentLines.trim()) return `<div class="muted">Sin historial</div>`;
-            const rows = parseRespLog(currentLines, inc)
-              .sort((a, b) => a.level - b.level || a.when - b.when);
-            const limited = Number.isFinite(MAX_LOG_ENTRIES) ? rows.slice(-MAX_LOG_ENTRIES) : rows;
-            const items = limited.map(r => {
-                const time = formatTimeOrDate(r.when);
-                const who = safe(r.name || nameFromEmail(r.email) || r.email);
-                // Eventos de transferencia y derivación
-                if (r.ev === 'TRANSFER' || r.ev === 'DERIVATION') {
-                    const title = r.ev === 'TRANSFER' ? 'Transferencia' : 'Derivación';
-                    const icon = r.ev === 'TRANSFER' ? '🔀' : '🏢';
-                    const phase = r.ev === 'TRANSFER' ? 'phase-transfer' : 'phase-derivation';
-                    const from = safe(r.from || r.kv?.from || '');
-                    const to = safe(r.to || r.kv?.to || '');
-                    const reason = safe(r.reason || r.detail || '');
-                    const mid = from && to ? `${from} → ${to}` : (from || to);
-                    const body = `${icon} ${title}${mid ? ' · ' + mid : ''}${reason ? ' · ' + reason : ''}`;
-                    return `<li class="${phase}"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
-                }
-                // Eventos de apoyo
-                if (r.ev === 'APOYO_ASSIGNED' || r.ev === 'APOYO_ACCEPTED') {
-                    const map = { APOYO_ASSIGNED: 'Apoyo Asignado', APOYO_ACCEPTED: 'Apoyo Aceptado' };
-                    const title = map[r.ev] || r.ev;
-                    const body = `🤝 L${r.level} · ${safe(title)} · ${who}`;
-                    return `<li class="level-${r.level} phase-support"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
-                }
-                // Eventos de desasignación
-                if (r.ev === 'UNASSIGN') {
-                    const parts = [who, safe(r.type), safe(r.detail)].filter(Boolean);
-                    const body = `🚫 Desasignado${parts.length ? ' · ' + parts.join(' · ') : ''}`;
-                    return `<li class="phase-unassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
-                }
-                // Eventos de reasignación
-                if (r.ev && r.ev.startsWith('REASSIGN_')) {
-                    const map = { REASSIGN_TO: 'Reasignado a', REASSIGN_FROM: 'Reasignado de' };
-                    const icon = r.ev === 'REASSIGN_TO' ? '➡️' : (r.ev === 'REASSIGN_FROM' ? '⬅️' : '🔄');
-                    const title = safe(map[r.ev] || r.ev);
-                    const detail = safe(r.detail);
-                    const extras = [detail, who].filter(Boolean).join(' · ');
-                    const body = `${icon} ${title}${extras ? ' · ' + extras : ''}`;
-                    return `<li class="phase-reassign"><span class="t-time">${time}</span><span class="t-body">${body}</span></li>`;
-                }
-                let ev = r.ev;
-                if (ev.startsWith('REJECTED::')) ev = 'Rechazado: ' + ev.split('::')[1];
-                else {
-                    const map = {
-                        ASSIGNED: 'Asignado',
-                        ACCEPTED: 'Aceptado',
-                         NO_RESPONSE: 'Sin Respuesta'
-                    };
-                    ev = map[ev] || ev;
-                }
-                ev = safe(ev);
-                const phase = r.ev.startsWith('REJECTED') ? 'phase-rejected'
-                  : (r.ev === 'ASSIGNED' ? 'phase-pending' : 'phase-approved');
-                return `<li class="level-${r.level} ${phase}"><span class="t-time">${time}</span>`+
-                       `<span class="t-body">L${r.level} · ${ev} · ${who}</span></li>`;
-            }).join('');
-            return `<ul class="timeline">${items}</ul>`;
+          const split = getSplitContext(inc);
+          const currentTimeline = buildEscalationTimeline(split?.current, inc);
+          const previousTimeline = buildEscalationTimeline(split?.previous, inc);
+
+          const sections = [];
+          if (currentTimeline) {
+            sections.push(currentTimeline);
+          } else if (previousTimeline) {
+            sections.push('<div class="muted">Sin historial en el ciclo actual</div>');
+          }
+
+          if (previousTimeline) {
+            sections.push(`
+              <details class="previous-cycles">
+                <summary>🔁 Ciclos anteriores</summary>
+                ${previousTimeline}
+              </details>
+            `);
+          }
+
+          if (!sections.length) {
+            return `<div class="muted">Sin historial</div>`;
+          }
+
+          return sections.join('');
         }
         
         function renderSolicitudesResumen(inc){
