@@ -4565,10 +4565,7 @@
                   </div>
                 </div>
                 <div class="incident-header-right">
-                <div class="state-sla">
-                    <span class="state-badge">${getStateLabel(state)}</span>
-                    ${renderSlaPillInHeader(inc, state, card)}
-                  </div>
+               <div class="state-sla"></div>
                 </div>
               </div>
         
@@ -4594,7 +4591,9 @@
           if (chipsWrapper && (!chipsMount || !chipsMount.childElementCount)) {
             chipsWrapper.innerHTML = `<span class="chip">✔️ Sin validaciones pendientes</span>`;
           }
-
+          updateCardStateSla(card, inc, state);
+          renderPreviousCyclesSection(inc, card);
+            
           return card;
         }
         
@@ -4615,23 +4614,7 @@
               <summary>📈 Historial de escalado</summary>
               ${renderEscalationHistory(inc)}
             </details>
-             ${(() => {
-              const split = getSplitContext(inc);
-              if (!split.previous?.length) return '';
-              const prev = split.previous.map(r => {
-                const raw = String(r.raw || '');
-                const body = raw.replace(/^\[[^\]]+\]\s*/, '');
-                return `<li class="level-${r.level || 0}">
-      <span class="t-time">${formatTimeOrDate(r.when)}</span>
-      <span class="t-body">${safe(body)}</span>
-    </li>`;
-              }).join('');
-              return `
-    <details open>
-      <summary class="notes-summary">📘 Ciclos anteriores</summary>
-      <ul class="timeline">${prev}</ul>
-    </details>`;
-            })()}
+            <div class="ciclos-anteriores"></div>
             <details>
               <summary>📦 Solicitudes recientes</summary>
               ${renderSolicitudesResumen(inc)}
@@ -4835,7 +4818,61 @@
   return `<ul class="timeline">${items}</ul>`;
 }
 
+        function updateCardStateSla(card, inc, state) {
+      if (!card) return;
+      const container = card.querySelector('.incident-header-right .state-sla');
+      if (!container) return;
+      const slaOrState = renderSlaPillInHeader(inc, state, card)
+        || `<span class="state-badge state-${state}">${getStateLabel(state)}</span>`;
+      container.innerHTML = slaOrState;
+    }
 
+    function renderPreviousCyclesSection(inc, card) {
+      if (!card) return;
+      const mount = card.querySelector('.ciclos-anteriores');
+      if (!mount) return;
+
+      const split = getSplitContext(inc);
+      if (!split?.previous?.length) {
+        mount.innerHTML = '';
+        return;
+      }
+
+      const prevRows = parseRespLog(split.previous.map(r => r.raw).join("\n"), inc) || [];
+      if (!prevRows.length) {
+        mount.innerHTML = '';
+        return;
+      }
+
+      const prevHtml = prevRows.map(r => {
+        const level = r.level ?? '?';
+        const actor = r.email || r.ev || '';
+        const event = r.ev || '';
+        return `
+        <li class="timeline-item">
+          <span class="t-time">${formatTimeOrDate(r.when)}</span>
+          <span class="t-body">L${safe(level)} · ${safe(actor)} · ${safe(event)}</span>
+        </li>
+      `;
+      }).join('');
+
+      mount.innerHTML = `<div class="section-title">Ciclos anteriores</div><ul class="timeline">${prevHtml}</ul>`;
+    }
+
+    function checkDerivationConsistency(inc, card) {
+      const solText = ensureLogString(inc["Solicitudes (log)"] || inc.solicitudes_log);
+      const rows = parseSolicitudesLog(solText);
+      const grouped = groupByRequest(rows);
+      const hasDerivApproved = Object.values(grouped).some(g => g.cat === 'DERIVACION' && g.last?.phase === 'APPROVED');
+      const hasDerivRequest = Object.values(grouped).some(g => g.cat === 'DERIVACION' && g.phases?.some(p => p.phase === 'REQUEST'));
+      if (!hasDerivApproved || hasDerivRequest) return;
+
+      const notas = ensureLogString(inc["Comentarios (log)"] || inc.comentarios_log);
+      const supHasNote = parseNotesLog(notas).some(n => n.role === 'SUP');
+      if (supHasNote) return;
+
+      setIncidentBanner(card, `<div class="seguimiento-banner">⚠️ Derivación aprobada por supervisión sin solicitud previa ni nota. Verificar.</div>`);
+    }
 
     function renderIncidents(incidents) {
       const legacy = document.getElementById('incidentsContainer');
@@ -4859,6 +4896,7 @@
         if (!card) return;
           
         renderSeguimientoBanner(inc, state, card);
+        checkDerivationConsistency(inc, card);
           
         frag.appendChild(card);
       });
@@ -4910,10 +4948,7 @@
             const inc = allIncidents.find(i => String(i.id) === String(id));
             if (!inc) return;
             const state = getIncidentRealState(inc, currentTechnician?.email || "");
-            const box = card.querySelector('.incident-header-right .state-sla');
-            if (box) {
-              box.innerHTML = `<span class="state-badge">${getStateLabel(state)}</span>${renderSlaPillInHeader(inc, state, card)}`;
-            }
+            updateCardStateSla(card, inc, state);
           });
         }, 15000);
       }
