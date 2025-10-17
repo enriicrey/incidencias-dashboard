@@ -3459,10 +3459,10 @@
           return parseInt(incident.escalation_level ?? 0, 10);
         }
         function getSlaEndForLevel(incident, level) {
-          if (level === 0) return incident.sla_l0_end || "";
-          if (level === 1) return incident.sla_l1_backup_end || "";
-          if (level === 2) return incident.sla_l2_equipo_end || "";
-          if (level === 3) return incident.sla_l3_responsable_end || "";
+          if (level === 0) return incident.sla_l0_end || incident.sla_L0_end || "";
+          if (level === 1) return incident.sla_l1_backup_end || incident.sla_l1_end || "";
+          if (level === 2) return incident.sla_l2_equipo_end || incident.sla_l2_end || "";
+          if (level === 3) return incident.sla_l3_responsable_end || incident.sla_l3_end || "";
           return "";
         }
         function formatRemain(ms) {
@@ -4623,13 +4623,30 @@
                 <span class="value">${safe(name) || '—'}${phone ? `<a class="btn-tel" href="tel:${safe(phone)}">📞</a>` : ''}</span>
               </div>`;
           };
+
+          
+          const L = getCurrentLevel(inc);
+          const split = getSplitContext(inc);
+          const respText = (split?.current || []).map(e => e.raw).join("\n");
+          const rowsRaw = parseRespLog(respText, inc) || [];
+          const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
+
+          const reversed = [...rows].reverse();
+          const lastAssigned = reversed.find(r => r.level === L && r.ev === "ASSIGNED");
+          const hasAccepted = lastAssigned
+            ? reversed.some(r => r.level === L && r.ev === "ACCEPTED" && (r.email || '').toLowerCase() === (lastAssigned.email || '').toLowerCase())
+            : false;
+
+          const assignedSafe = hasAccepted
+            ? (nameFromEmail(lastAssigned?.email) || lastAssigned?.email || '')
+            : '';
         return `
           <div class="detail-grid">
             <div class="contact-card">
               <div class="contact-title">👷 Equipo técnico</div>
               ${contactRow('Supervisor', inc.supervisor, inc.supervisor_phone)}
               ${contactRow('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
-              ${contactRow('Técnico asignado', inc.assigned_technician, inc.assigned_technician_phone)}
+              ${contactRow('Técnico asignado', assignedSafe || '', inc.assigned_technician_phone)}
             </div>
             
             <div class="contact-card">
@@ -4814,11 +4831,20 @@
         const state = getIncidentRealState(inc, currentTechnician?.email || "");
         const card = incidentCardHTML(inc, state);
         if (!card) return;
+          
+        const slaHTML = renderSlaPillInHeader(inc, state, card);
         const hasSeg = renderSeguimientoBanner(inc, state, card);
-        if (!hasSeg) {
-          const slaHTML = renderSlaPillInHeader(inc, state, card);
-          if (slaHTML) card.querySelector('.state-sla')?.insertAdjacentHTML('beforeend', slaHTML);
+        if (slaHTML) {
+          if (!hasSeg) {
+            const bannerHtml = /seguimiento-banner/.test(slaHTML)
+              ? slaHTML
+              : `<div class="seguimiento-banner">${slaHTML}</div>`;
+            setIncidentBanner(card, bannerHtml);
+          } else {
+            card.querySelector('.state-sla')?.insertAdjacentHTML('beforeend', slaHTML);
+          }
         }
+          
         frag.appendChild(card);
       });
     
