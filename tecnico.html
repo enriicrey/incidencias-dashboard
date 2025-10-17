@@ -2989,9 +2989,15 @@
             const base = (info.icon ? `${info.icon} ` : "") + (info.label || req.cat || "");
             let displayText = base;
             if (detail) displayText += ` · ${detail}`;
-            const requesterRaw = (req.last?.meta?.by || req.last?.meta?.from || req.last?.meta?.requested_by || "");
-            const requester = requesterRaw ? nameFromEmail(String(requesterRaw)) : "";
-            if (requester) displayText += ` · 👤 ${requester}`;
+            const requesterRaw = req.last?.meta?.req_by || req.last?.meta?.requested_by || req.last?.meta?.by || req.last?.meta?.from || '';
+            const requesterName = req.last?.meta?.req_by_name || req.last?.meta?.by_name || '';
+            const requester = requesterName || (requesterRaw ? nameFromEmail(String(requesterRaw)) : '');
+            const approverRaw = req.last?.meta?.by || '';
+            const approverName = req.last?.meta?.by_name || (approverRaw ? nameFromEmail(String(approverRaw)) : '');
+            if (requester) displayText += ` · 👤 Solicitó: ${requester}`;
+            if ((req.last?.phase || '').toUpperCase() === 'APPROVED' && (approverName || approverRaw)) {
+              displayText += ` · ✅ Aprobó: ${approverName || nameFromEmail(String(approverRaw))}`;
+            }
             displayText = cleanLevelTags(displayText);
             
             const chip = document.createElement("button");
@@ -3213,7 +3219,9 @@
             "cc",
             "bcc",
             "copy",
-            "copias"
+            "copias",
+            "req_by",
+            "req_by_name"
           ];
 
           const intersectsTargets = (values) => {
@@ -4559,6 +4567,7 @@
                 <div class="incident-header-right">
                 <div class="state-sla">
                     <span class="state-badge">${getStateLabel(state)}</span>
+                    ${renderSlaPillInHeader(inc, state, card)}
                   </div>
                 </div>
               </div>
@@ -4606,6 +4615,23 @@
               <summary>📈 Historial de escalado</summary>
               ${renderEscalationHistory(inc)}
             </details>
+             ${(() => {
+              const split = getSplitContext(inc);
+              if (!split.previous?.length) return '';
+              const prev = split.previous.map(r => {
+                const raw = String(r.raw || '');
+                const body = raw.replace(/^\[[^\]]+\]\s*/, '');
+                return `<li class="level-${r.level || 0}">
+      <span class="t-time">${formatTimeOrDate(r.when)}</span>
+      <span class="t-body">${safe(body)}</span>
+    </li>`;
+              }).join('');
+              return `
+    <details open>
+      <summary class="notes-summary">📘 Ciclos anteriores</summary>
+      <ul class="timeline">${prev}</ul>
+    </details>`;
+            })()}
             <details>
               <summary>📦 Solicitudes recientes</summary>
               ${renderSolicitudesResumen(inc)}
@@ -4832,25 +4858,12 @@
         const card = incidentCardHTML(inc, state);
         if (!card) return;
           
-        const slaHTML = renderSlaPillInHeader(inc, state, card);
-        const hasSeg = renderSeguimientoBanner(inc, state, card);
-        if (slaHTML) {
-          if (!hasSeg) {
-            const bannerHtml = /seguimiento-banner/.test(slaHTML)
-              ? slaHTML
-              : `<div class="seguimiento-banner">${slaHTML}</div>`;
-            setIncidentBanner(card, bannerHtml);
-          } else {
-            card.querySelector('.state-sla')?.insertAdjacentHTML('beforeend', slaHTML);
-          }
-        }
+        renderSeguimientoBanner(inc, state, card);
           
         frag.appendChild(card);
       });
     
       incidentsContainer.appendChild(frag);
-      renderSlaStickyBar();
-      initDirectedCountdowns();
 
       try {
       if (directIncidentId && !directScrollDone) {
@@ -4887,9 +4900,23 @@
       });
       renderIncidents(list);
       renderSlaStickyBar();
-      clearInterval(window.__slaTick);
-      window.__slaTick = setInterval(renderSlaStickyBar, 10000);
-      renderSlaStickyBar();
+      initDirectedCountdowns();
+
+      if (!window.__slaTick) {
+        window.__slaTick = setInterval(() => {
+          renderSlaStickyBar();
+          document.querySelectorAll('.incident-card').forEach(card => {
+            const id = card.dataset.incidentId || card.getAttribute('data-incident-id');
+            const inc = allIncidents.find(i => String(i.id) === String(id));
+            if (!inc) return;
+            const state = getIncidentRealState(inc, currentTechnician?.email || "");
+            const box = card.querySelector('.incident-header-right .state-sla');
+            if (box) {
+              box.innerHTML = `<span class="state-badge">${getStateLabel(state)}</span>${renderSlaPillInHeader(inc, state, card)}`;
+            }
+          });
+        }, 15000);
+      }
     }
     
     // Carga inicial
