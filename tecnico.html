@@ -1794,46 +1794,50 @@
             document.getElementById('workingCount').textContent = stats.working;
             document.getElementById('seguimientoCount').textContent = stats.seguimiento;
         }
-           function nearestPendingSla(incidents, email) {
-          // sólo incidencias en 'pending' para este técnico
-          const list = (incidents || []).map(inc => {
-            const st = getIncidentRealState(inc, email);
-            const directed = hasDirectedPendingRequests(inc);
-            if (st !== 'pending' && !directed) return null;
-            const end = getSlaEndForLevel(inc, getCurrentLevel(inc));
-            if (!end) return null;
-            const t = Date.parse(end);
-            return isNaN(t) ? null : { inc, t };
-          }).filter(Boolean);
-          if (!list.length) return null;
-          list.sort((a,b)=> a.t - b.t);
-          return list[0];
-        }
         
         function renderSlaStickyBar() {
           const bar = document.getElementById('slaSticky');
           if (!bar) return;
           const email = currentTechnician?.email || '';
-          const next = nearestPendingSla(allIncidents, email);
-          if (!next) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
-        
-          const ms = next.t - Date.now();
-          const severity = ms <= 30*60000 ? 'sla-critical' : (ms <= 120*60000 ? 'sla-warning' : 'sla-good');
-          const blink = ms <= 2*60000 ? 'active' : '';
-          const countdownClasses = ['badge', severity, blink].filter(Boolean).join(' ');
-          const left = formatRemain(ms);
+          // Incidencias que están pendientes para el técnico (o con solicitud dirigida)
+          const pendings = (allIncidents || [])
+            .map(inc => {
+              const state = getIncidentRealState(inc, email);
+              const directed = hasDirectedPendingRequests(inc);
+              if (state !== 'pending' && !directed) return null;
+              const L = getCurrentLevel(inc);
+              const end = getSlaEndForLevel(inc, L);
+              const t = end ? Date.parse(end) : NaN;
+              return (t && t > Date.now()) ? { inc, t } : null;
+            })
+            .filter(Boolean)
+            .sort((a,b) => a.t - b.t);
+
+          if (!pendings.length) {
+            bar.classList.add('hidden');
+            bar.innerHTML = '';
+            return;
+          }
           bar.classList.remove('hidden');
-          bar.innerHTML = `
-            <span class="${countdownClasses}">⏱️ Próxima respuesta: ${left}</span>
-            <span class="badge">Inc: ${safe(next.inc.id)}</span>
-            <button class="cta" onclick="scrollToIncident('${safe(next.inc.id)}')">Ir a la tarjeta</button>
-          `;
+          bar.innerHTML = pendings.map(({inc, t}) => {
+            const ms = t - Date.now();
+            const sev = ms <= 30*60000 ? 'sla-critical' : ms <= 120*60000 ? 'sla-warning' : 'sla-good';
+            const blink = ms <= 2*60000 ? 'active' : '';
+            // Cada chip es un botón que lleva a la tarjeta
+            return `<button class="badge ${sev} ${blink}" onclick="scrollToIncident('${safe(inc.id)}')">
+              Inc: ${safe(inc.id)} · ${formatRemain(ms)}
+            </button>`;
+          }).join('');
         }
         
         function scrollToIncident(id){
-          const el = document.querySelector(
+          let el = document.querySelector(
           `.incident-card[data-incident-id="${CSS.escape(id)}"]`
         );
+          if (!el) {
+            el = [...document.querySelectorAll('.incident-card')]
+              .find(n => n.textContent && n.textContent.includes(id));
+          }
           if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
         }
 
@@ -2598,29 +2602,16 @@
           return map;
         }
          function renderSlaPillInHeader(inc, state) {
-            const L = getCurrentLevel(inc);
-            const end = getSlaEndForLevel(inc, L);
-             
-            if (state === "working") {
-            const split = getSplitContext(inc);
-              const respText = (split?.current || []).map(entry => entry.raw).join("\n");
-              let label = "";
-              if (respText.trim()) {
-                const rows = parseRespLog(respText, inc);
-                const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
-                if (lastAccepted) label = new Date(lastAccepted.when).toLocaleString('es-ES');
-              }
-              return `<span class="sla-timer active">Trabajando L${L}${label ? ` · ${label}` : ""}</span>`;
-            }
-             
-            if (!end) return "";
-            if (state !== "pending") return "";
-            const ms = Date.parse(end) - Date.now();
-            if (ms <= 0) return "";
-            const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
-            const blink = ms <= 2*60000 ? "active" : "";
-            return `<span class="sla-timer ${cls} ${blink}">⏱️ ${formatRemain(ms)}</span>`;
-          }
+          // Solo mostramos SLA en estado 'pending' (con ventana viva).
+          if (state !== "pending") return "";
+          const end = getSlaEndForLevel(inc, getCurrentLevel(inc));
+          if (!end) return "";
+          const ms = Date.parse(end) - Date.now();
+          if (ms <= 0) return ""; // vencido -> nada en header
+          const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
+          const blink = ms <= 2*60000 ? "active" : "";
+          return `<span class="sla-timer ${cls} ${blink}">⏱️ ${formatRemain(ms)}</span>`;
+        }
 
         
         // --- ¿Qué categorías tienen pendientes? ---
@@ -4401,6 +4392,7 @@
           const card = document.createElement('div');
           card.className = 'incident-card';
           card.dataset.incidentId = inc?.id != null ? String(inc.id) : '';
+          card.setAttribute('data-incident-id', card.dataset.incidentId);
 
           card.innerHTML = `
               <div class="incident-banner"></div>
