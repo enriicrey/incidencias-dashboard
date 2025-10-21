@@ -1752,128 +1752,22 @@
         // ========================================
          function computeCycleState(incident, technicianEmail) {
           const email = String(technicianEmail || "").trim().toLowerCase();
-          if (!incident || !email) return "seguimiento";
-
-          const split = getSplitContext(incident);
-          const currentResponses = Array.isArray(split?.current) ? split.current : [];
-          const currBodies = currentResponses.map(entry => entry?.body || entry?.raw || "");
-          const emailEscaped = escapeRegExp(email);
-          const acceptedRegex = new RegExp(`RESP#L\\d#${emailEscaped}\\|ACCEPTED\\|`, "i");
-          const assignedRegex = new RegExp(`RESP#L\\d#${emailEscaped}\\|ASSIGNED\\|`, "i");
-
+          const split = getSplitContext(incident || {});
+          const currBodies = (split.current || []).map(entry => entry.body || entry.raw || "");
+          const acceptedRegex = new RegExp(`RESP#L\\d#${email}\\|ACCEPTED\\|`, "i");
+          const assignedRegex = new RegExp(`RESP#L\\d#${email}\\|ASSIGNED\\|`, "i");
           const acceptedByTech = currBodies.some(line => acceptedRegex.test(line));
           const assignedToTech = currBodies.some(line => assignedRegex.test(line));
 
-          const requestEntries = split?.requests?.current || [];
-          const requestText = requestEntries.map(entry => entry?.raw || "").filter(Boolean).join("\n");
-          const pendingForTech = getPendingRequestsForTechnician(requestText, email) || [];
-          const hasPendingDirected = pendingForTech.length > 0;
-
-          if (hasPendingDirected) return "pending";
+          const reqText = (split.requests?.current || []).map(entry => entry.raw).join("\n");
+          const pendingForTech = getPendingRequestsForTechnician(reqText, email) || [];
+          if ((pendingForTech || []).length) return "pending";
           if (acceptedByTech) return "working";
           if (assignedToTech) return "pending";
           return "seguimiento";
         }
         function getIncidentRealState(incident, technicianEmail) {
-            const computedState = computeCycleState(incident, technicianEmail);
-          if (computedState !== undefined && computedState !== null) {
-            return computedState;
-          }
-          const level = parseInt(incident.escalation_level) || 0;
-          const email = (technicianEmail || '').toLowerCase();
-
-          // Si algún nivel inferior ya fue aceptado, no consultamos niveles superiores
-          for (let prev = 0; prev < level; prev++) {
-            let resp, tech;
-            if (prev === 2) {
-              resp = incident.l2_responses;
-              tech = incident.l2_technicians;
-            } else {
-              resp = incident[`l${prev}_response`];
-              tech = incident[`l${prev}_technician`];
-            }
-            const respStr = Array.isArray(resp) ? resp.join(' ').toLowerCase() : String(resp || '').toLowerCase();
-            if (respStr.includes('acepto')) {
-              const techStr = Array.isArray(tech) ? tech.join(',').toLowerCase() : String(tech || '').toLowerCase();
-              if (techStr.includes(email)) return 'working';
-              return 'seguimiento';
-            }
-          }
-        
-          // SLA del nivel actual
-          const slaEnd = getSlaEndForLevel(incident, level);
-          const withinSla = slaEnd ? Date.now() <= Date.parse(slaEnd) : false;
-        
-          // 1) Preferir "Respuestas (log)"
-          let respText = ensureLogString(incident["Respuestas (log)"] || incident.respuestas_log);
-          if (respText !== "{{emptystring}}") {
-            let rows = parseRespLog(respText, incident).filter(r => r.level === level);
-            const derivation = getLastDerivation(rows);
-            if (derivation) {
-              rows = rows.filter(r => r.when >= derivation.when);
-              const hasActivity = rows.some(r => r.email && r.email.toLowerCase() === email && r.ev !== 'UNASSIGN');
-              if (!hasActivity) return 'seguimiento';
-            }
-            const transfer = getLastTransferFor(rows, email);
-            const myRows = rows.filter(r => r.email && r.email.toLowerCase() === email);
-            const lastMine = myRows[myRows.length - 1];
-            const lastAccepted = rows.filter(r => r.ev === 'ACCEPTED').slice(-1)[0];
-
-            // Traspaso: quien entrega pasa a seguimiento
-            if (transfer && transfer.type === 'from') return 'seguimiento';
-
-            // Receptor del traspaso sin respuesta todavía
-            if (transfer && transfer.type === 'to' && !lastMine) {
-              return withinSla ? 'pending' : 'seguimiento';
-            }
-
-            if (lastMine) {
-              if (lastMine.ev === 'ACCEPTED') return 'working';
-              if (lastMine.ev === 'REJECTED' || lastMine.ev === 'NO_RESPONSE' || lastMine.ev === 'REASSIGN_FROM' || lastMine.ev === 'UNASSIGN') return 'seguimiento';
-              if (lastMine.ev === 'ASSIGNED') {
-                // Apoyo aceptado: si cualquiera aceptó, ambos trabajan
-                if (lastAccepted) return 'working';
-                return withinSla ? 'pending' : 'seguimiento';
-              }
-            }
-
-            // Receptor de traspaso que aún no acepta
-            if (transfer && transfer.type === 'to') return withinSla ? 'pending' : 'seguimiento';
-
-            // Otro técnico aceptó → este queda en seguimiento
-            if (lastAccepted && lastAccepted.email.toLowerCase() !== email) return 'seguimiento';
-
-            const assigned = rows.some(r => r.ev === 'ASSIGNED' && r.email.toLowerCase() === email);
-            if (assigned) return withinSla ? 'pending' : 'seguimiento';
-
-            if (!withinSla) return 'seguimiento';
-        
-          } else {
-            // 2) Fallback (campos legados)
-            const assignments = [
-              { level: 0, tech: incident.l0_technician, respText: incident.l0_response, sla: incident.sla_l0_end },
-              { level: 1, tech: incident.l1_technician, respText: incident.l1_response, sla: incident.sla_l1_backup_end },
-              { level: 2, tech: incident.l2_technicians, respText: incident.l2_responses, sla: incident.sla_l2_equipo_end },
-              { level: 3, tech: incident.l3_technician, respText: incident.l3_response, sla: incident.sla_l3_responsable_end }
-            ];
-
-            const curr = assignments.find(a =>
-              a.level === level &&
-              (Array.isArray(a.tech)
-                ? a.tech.map(t => String(t).toLowerCase()).includes(email)
-                : String(a.tech || '').toLowerCase().includes(email))
-            );
-            if (curr) {
-              const withinSla = curr.sla ? Date.now() <= Date.parse(curr.sla) : false;
-              const resp = Array.isArray(curr.respText)
-                ? curr.respText.join(' ').toLowerCase()
-                : String(curr.respText || '').toLowerCase();
-              if (resp.includes('rechazo')) return 'seguimiento';
-              if (resp.includes('acepto')) return 'working';
-              if (!resp || resp.includes('sin respuesta')) return withinSla ? 'pending' : 'seguimiento';
-            }
-          }
-           return 'seguimiento';
+         return computeCycleState(incident, technicianEmail);
         }
 
 
@@ -2703,34 +2597,30 @@
           }
           return map;
         }
-          function renderSlaPillInHeader(inc, state, card) {
-              const L = getCurrentLevel(inc);
-              const end = getSlaEndForLevel(inc, L);
-              if (!end) return "";
-            
-              // Si está trabajando, enseñamos banner “Trabajando”
+         function renderSlaPillInHeader(inc, state) {
+            const L = getCurrentLevel(inc);
+            const end = getSlaEndForLevel(inc, L);
+             
             if (state === "working") {
-            let acept = "";
             const split = getSplitContext(inc);
-            const respText = (split?.current || []).map(entry => entry.raw).join("\n");
-            if (respText.trim()) {
-              const rows = parseRespLog(respText, inc);
-              const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
-              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+              const respText = (split?.current || []).map(entry => entry.raw).join("\n");
+              let label = "";
+              if (respText.trim()) {
+                const rows = parseRespLog(respText, inc);
+                const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
+                if (lastAccepted) label = new Date(lastAccepted.when).toLocaleString('es-ES');
+              }
+              return `<span class="sla-timer active">Trabajando L${L}${label ? ` · ${label}` : ""}</span>`;
             }
-            return `<span class="sla-timer active">Trabajando L${L}${acept ? ` · ${acept}` : ""}</span>`;
+             
+            if (!end) return "";
+            if (state !== "pending") return "";
+            const ms = Date.parse(end) - Date.now();
+            if (ms <= 0) return "";
+            const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
+            const blink = ms <= 2*60000 ? "active" : "";
+            return `<span class="sla-timer ${cls} ${blink}">⏱️ ${formatRemain(ms)}</span>`;
           }
-            
-              // Solo mostrar temporizador si está PENDING y no ha vencido
-              if (state !== "pending") return "";
-              const ms = Date.parse(end) - Date.now();
-              if (ms <= 0) return ""; // nada si ya venció
-            
-              const severity = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
-              const blink = ms <= 2*60000 ? "active" : "";
-              const classes = ["sla-timer", severity, blink].filter(Boolean).join(" ");
-              return `<span class="${classes}">⏱️ ${formatRemain(ms)}</span>`;
-            }
 
         
         // --- ¿Qué categorías tienen pendientes? ---
@@ -2813,17 +2703,9 @@
         function toPlainLogString(val) {
           if (Array.isArray(val)) val = val.join("\n");
           if (val === undefined || val === null) return "";
-          if (typeof val === "string") {
-            const trimmed = val.trim();
-            return trimmed === "{{emptystring}}" ? "" : val;
+          const s = String(val || "");
+          return (s.trim() === "{{emptystring}}") ? "" : s;
           }
-          try {
-            const str = String(val || "");
-            return str === "{{emptystring}}" ? "" : str;
-          } catch (err) {
-            return "";
-          }
-        }
 
         function parseLines(raw){
           const text = toPlainLogString(raw);
@@ -2834,10 +2716,8 @@
             .filter(Boolean)
             .map(line => {
               const m = line.match(/^\[(.+?)\]\s+(\S+)/);
-              const tsRaw = m ? Date.parse(m[1]) : NaN;
-              const ts = Number.isFinite(tsRaw) ? tsRaw : 0;
-              const body = line.replace(/^\[[^\]]+\]\s*/, "").trim();
-              return { ts, raw: line, body };
+              const ts = m ? Date.parse(m[1]) : 0;
+              return { ts, raw: line, body: line.replace(/^\[[^\]]+\]\s*/, "").trim() };
             })
             .sort((a, b) => a.ts - b.ts);
         }
@@ -2845,53 +2725,31 @@
         function splitCycles(respuestasRaw, solicitudesRaw){
           const resp = parseLines(respuestasRaw);
           const reqs = parseLines(solicitudesRaw);
-          const cut = reqs
-            .filter(r => /^(TRASPASO|DERIVACION)#.+\|APPROVED/i.test(r.body || ""))
-            .pop();
-          if (!cut) {
-            return {
-              current: resp,
-              previous: [],
-              requests: { current: reqs, previous: [] },
-              cutTimestamp: null
-            };
-          }
-          const cutTs = cut.ts;
-          const currentResp = resp.filter(r => r.ts >= cutTs);
-          const previousResp = resp.filter(r => r.ts < cutTs);
-          const currentReq = reqs.filter(r => r.ts >= cutTs);
-          const previousReq = reqs.filter(r => r.ts < cutTs);
+          const cut = reqs.filter(r => /^(TRASPASO|DERIVACION)#.+\|APPROVED/i.test(r.body)).pop();
+          if (!cut) return { current: resp, previous: [], requests: { current: reqs, previous: [] }, cutTimestamp: null };
+          const t = cut.ts;
           return {
-            current: currentResp,
-            previous: previousResp,
-            requests: { current: currentReq, previous: previousReq },
-            cutTimestamp: cutTs
+            current: resp.filter(r => r.ts >= t),
+            previous: resp.filter(r => r.ts < t),
+            requests: {
+              current: reqs.filter(r => r.ts >= t),
+              previous: reqs.filter(r => r.ts < t)
+            },
+            cutTimestamp: t
           };
         }
 
-        function getSplitContext(incident) {
+        function getSplitContext(incident){
           if (!incident) {
-            return {
-              current: [],
-              previous: [],
-              requests: { current: [], previous: [] },
-              cutTimestamp: null
-            };
+            return { current: [], previous: [], requests: { current: [], previous: [] }, cutTimestamp: null };
           }
-          if (!incident.__splitCyclesCache) {
-            let responsesRaw = toPlainLogString(incident.respuestas_log_full);
-            if (!responsesRaw) {
-              responsesRaw = toPlainLogString(incident["Respuestas (log)"]);
-            }
-            if (!responsesRaw) {
-              responsesRaw = toPlainLogString(incident.respuestas_log);
-            }
-
-            let requestsRaw = toPlainLogString(incident["Solicitudes (log)"]);
-            if (!requestsRaw) {
-              requestsRaw = toPlainLogString(incident.solicitudes_log);
-            }
-            incident.__splitCyclesCache = splitCycles(responsesRaw, requestsRaw);
+            if (!incident.__splitCyclesCache){
+            let responses = toPlainLogString(incident.respuestas_log_full)
+              || toPlainLogString(incident["Respuestas (log)"])
+              || toPlainLogString(incident.respuestas_log);
+            let requests = toPlainLogString(incident["Solicitudes (log)"])
+              || toPlainLogString(incident.solicitudes_log);
+            incident.__splitCyclesCache = splitCycles(responses, requests);
           }
           return incident.__splitCyclesCache;
         }
@@ -3272,13 +3130,10 @@
         }
 
         function hasDirectedPendingRequests(incident) {
-          if (!incident || !currentTechnician?.email) return false;
           const split = getSplitContext(incident);
           const log = (split?.requests?.current || []).map(entry => entry.raw).join("\n");
-          const who = currentTechnician.email || "";
-          if (!who) return false;
-          const arr = getPendingRequestsForTechnician(log, who);
-          return Array.isArray(arr) && arr.length > 0;
+          const who = currentTechnician?.email || "";
+          return (getPendingRequestsForTechnician(log, who) || []).length > 0;
         }
         
        // ¿Quién es el titular vigente de un nivel?
@@ -3300,24 +3155,6 @@
             }
           }
           return '';
-        }
-
-        // Última transferencia en la que participó el técnico
-        function getLastTransferFor(respRows, email){
-          const lower = (email || '').toLowerCase();
-          for (let i = respRows.length - 1; i >= 0; i--) {
-            const r = respRows[i];
-            if (r.ev === 'TRANSFER') {
-              if (r.from?.toLowerCase() === lower) return { ...r, type: 'from' };
-              if (r.to?.toLowerCase() === lower) return { ...r, type: 'to' };
-            }
-          }
-          return null;
-        }
-
-        // Última derivación registrada
-        function getLastDerivation(respRows){
-          return respRows.filter(r => r.ev === 'DERIVATION').slice(-1)[0] || null;
         }
         
         // ¿Cómo va el técnico logueado en este nivel?
@@ -3467,11 +3304,11 @@
           return parseInt(incident.escalation_level ?? 0, 10);
         }
         function getSlaEndForLevel(incident, level) {
-          if (level === 0) return incident.sla_l0_end || incident.sla_L0_end || "";
-          if (level === 1) return incident.sla_l1_backup_end || incident.sla_l1_end || "";
-          if (level === 2) return incident.sla_l2_equipo_end || incident.sla_l2_end || "";
-          if (level === 3) return incident.sla_l3_responsable_end || incident.sla_l3_end || "";
-          return "";
+          if (level === 0) return incident.sla_l0_end || incident.sla_L0_end || null;
+          if (level === 1) return incident.sla_l1_backup_end || incident.sla_l1_end || null;
+          if (level === 2) return incident.sla_l2_equipo_end || incident.sla_l2_end || null;
+          if (level === 3) return incident.sla_l3_responsable_end || incident.sla_l3_end || null;
+          return null;
         }
         function formatRemain(ms) {
           const s = Math.max(0, Math.floor(ms / 1000));
@@ -3510,13 +3347,28 @@
             const split = getSplitContext(incident);
             const respText = (split?.current || []).map(entry => entry.raw).join("\n");
             let acept = "";
-            if (respText !== "{{emptystring}}") {
+            if (respText.trim()) {
               const rows = parseRespLog(respText, incident);
               const lastAccepted = rows.filter(r => r.level === L && r.ev === "ACCEPTED").slice(-1)[0];
-              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString();
+              if (lastAccepted) acept = new Date(lastAccepted.when).toLocaleString('es-ES');
             }
             setIncidentBanner(card, `<div class="seguimiento-banner">Trabajando L${L}${acept ? ` · ${acept}` : ""}</div>`);
             return true;
+          }
+
+            if (state === "pending") {
+            const end = getSlaEndForLevel(incident, L);
+            if (end) {
+              const ms = Date.parse(end) - Date.now();
+              if (ms > 0) {
+                const cls = ms <= 30*60000 ? 'sla-critical' : ms <= 120*60000 ? 'sla-warning' : 'sla-good';
+                const blink = ms <= 2*60000 ? 'active' : '';
+                setIncidentBanner(card, `<div class="seguimiento-banner ${cls} ${blink}">⏱️ ${formatRemain(ms)}</div>`);
+                return true;
+              }
+            }
+            setIncidentBanner(card, "");
+            return false;
           }
           if (state !== "seguimiento") return false;
             
@@ -4596,6 +4448,16 @@
             
           return card;
         }
+
+          function getAcceptedOwner(inc){
+          const L = getCurrentLevel(inc);
+          const split = getSplitContext(inc);
+          const respText = (split?.current || []).map(e => e.raw).join("\n");
+          if (!respText.trim()) return "";
+          const rows = parseRespLog(respText, inc) || [];
+          const lastAcc = [...rows].reverse().find(r => r.level === L && r.ev === 'ACCEPTED');
+          return lastAcc ? (lastAcc.email || "") : "";
+        }
         
         function renderDetailsSection(inc, state, news) {
           const notesBadge = news?.notes
@@ -4633,29 +4495,16 @@
               </div>`;
           };
 
-          
-          const L = getCurrentLevel(inc);
-          const split = getSplitContext(inc);
-          const respText = (split?.current || []).map(e => e.raw).join("\n");
-          const rowsRaw = parseRespLog(respText, inc) || [];
-          const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
-
-          const reversed = [...rows].reverse();
-          const lastAssigned = reversed.find(r => r.level === L && r.ev === "ASSIGNED");
-          const hasAccepted = lastAssigned
-            ? reversed.some(r => r.level === L && r.ev === "ACCEPTED" && (r.email || '').toLowerCase() === (lastAssigned.email || '').toLowerCase())
-            : false;
-
-          const assignedSafe = hasAccepted
-            ? (nameFromEmail(lastAssigned?.email) || lastAssigned?.email || '')
-            : '';
+          const ownerEmail = getAcceptedOwner(inc);
+          const assignedLabel = ownerEmail ? (nameFromEmail(ownerEmail) || ownerEmail) : '—';
+          const assignedPhone = ownerEmail ? inc.assigned_technician_phone : '';
         return `
           <div class="detail-grid">
             <div class="contact-card">
               <div class="contact-title">👷 Equipo técnico</div>
               ${contactRow('Supervisor', inc.supervisor, inc.supervisor_phone)}
               ${contactRow('Encargado de zona', inc.zone_manager, inc.zone_manager_phone)}
-              ${contactRow('Técnico asignado', assignedSafe || '', inc.assigned_technician_phone)}
+              ${contactRow('Técnico asignado', assignedLabel, assignedPhone)}
             </div>
             
             <div class="contact-card">
@@ -4822,7 +4671,7 @@
       if (!card) return;
       const container = card.querySelector('.incident-header-right .state-sla');
       if (!container) return;
-      const slaOrState = renderSlaPillInHeader(inc, state, card)
+      const slaOrState = renderSlaPillInHeader(inc, state)
         || `<span class="state-badge state-${state}">${getStateLabel(state)}</span>`;
       container.innerHTML = slaOrState;
     }
