@@ -2601,18 +2601,6 @@
           }
           return map;
         }
-         function renderSlaPillInHeader(inc, state) {
-          // Solo mostramos SLA en estado 'pending' (con ventana viva).
-          if (state !== "pending") return "";
-          const end = getSlaEndForLevel(inc, getCurrentLevel(inc));
-          if (!end) return "";
-          const ms = Date.parse(end) - Date.now();
-          if (ms <= 0) return ""; // vencido -> nada en header
-          const cls = ms <= 30*60000 ? "sla-critical" : ms <= 120*60000 ? "sla-warning" : "sla-good";
-          const blink = ms <= 2*60000 ? "active" : "";
-          return `<span class="sla-timer ${cls} ${blink}">⏱️ ${formatRemain(ms)}</span>`;
-        }
-
         
         // --- ¿Qué categorías tienen pendientes? ---
         function getPendingCategoriesFromLog(logText="") {
@@ -4663,9 +4651,7 @@
       if (!card) return;
       const container = card.querySelector('.incident-header-right .state-sla');
       if (!container) return;
-      const slaOrState = renderSlaPillInHeader(inc, state)
-        || `<span class="state-badge state-${state}">${getStateLabel(state)}</span>`;
-      container.innerHTML = slaOrState;
+      container.innerHTML = `<span class="state-badge state-${state}">${getStateLabel(state)}</span>`;
     }
 
     function renderPreviousCyclesSection(inc, card) {
