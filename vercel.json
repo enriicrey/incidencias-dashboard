@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "rewrites": [
+     { "source": "/tecnico", "destination": "/tecnico.html" },
+    { "source": "/supervisor", "destination": "/supervisor.html" }
+  ]
+}

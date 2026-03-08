@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico">
+    <title>Dashboard Supervisor - Control de Incidencias</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f3f4;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .pin-access {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .refresh-button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .refresh-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .last-update {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .email-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+            letter-spacing: 8px;
+        }
+        
+        .verify-btn {
+            background: #3498db;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        /* Dashboard Styles */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid;
+        }
+        
+        .stat-card.critical { border-color: #e74c3c; }
+        .stat-card.warning { border-color: #f39c12; }
+        .stat-card.info { border-color: #3498db; }
+        .stat-card.success { border-color: #27ae60; }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .incidents-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .incident-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .incident-item {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            background: #fafafa;
+            transition: all 0.2s ease;
+        }
+        
+        .incident-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .incident-id {
+            font-weight: 700;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .incident-priority {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .priority-crítica {
+            background: #fee;
+            color: #c0392b;
+        }
+        
+        .priority-alta {
+            background: #fef5e7;
+            color: #d68910;
+        }
+        
+        .priority-media {
+            background: #eaf2f8;
+            color: #2980b9;
+        }
+        
+        .priority-baja {
+            background: #eafaf1;
+            color: #27ae60;
+        }
+        
+        .incident-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .response-section {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .status-section {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .status-escalated {
+            background: #fee;
+            color: #c0392b;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-paused {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-assigned {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status-pending {
+            background: #e2e3e5;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .incident-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success { background: #27ae60; }
+        .notification.error { background: #e74c3c; }
+        .notification.info { background: #3498db; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 20px 15px; }
+            .header-content { flex-direction: column; gap: 15px; }
+            .filters { flex-direction: column; width: 100%; }
+            .incident-details { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <h2>🛡️ Acceso Supervisor</h2>
+            <p>Introduce tus credenciales de acceso</p>
+            
+            <!-- Campo Email -->
+            <input type="email" id="emailInput" class="email-input" placeholder="supervisor@empresa.com">
+            
+            <!-- Campo PIN -->
+            <input type="password" id="pinInput" class="pin-input" placeholder="••••" maxlength="4">
+            
+           <button onclick="window.verifyPin ? verifyPin() : alert('Función no cargada')" class="verify-btn">Verificar Acceso</button>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🛡️ Dashboard Supervisor</div>
+            <div class="user-info">
+                <div class="pin-access">
+                    <span id="supervisorName">Supervisor</span> - 
+                    <span id="supervisorRole">Sistema</span>
+                </div>
+                <button id="refreshBtn" class="refresh-button" onclick="refreshData()">
+                    🔄 Actualizar
+                </button>
+                <p id="lastUpdate" class="last-update">Última actualización: --:--</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Principal -->
+    <div class="container">
+        <!-- Dashboard Principal -->
+        <div class="dashboard" id="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card critical">
+                    <div class="stat-number" id="criticalCount">0</div>
+                    <div class="stat-label">Incidencias Críticas</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-number" id="escalatedCount">0</div>
+                    <div class="stat-label">Escaladas a L3</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-number" id="inProcessCount">0</div>
+                    <div class="stat-label">En Proceso</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-number" id="resolvedCount">0</div>
+                    <div class="stat-label">Resueltas (48h)</div>
+                </div>
+            </div>
+            
+            <div class="incidents-section">
+                <div class="section-header">
+                    <h3>📋 Incidencias Activas (48h)</h3>
+                    <div class="filters">
+                        <button class="filter-btn active" onclick="filterIncidents('all', this)">Todas</button>
+                        <button class="filter-btn" onclick="filterIncidents('critical', this)">Críticas</button>
+                        <button class="filter-btn" onclick="filterIncidents('escalated', this)">Escaladas</button>
+                        <button class="filter-btn" onclick="filterIncidents('pending', this)">Pendientes</button>
+                    </div>
+                </div>
+                
+                <div class="incident-list" id="incidentList">
+                    <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <h3>🔄 Cargando incidencias...</h3>
+                        <p>Conectando con sistema Make + Notion</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allIncidents = [];
+        let currentFilter = 'all';
+        let currentSupervisor = null;
+        let supervisorEmail = null;
+        
+        // Obtener parámetros de URL al cargar
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            supervisorEmail = urlParams.get('email');
+            const pinFromUrl = urlParams.get('pin');
+            
+            // Si viene email en URL, prellenar campo
+            if (supervisorEmail) {
+                document.getElementById('emailInput').value = supervisorEmail;
+                console.log('🎯 Email prellenado desde URL:', supervisorEmail);
+            }
+            
+            // Si viene PIN en URL, prellenar y auto-validar
+            if (pinFromUrl) {
+                document.getElementById('pinInput').value = pinFromUrl;
+                if (supervisorEmail) {
+                    console.log('🔄 Auto-validando desde URL...');
+                    verifyPin();
+                }
+            }
+        });
+        
+        // Verificar PIN
+        async function verifyPin() {
+            const pin = document.getElementById('pinInput').value;
+            const email = supervisorEmail || document.getElementById('emailInput').value;
+            
+            if (!email || !email.includes('@')) {
+                showError('Introduce un email válido');
+                return;
+            }
+            
+            if (!pin || pin.length !== 4) {
+                showError('Introduce un PIN de 4 dígitos');
+                return;
+            }
+            
+            try {
+                // ✅ WEBHOOK VALIDATE-PIN: Solo validación
+                const response = await fetch('/api/validate-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'validate_pin',
+                        supervisor: email,
+                        pin: pin
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('🔐 Respuesta validación PIN:', data);
+                
+                if (data.status === 'success') {
+                    currentSupervisor = data.supervisor;
+                    supervisorEmail = email; // Actualizar email global
+                    
+                    // Actualizar UI con datos reales del supervisor
+                    if (currentSupervisor) {
+                        document.getElementById('supervisorName').textContent = currentSupervisor.name || 'Supervisor';
+                        document.getElementById('supervisorRole').textContent = currentSupervisor.department || 'Sistema';
+                    }
+                    
+                    document.getElementById('loginScreen').style.display = 'none';
+                    showNotification('✅ Acceso autorizado', 'success');
+                    
+                    // Cargar incidencias inmediatamente
+                    refreshData();
+                } else {
+                    showError(data.message || 'PIN incorrecto');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error de conexión');
+            }
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => errorElement.style.display = 'none', 3000);
+        }
+        
+        // Permitir verificación con Enter
+        document.getElementById('pinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verifyPin();
+        });
+        
+        // Función para actualizar datos (SOLO get_incidents)
+        async function refreshData() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const lastUpdateElement = document.getElementById('lastUpdate');
+            
+            refreshBtn.innerHTML = '🔄 Actualizando...';
+            refreshBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/webhook-supervisor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        action: 'get_incidents',
+        supervisor: supervisorEmail || document.getElementById('emailInput').value,
+        department: currentSupervisor?.department || 'Sin departamento',
+        supervisor_name: currentSupervisor?.name || 'Sin nombre'
+    })
+});
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📡 Respuesta incidencias:', data);
+                
+                if (data.status === 'success' && data.incidents) {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('es-ES', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                    
+                    lastUpdateElement.textContent = `Última actualización: ${timeString}`;
+                    allIncidents = data.incidents;
+                    
+                    renderIncidents(allIncidents);
+                    updateStats(allIncidents);
+                    
+                    showNotification('✅ Datos actualizados correctamente', 'success');
+                } else {
+                    throw new Error(data.message || 'Respuesta inválida del servidor');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al actualizar:', error);
+                showNotification('❌ Error: ' + error.message, 'error');
+            } finally {
+                refreshBtn.innerHTML = '🔄 Actualizar';
+                refreshBtn.disabled = false;
+            }
+        }
+        
+        // Renderizar incidencias
+        function renderIncidents(incidents) {
+            const container = document.getElementById('incidentList');
+            
+            if (!incidents || incidents.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <h3>✅ No hay incidencias en las últimas 48h</h3>
+                        <p>Todas las incidencias están resueltas</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const filteredIncidents = filterIncidentsByStatus(incidents);
+            
+            container.innerHTML = filteredIncidents.map(incident => `
+                <div class="incident-item" 
+                     data-status="${getIncidentStatus(incident)}" 
+                     data-priority="${extractPriorityText(incident.priority)}">
+                    ${renderIncidentHeader(incident)}
+                    ${renderIncidentDetails(incident)}
+                    ${renderTechnicianResponses(incident)}
+                    ${renderIncidentStatus(incident)}
+                    ${renderIncidentActions(incident)}
+                </div>
+            `).join('');
+        }
+        
+        // Extraer texto de prioridad sin emojis
+        function extractPriorityText(priority) {
+            return priority.replace(/[🔴🟠🟡🟢⚪]/g, '').trim().toLowerCase();
+        }
+        
+        // Renderizar header de incidencia
+        function renderIncidentHeader(incident) {
+            const priorityText = extractPriorityText(incident.priority);
+            const priorityClass = `priority-${priorityText}`;
+            
+            return `
+                <div class="incident-header">
+                    <div class="incident-id">${incident.id}</div>
+                    <div class="incident-priority ${priorityClass}">
+                        ${incident.priority}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Renderizar detalles básicos
+        function renderIncidentDetails(incident) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
+            return `
+                <div class="incident-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Equipo</div>
+                        <div class="detail-value">${incident.equipment || 'No especificado'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Zona</div>
+                        <div class="detail-value">${incident.zone || 'Sin zona'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Estado</div>
+                        <div class="detail-value">${incident.status || 'Nueva'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Técnico Asignado</div>
+                        <div class="detail-value">${incident.assigned_technician || 'Sin asignar'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tiempo Transcurrido</div>
+                        <div class="detail-value">${incident.time_elapsed || 0} min</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Nivel de Escalado</div>
+                        <div class="detail-value">L${escalationLevel}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Renderizar respuestas de técnicos
+        function renderTechnicianResponses(incident) {
+            let responses = [];
+        
+            // Respuesta L0
+            if (incident.l0_response && !incident.l0_response.includes('Sin Respuesta')) {
+                let responseText = `<strong>L0 (${incident.l0_technician}):</strong> ${incident.l0_response}`;
+            
+                if (incident.l0_response.includes('Rechazado') && incident.l0_reject_reason && incident.l0_reject_reason !== 'Sin motivo') {
+                    responseText += ` - <em>${incident.l0_reject_reason}</em>`;
+                }
+                if (incident.l0_response.includes('Ayuda') && incident.l0_help_type && incident.l0_help_type !== 'Sin ayuda') {
+                    responseText += ` - <em>${incident.l0_help_type}</em>`;
+                }
+                responses.push(responseText);
+            }
+            
+            // Respuesta L1
+            if (incident.l1_response && !incident.l1_response.includes('Sin Respuesta')) {
+                let responseText = `<strong>L1 (${incident.l1_technician}):</strong> ${incident.l1_response}`;
+                
+                if (incident.l1_response.includes('Rechazado') && incident.l1_reject_reason && incident.l1_reject_reason !== 'Sin motivo') {
+                    responseText += ` - <em>${incident.l1_reject_reason}</em>`;
+                }
+                if (incident.l1_response.includes('Ayuda') && incident.l1_help_type && incident.l1_help_type !== 'Sin ayuda') {
+                    responseText += ` - <em>${incident.l1_help_type}</em>`;
+                }
+                responses.push(responseText);
+            }
+            
+            // Respuestas L2 (Múltiples o vacías)
+            if (incident.l2_responses && incident.l2_responses.trim() && !incident.l2_responses.includes('Sin Respuesta')) {
+                const l2ResponsesArray = incident.l2_responses.split(', ').filter(r => r.trim());
+                const l2TechniciansArray = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t) : [];
+                
+                if (l2ResponsesArray.length > 0) {
+                    if (l2TechniciansArray.length === l2ResponsesArray.length) {
+                        l2ResponsesArray.forEach((response, index) => {
+                            let responseText = `<strong>L2 (${l2TechniciansArray[index]}):</strong> ${response}`;
+                            responses.push(responseText);
+                        });
+                    } else {
+                        const responseText = `<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> ${l2ResponsesArray.join(', ')}`;
+                        responses.push(responseText);
+                    }
+                }
+            } else if (incident.l2_technicians && incident.l2_technicians.trim()) {
+                const l2TechniciansArray = incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t);
+                if (l2TechniciansArray.length > 0) {
+                    responses.push(`<strong>L2 (${l2TechniciansArray.join(', ')}):</strong> <span style="color: #999;">⏳ Esperando respuesta...</span>`);
+                }
+            }
+            
+            // Agregar motivos de rechazo L2 si existen
+            if (incident.l2_reject_reasons && incident.l2_reject_reasons.trim() && incident.l2_reject_reasons !== 'Sin motivos') {
+                responses.push(`<span style="color: #666; font-size: 13px; margin-left: 20px;">Motivos L2: <em>${incident.l2_reject_reasons}</em></span>`);
+            }
+            
+            // Mostrar técnicos L2 notificados (solo si hay más que los que actuaron)
+            if (incident.l2_technicians_notified && incident.l2_technicians_notified !== 'Ninguno') {
+                const notifiedArray = incident.l2_technicians_notified.split(',').map(t => t.trim()).filter(t => t);
+                const actedArray = incident.l2_technicians ? incident.l2_technicians.split(',').map(t => t.trim()).filter(t => t) : [];
+                
+                if (notifiedArray.length > actedArray.length) {
+                    responses.push(`<span style="color: #999; font-size: 12px; font-style: italic;">📧 L2 notificados: ${incident.l2_technicians_notified}</span>`);
+                }
+            }
+            
+            // Respuesta L3 (Supervisor)
+            if (incident.l3_response && !incident.l3_response.includes('Sin Respuesta')) {
+                responses.push(`<strong>L3 (Supervisor):</strong> ${incident.l3_response}`);
+            }
+            
+            if (responses.length === 0) return '';
+            
+            return `
+    <div class="response-section" style="background: #f8f9fa; border-left: 4px solid #007bff;">
+        <div class="detail-label" style="margin-bottom: 8px;">Historial de Respuestas</div>
+        ${responses.map(r => `<div style="margin: 6px 0; line-height: 1.4;">${r}</div>`).join('')}
+    </div>
+`;
+}
+        
+        // Renderizar estado de incidencia
+        function renderIncidentStatus(incident) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            const isPaused = incident.escalation_paused === true || incident.escalation_paused === "true";
+            
+            if (isPaused) {
+                return `<div class="status-section status-paused">⏸️ ESCALADO PAUSADO - REQUIERE INTERVENCIÓN</div>`;
+            } else if (escalationLevel >= 3) {
+                return `<div class="status-section status-escalated">🚨 REQUIERE ASIGNACIÓN MANUAL INMEDIATA</div>`;
+            } else if (incident.status && incident.status.includes('Asignada')) {
+                return `<div class="status-section status-assigned">✅ ${incident.assigned_technician} TRABAJANDO</div>`;
+            } else if (incident.status && (incident.status.includes('Resuelta') || incident.status.includes('Cerrada'))) {
+                return `<div class="status-section status-assigned">✅ INCIDENCIA ${incident.status.toUpperCase()}</div>`;
+            } else {
+                return `<div class="status-section status-pending">⏳ EN PROCESO DE ESCALADO (L${escalationLevel})</div>`;
+            }
+        }
+        
+        // Renderizar acciones disponibles
+        function renderIncidentActions(incident) {
+            let actions = [];
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            const isPaused = incident.escalation_paused === true || incident.escalation_paused === "true";
+            
+            // Acciones para escalado pausado (ayuda requerida)
+            if (isPaused) {
+                actions.push(`<button class="btn btn-success" onclick="resolveHelp('${incident.id}', 'provide_tools')">🔧 PROPORCIONAR HERRAMIENTAS</button>`);
+                actions.push(`<button class="btn btn-success" onclick="resolveHelp('${incident.id}', 'provide_consultation')">📞 DAR CONSULTA</button>`);
+            }
+            
+            // Asignación manual (siempre disponible para incidencias activas)
+            if (!incident.status || !incident.status.includes('Resuelta') && !incident.status.includes('Cerrada')) {
+                actions.push(`<button class="btn btn-warning" onclick="assignManually('${incident.id}')">👤 ASIGNAR MANUAL</button>`);
+            }
+            
+            // Cortar escalado (solo si no está pausado y hay escalado activo)
+            if (!isPaused && escalationLevel > 0) {
+                actions.push(`<button class="btn btn-danger" onclick="cutEscalation('${incident.id}', ${incident.escalation_paused})">✂️ CORTAR ESCALADO</button>`);
+            }
+            
+            // Resolver directamente (siempre disponible para incidencias activas)
+            if (!incident.status || !incident.status.includes('Resuelta') && !incident.status.includes('Cerrada')) {
+                actions.push(`<button class="btn btn-primary" onclick="resolveDirectly('${incident.id}')">🔧 RESOLVER DIRECTAMENTE</button>`);
+            }
+            
+            // Ver detalles (siempre disponible)
+            actions.push(`<button class="btn btn-info" onclick="viewDetails('${incident.id}')">📋 VER DETALLES</button>`);
+            
+            return `<div class="incident-actions">${actions.join('')}</div>`;
+        }
+        
+        // Obtener estado de incidencia para filtros
+        function getIncidentStatus(incident) {
+            const escalationLevel = parseInt(incident.escalation_level) || 0;
+            
+            if (incident.escalation_paused === true || incident.escalation_paused === "true") return 'help_requested';
+            if (escalationLevel >= 3) return 'escalated';
+            if (incident.priority && incident.priority.includes('CRÍTICA')) return 'critical';
+            if (incident.status && incident.status.includes('Asignada')) return 'assigned';
+            if (incident.status && (incident.status.includes('Resuelta') || incident.status.includes('Cerrada'))) return 'resolved';
+            return 'pending';
+        }
+        
+        // Filtrar incidencias por estado
+        function filterIncidentsByStatus(incidents) {
+            switch (currentFilter) {
+                case 'critical':
+                    return incidents.filter(i => i.priority && i.priority.includes('CRÍTICA'));
+                case 'escalated':
+                    return incidents.filter(i => {
+                        const escalationLevel = parseInt(i.escalation_level) || 0;
+                        return escalationLevel >= 3;
+                    });
+                case 'pending':
+                    return incidents.filter(i => !i.assigned_technician || i.assigned_technician === 'Sin asignar');
+                default:
+                    return incidents;
+            }
+        }
+        
+        // Actualizar estadísticas
+        function updateStats(incidents) {
+            const critical = incidents.filter(i => i.priority && i.priority.includes('CRÍTICA')).length;
+            const escalated = incidents.filter(i => {
+                const escalationLevel = parseInt(i.escalation_level) || 0;
+                return escalationLevel >= 3;
+            }).length;
+            const inProcess = incidents.filter(i => i.status && i.status.includes('Asignada')).length;
+            const resolved = incidents.filter(i => i.status && (i.status.includes('Resuelta') || i.status.includes('Cerrada'))).length;
+            
+            document.getElementById('criticalCount').textContent = critical;
+            document.getElementById('escalatedCount').textContent = escalated;
+            document.getElementById('inProcessCount').textContent = inProcess;
+            document.getElementById('resolvedCount').textContent = resolved;
+        }
+        
+        // Función de filtrado
+        function filterIncidents(filter, buttonElement) {
+            currentFilter = filter;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            
+            // Re-renderizar con filtro
+            renderIncidents(allIncidents);
+        }
+        
+        // === ACCIONES DEL SUPERVISOR ===
+        
+        // Asignar manualmente
+        async function assignManually(incidentId) {
+            const technician = prompt(`🎯 Asignar técnico para ${incidentId}:\n\nIntroduce el email del técnico:`);
+            
+            if (technician && technician.includes('@')) {
+                try {
+                    const response = await fetch('/api/webhook-supervisor', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'assign_manual',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                            incident_id: incidentId,
+                            technician: technician
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        showNotification(`✅ ${incidentId} asignada a ${technician}`, 'success');
+                        refreshData();
+                    } else {
+                        showNotification(`❌ Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Error de conexión', 'error');
+                }
+            } else if (technician !== null) {
+                alert('Introduce un email válido');
+            }
+        }
+        
+        // Resolver ayuda
+        async function resolveHelp(incidentId, action) {
+            const messages = {
+                'provide_tools': `🔧 Gestionando herramientas para ${incidentId}.\n\nSe proporcionarán las herramientas necesarias y se reactivará el escalado.`,
+                'provide_consultation': `📞 Contactando técnico para consulta de ${incidentId}.\n\nSe proporcionará asesoramiento y continuará la incidencia.`
+            };
+            
+            if (confirm(messages[action])) {
+                try {
+                    const response = await fetch('/api/webhook-supervisor', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'resolve_help',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                            incident_id: incidentId,
+                            help_action: action
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        showNotification(`✅ Acción ejecutada para ${incidentId}`, 'success');
+                        refreshData();
+                    } else {
+                        showNotification(`❌ Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Error de conexión', 'error');
+                }
+            }
+        }
+        
+        // Cortar escalado
+        async function cutEscalation(incidentId,escalationPaused) {
+            if (confirm(`¿Confirmas cortar el escalado automático para ${incidentId}?\n\nPodrás asignar manualmente o resolver directamente.`)) {
+                try {
+                    const response = await fetch('/api/webhook-supervisor', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'pause_escalation',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                            incident_id: incidentId,
+                            escalation_paused: escalationPaused
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        showNotification(`✂️ Escalado cortado para ${incidentId}`, 'success');
+                        refreshData();
+                    } else {
+                        showNotification(`❌ Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Error de conexión', 'error');
+                }
+            }
+        }
+        
+        // Resolver directamente
+        async function resolveDirectly(incidentId) {
+            const solution = prompt(`🔧 Resolver directamente ${incidentId}:\n\nDescribe la solución aplicada (mínimo 10 caracteres):`);
+            
+            if (solution && solution.trim().length >= 10) {
+                try {
+                    const response = await fetch('/api/webhook-supervisor', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'resolve_directly',
+                            supervisor: supervisorEmail || document.getElementById('emailInput').value,
+                            incident_id: incidentId,
+                            solution: solution
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        showNotification(`✅ ${incidentId} resuelta directamente`, 'success');
+                        refreshData();
+                    } else {
+                        showNotification(`❌ Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Error de conexión', 'error');
+                }
+            } else if (solution !== null) {
+                alert('Debes proporcionar una descripción de la solución (mínimo 10 caracteres)');
+            }
+        }
+        
+        // Ver detalles
+        function viewDetails(incidentId) {
+            const incident = allIncidents.find(i => i.id === incidentId);
+            
+            if (incident && incident.url && incident.url !== 'Sin URL') {
+                window.open(incident.url, '_blank');
+            } else {
+                alert(`📋 Detalles de ${incidentId}\n\n(URL de Notion no disponible)`);
+            }
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+        }
+        
+        // Auto-Refresh cada 5 minutos en caso de incidencias escaladas o críticas:
+setInterval(() => {
+    const criticalCount = parseInt(document.getElementById('criticalCount').textContent) || 0;
+    const escalatedCount = parseInt(document.getElementById('escalatedCount').textContent) || 0;
+    
+    // Auto-refresh solo si hay críticas O escaladas L3
+    if (criticalCount > 0 || escalatedCount > 0) {
+        console.log(`🔄 Auto-refresh: ${criticalCount} críticas, ${escalatedCount} escaladas`);
+        refreshData();
+    }
+}, 300000); // 5 minutos
+       
+
+    </script>
+</body>
+</html>
